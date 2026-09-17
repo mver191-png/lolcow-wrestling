@@ -7,8 +7,10 @@ extends Node
 
 @export var fighter: Fighter
 @export var reaction_interval: float = 0.22 # Reaction delay in seconds
+@export var escape_mash_interval: float = 0.10 # Cadence for CPU escape mashing
 
 var timer: float = 0.0
+var escape_timer: float = 0.0
 var think_state: String = "approach"
 
 func _ready() -> void:
@@ -16,7 +18,23 @@ func _ready() -> void:
 		fighter.is_cpu = true
 
 func _physics_process(delta: float) -> void:
-	if not is_instance_valid(fighter) or not is_instance_valid(fighter.opponent):
+	if not is_instance_valid(fighter):
+		return
+		
+	# Active escape mashing during PINNED or SUBMISSION_DEFENDER
+	if fighter.current_state in [Fighter.State.PINNED, Fighter.State.SUBMISSION_DEFENDER]:
+		escape_timer += delta
+		# Mashing cadence scales with reversal stat (higher reversal = faster mash)
+		var effective_interval: float = escape_mash_interval * (1.2 - (fighter.stat_reversal * 0.04))
+		if escape_timer >= effective_interval:
+			escape_timer = 0.0
+			fighter.input_pin = true
+			fighter.input_strike = true
+		return
+	else:
+		escape_timer = 0.0
+	
+	if not is_instance_valid(fighter.opponent):
 		return
 	
 	timer += delta
@@ -26,9 +44,9 @@ func _physics_process(delta: float) -> void:
 
 func _think() -> void:
 	var opp: Fighter = fighter.opponent
-	var dist: float = fighter.global_position.distance_to(opp.global_position)
-	var opp_pos: Vector3 = opp.global_position
-	var my_pos: Vector3 = fighter.global_position
+	var opp_pos: Vector3 = opp.global_position if opp.is_inside_tree() else opp.position
+	var my_pos: Vector3 = fighter.global_position if fighter.is_inside_tree() else fighter.position
+	var dist: float = my_pos.distance_to(opp_pos)
 	
 	# Clear pulse inputs
 	fighter.input_strike = false
@@ -48,9 +66,10 @@ func _think() -> void:
 			fighter.input_dir = Vector2(to_opp.x, to_opp.z)
 		return
 		
-	# Check if I am pinned -> escape mash!
-	if fighter.current_state == Fighter.State.PINNED:
+	# Check if I am pinned or in submission -> escape mash!
+	if fighter.current_state in [Fighter.State.PINNED, Fighter.State.SUBMISSION_DEFENDER]:
 		fighter.input_pin = true
+		fighter.input_strike = true
 		return
 		
 	# Tactical in-ring spacing

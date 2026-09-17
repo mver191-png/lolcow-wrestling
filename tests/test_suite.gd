@@ -25,6 +25,9 @@ func _init() -> void:
 	test_audio_and_trauma_shake()
 	test_match_config_and_character_select()
 	test_roster_pair_matrix_compatibility()
+	test_pass_a_cpu_escape_mechanisms()
+	test_pass_a_throw_height_and_ownership()
+	test_pass_a_slot_inversions_and_facing_vectors()
 	
 	print("==================================================")
 	print("TEST RESULTS: %d Passed, %d Failed, %d Total" % [passed_tests, failed_tests, total_tests])
@@ -387,3 +390,158 @@ func test_match_config_and_character_select() -> void:
 	
 	# Reset MatchConfig to defaults
 	MatchConfig.reset_defaults()
+
+func test_pass_a_cpu_escape_mechanisms() -> void:
+	# 1. Test CPU Pin Escape without keyboard input
+	var cpu_fighter: Fighter = Fighter.new()
+	var opponent: Fighter = Fighter.new()
+	var cpu_ctrl: CPUController = CPUController.new()
+	
+	root.add_child(cpu_fighter)
+	root.add_child(opponent)
+	root.add_child(cpu_ctrl)
+	
+	cpu_fighter.character_id = "cyraxx"
+	opponent.character_id = "tophiachu"
+	cpu_fighter.load_character_data()
+	opponent.load_character_data()
+	
+	cpu_fighter.opponent = opponent
+	opponent.opponent = cpu_fighter
+	cpu_fighter.is_cpu = true
+	cpu_ctrl.fighter = cpu_fighter
+	
+	# Lock into pin
+	opponent.current_state = Fighter.State.PINNING
+	cpu_fighter.on_pinned(opponent)
+	assert_true(cpu_fighter.current_state == Fighter.State.PINNED, "Pass A: Defender enters PINNED state")
+	assert_true(cpu_fighter.pin_escape_progress == 0.0, "Pass A: Pin escape progress starts at 0")
+	
+	# Simulate in-tree physics processing
+	var kicked_out: Array[bool] = [false]
+	cpu_fighter.kick_out_succeeded.connect(func(_f): kicked_out[0] = true)
+	
+	# Tick through physics updates until kickout or max frames
+	for frame in range(90):
+		cpu_ctrl._physics_process(1.0 / 60.0)
+		cpu_fighter._physics_process(1.0 / 60.0)
+		if kicked_out[0]:
+			break
+			
+	assert_true(cpu_fighter.pin_escape_progress > 20.0, "Pass A: CPU defender accumulates pin escape progress without keyboard input")
+	assert_true(kicked_out[0] and cpu_fighter.current_state == Fighter.State.GETTING_UP, "Pass A: CPU defender successfully kicks out via command interface")
+	
+	# 2. Test CPU Submission Escape without keyboard input
+	opponent.current_state = Fighter.State.SUBMISSION_ATTACKER
+	opponent.synchronized_partner = cpu_fighter
+	cpu_fighter.on_locked_by_submission(opponent)
+	assert_true(cpu_fighter.current_state == Fighter.State.SUBMISSION_DEFENDER, "Pass A: Defender enters SUBMISSION_DEFENDER state")
+	
+	var submission_escaped: Array[bool] = [false]
+	cpu_fighter.submission_escaped.connect(func(_f): submission_escaped[0] = true)
+	
+	for frame in range(90):
+		cpu_ctrl._physics_process(1.0 / 60.0)
+		cpu_fighter._physics_process(1.0 / 60.0)
+		if submission_escaped[0]:
+			break
+			
+	assert_true(submission_escaped[0] and cpu_fighter.current_state == Fighter.State.GETTING_UP, "Pass A: CPU defender successfully escapes submission via command interface")
+	
+	cpu_ctrl.free()
+	cpu_fighter.free()
+	opponent.free()
+
+func test_pass_a_throw_height_and_ownership() -> void:
+	var atk: Fighter = Fighter.new()
+	var def: Fighter = Fighter.new()
+	root.add_child(atk)
+	root.add_child(def)
+	
+	atk.character_id = "tophiachu"
+	def.character_id = "cyraxx"
+	atk.load_character_data()
+	def.load_character_data()
+	
+	atk.position = Vector3(0, 0, -1.0)
+	def.position = Vector3(0, 0, 1.0)
+	atk.opponent = def
+	def.opponent = atk
+	
+	atk._start_synchronized_throw(def)
+	assert_true(atk.current_state == Fighter.State.GRAPPLING_ATTACKER, "Pass A: Attacker in GRAPPLING_ATTACKER")
+	assert_true(def.current_state == Fighter.State.GRAPPLING_DEFENDER, "Pass A: Defender in GRAPPLING_DEFENDER")
+	
+	# Advance physics frames into the mid-lift peak (state_timer ~ 0.3s)
+	var peak_height_observed: float = 0.0
+	for frame in range(20):
+		atk._physics_process(0.016)
+		def._physics_process(0.016)
+		var def_y: float = def.global_position.y if def.is_inside_tree() else def.position.y
+		if def_y > peak_height_observed:
+			peak_height_observed = def_y
+			
+	assert_true(peak_height_observed > 1.2, "Pass A: Defender reaches peak throw height (> 1.2m) without being clamped to 0 by _clamp_within_ring (Observed: %.2fm)" % peak_height_observed)
+	
+	# Continue to throw completion
+	for frame in range(60):
+		atk._physics_process(0.016)
+		def._physics_process(0.016)
+		
+	assert_true(atk.current_state == Fighter.State.IDLE, "Pass A: Attacker cleanly transitions to IDLE after throw")
+	assert_true(def.current_state == Fighter.State.KNOCKED_DOWN, "Pass A: Defender transitions to KNOCKED_DOWN after throw")
+	var final_y: float = def.global_position.y if def.is_inside_tree() else def.position.y
+	assert_true(is_equal_approx(final_y, 0.0), "Pass A: Defender cleanly grounded on canvas after throw (Y=%.2f)" % final_y)
+	
+	atk.free()
+	def.free()
+
+func test_pass_a_slot_inversions_and_facing_vectors() -> void:
+	var configs = [
+		{"atk_id": "tophiachu", "atk_slot": 1, "atk_pos": Vector3(-1.5, 0, 0), "def_id": "cyraxx", "def_slot": 2, "def_pos": Vector3(1.5, 0, 0), "desc": "P1 Attacker (-X) vs P2 Defender (+X)"},
+		{"atk_id": "tophiachu", "atk_slot": 2, "atk_pos": Vector3(1.5, 0, 0), "def_id": "cyraxx", "def_slot": 1, "def_pos": Vector3(-1.5, 0, 0), "desc": "P2 Attacker (+X) vs P1 Defender (-X)"},
+		{"atk_id": "cyraxx", "atk_slot": 1, "atk_pos": Vector3(0, 0, -1.5), "def_id": "tophiachu", "def_slot": 2, "def_pos": Vector3(0, 0, 1.5), "desc": "P1 Attacker (-Z) vs P2 Defender (+Z)"},
+		{"atk_id": "cyraxx", "atk_slot": 2, "atk_pos": Vector3(0, 0, 1.5), "def_id": "tophiachu", "def_slot": 1, "def_pos": Vector3(0, 0, -1.5), "desc": "P2 Attacker (+Z) vs P1 Defender (-Z)"}
+	]
+	
+	for cfg in configs:
+		var atk: Fighter = Fighter.new()
+		var def: Fighter = Fighter.new()
+		root.add_child(atk)
+		root.add_child(def)
+		
+		atk.character_id = cfg["atk_id"]
+		atk.player_index = cfg["atk_slot"]
+		def.character_id = cfg["def_id"]
+		def.player_index = cfg["def_slot"]
+		atk.load_character_data()
+		def.load_character_data()
+		
+		atk.position = cfg["atk_pos"]
+		def.position = cfg["def_pos"]
+		atk.opponent = def
+		def.opponent = atk
+		
+		atk._start_synchronized_throw(def)
+		
+		var atk_fwd: Vector3 = -atk.transform.basis.z.normalized()
+		var def_fwd: Vector3 = -def.transform.basis.z.normalized()
+		var expected_atk_dir: Vector3 = (cfg["def_pos"] - cfg["atk_pos"]).normalized()
+		var expected_def_dir: Vector3 = (cfg["atk_pos"] - cfg["def_pos"]).normalized()
+		
+		var atk_facing_dot: float = atk_fwd.dot(expected_atk_dir)
+		var def_facing_dot: float = def_fwd.dot(expected_def_dir)
+		assert_true(atk_facing_dot > 0.98, "Pass A Facing: Attacker faces defender in %s (dot=%.3f)" % [cfg["desc"], atk_facing_dot])
+		assert_true(def_facing_dot > 0.98, "Pass A Facing: Defender faces attacker in %s (dot=%.3f)" % [cfg["desc"], def_facing_dot])
+		
+		# Advance to post-impact slam
+		atk.state_timer = 0.65
+		atk._process_synchronized_attacker()
+		
+		# Slam position must be in front of attacker along attacker forward vector
+		var slam_offset: Vector3 = (def.position - atk.position).normalized()
+		var slam_in_front: float = slam_offset.dot(atk_fwd)
+		assert_true(slam_in_front > 0.95, "Pass A Trajectory: Slam position is in front of attacker in %s (dot=%.3f)" % [cfg["desc"], slam_in_front])
+		
+		atk.free()
+		def.free()

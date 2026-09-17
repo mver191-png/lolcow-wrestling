@@ -98,6 +98,7 @@ var input_block: bool = false
 var input_reversal: bool = false
 var input_pin: bool = false
 var input_finisher: bool = false
+var input_hold_pin: bool = false
 
 func _ready() -> void:
 	load_character_data()
@@ -154,6 +155,7 @@ func _physics_process(delta: float) -> void:
 	_tick_stamina(delta)
 	_update_state_machine(delta)
 	_clamp_within_ring()
+	_clear_consumed_pulse_inputs()
 
 func _gather_player_inputs() -> void:
 	var prefix: String = "p" + str(player_index) + "_"
@@ -175,6 +177,14 @@ func _gather_player_inputs() -> void:
 	input_reversal = Input.is_action_just_pressed(prefix + "reversal")
 	input_pin = Input.is_action_just_pressed(prefix + "pin")
 	input_finisher = Input.is_action_just_pressed(prefix + "finisher")
+	input_hold_pin = Input.is_action_pressed(prefix + "pin")
+
+func _clear_consumed_pulse_inputs() -> void:
+	input_strike = false
+	input_grapple = false
+	input_reversal = false
+	input_pin = false
+	input_finisher = false
 
 func _tick_stamina(delta: float) -> void:
 	if current_state == State.BLOCKING:
@@ -289,8 +299,8 @@ func _handle_locomotion(delta: float) -> void:
 		if is_inside_tree():
 			move_and_slide()
 		
-		# Rotate towards movement direction
-		var target_angle: float = atan2(input_dir.x, input_dir.y)
+		# Rotate towards movement direction using standard Godot -Z forward convention
+		var target_angle: float = atan2(-input_dir.x, -input_dir.y)
 		rotation.y = lerp_angle(rotation.y, target_angle, 10.0 * delta)
 		
 		if current_state != State.MOVING:
@@ -302,13 +312,14 @@ func _handle_locomotion(delta: float) -> void:
 		if current_state != State.IDLE:
 			_set_state(State.IDLE)
 		
-		# Face opponent when standing still
+		# Face opponent when standing still using standard Godot -Z forward convention
 		if is_instance_valid(opponent):
 			var my_pos: Vector3 = global_position if is_inside_tree() else position
 			var opp_pos: Vector3 = opponent.global_position if opponent.is_inside_tree() else opponent.position
-			var look_pos: Vector3 = Vector3(opp_pos.x, my_pos.y, opp_pos.z)
-			if not my_pos.is_equal_approx(look_pos):
-				var target_rot: float = atan2(look_pos.x - my_pos.x, look_pos.z - my_pos.z)
+			var look_dir: Vector3 = Vector3(opp_pos.x - my_pos.x, 0.0, opp_pos.z - my_pos.z)
+			if look_dir.length_squared() > 0.001:
+				var look_norm: Vector3 = look_dir.normalized()
+				var target_rot: float = atan2(-look_norm.x, -look_norm.z)
 				rotation.y = lerp_angle(rotation.y, target_rot, 6.0 * delta)
 
 func _check_standing_actions() -> void:
@@ -434,13 +445,13 @@ func _start_synchronized_throw(target: Fighter) -> void:
 	_set_state(State.GRAPPLING_ATTACKER)
 	target.on_locked_by_throw(self)
 	
-	# Face each other
+	# Face each other using standard Godot -Z forward convention
 	var p1: Vector3 = global_position if is_inside_tree() else position
 	var p2: Vector3 = target.global_position if target.is_inside_tree() else target.position
-	var forward_dir: Vector3 = (p2 - p1).normalized()
+	var forward_dir: Vector3 = Vector3(p2.x - p1.x, 0.0, p2.z - p1.z).normalized()
 	if not forward_dir.is_zero_approx():
-		rotation.y = atan2(forward_dir.x, forward_dir.z)
-		target.rotation.y = atan2(-forward_dir.x, -forward_dir.z)
+		rotation.y = atan2(-forward_dir.x, -forward_dir.z)
+		target.rotation.y = atan2(forward_dir.x, forward_dir.z)
 
 func on_locked_by_throw(attacker: Fighter) -> void:
 	synchronized_partner = attacker
@@ -509,10 +520,19 @@ func _process_synchronized_attacker() -> void:
 		var partner: Fighter = synchronized_partner
 		synchronized_partner = null
 		_set_state(State.IDLE)
-		partner.on_throw_released()
+		if is_instance_valid(partner):
+			if partner.is_inside_tree():
+				partner.global_position.y = 0.0
+			else:
+				partner.position.y = 0.0
+			partner.on_throw_released()
 
 func on_throw_released() -> void:
 	synchronized_partner = null
+	if is_inside_tree():
+		global_position.y = 0.0
+	else:
+		position.y = 0.0
 	knockdown_duration = 3.0 + clamp((1.0 - (vitality / max_vitality)) * 2.0, 0.0, 2.5)
 	_set_state(State.KNOCKED_DOWN)
 
@@ -585,12 +605,12 @@ func _process_submission_attacker(delta: float) -> void:
 			defender.on_tap_out()
 
 func _process_submission_defender(delta: float) -> void:
-	var prefix: String = "p" + str(player_index) + "_"
 	var escape_gain: float = 0.0
 	
-	if Input.is_action_just_pressed(prefix + "pin") or Input.is_action_just_pressed(prefix + "strike") or Input.is_action_just_pressed(prefix + "grapple"):
+	# Any mash press (pin, strike, grapple) yields immediate burst escape gain
+	if input_pin or input_strike or input_grapple:
 		escape_gain += 15.0
-	elif Input.is_action_pressed(prefix + "pin") or Input.is_action_pressed(prefix + "strike"):
+	elif input_hold_pin or input_block:
 		escape_gain += MatchRules.PIN_ESCAPE_BASE_RATE * delta
 		
 	var stamina_factor: float = 0.4 + 0.6 * (stamina / max_stamina)
@@ -612,11 +632,12 @@ func _execute_submission_escape() -> void:
 func on_submission_broken_by_escape() -> void:
 	if visual_root:
 		visual_root.position = Vector3.ZERO
-	var push_dir: Vector3 = -global_transform.basis.z.normalized() if is_inside_tree() else -transform.basis.z.normalized()
+	# Push backward away from opponent
+	var push_back: Vector3 = global_transform.basis.z.normalized() if is_inside_tree() else transform.basis.z.normalized()
 	if is_inside_tree():
-		global_position += push_dir * 1.2
+		global_position += push_back * 1.2
 	else:
-		position += push_dir * 1.2
+		position += push_back * 1.2
 	_set_state(State.IDLE)
 	synchronized_partner = null
 	if AudioManager.instance:
@@ -673,13 +694,12 @@ func on_pinned(attacker: Fighter) -> void:
 	_set_state(State.PINNED)
 
 func _process_pin_escape(delta: float) -> void:
-	# Accumulate escape progress via button presses or hold
-	var prefix: String = "p" + str(player_index) + "_"
+	# Accumulate escape progress via button presses or hold using unified fighter command interface
 	var escape_gain: float = 0.0
 	
-	if Input.is_action_just_pressed(prefix + "pin") or Input.is_action_just_pressed(prefix + "strike") or Input.is_action_just_pressed(prefix + "grapple"):
+	if input_pin or input_strike or input_grapple:
 		escape_gain += 16.0
-	elif Input.is_action_pressed(prefix + "pin"): # Accessibility hold-to-resist
+	elif input_hold_pin: # Accessibility hold-to-resist
 		escape_gain += MatchRules.PIN_ESCAPE_BASE_RATE * delta
 	
 	# Scale with remaining stamina & vitality
@@ -703,12 +723,12 @@ func _execute_kick_out() -> void:
 func on_kick_out_received() -> void:
 	if visual_root:
 		visual_root.position = Vector3.ZERO
-	# Stumble back
-	var push_dir: Vector3 = -global_transform.basis.z.normalized() if is_inside_tree() else -transform.basis.z.normalized()
+	# Stumble backward away from opponent
+	var push_back: Vector3 = global_transform.basis.z.normalized() if is_inside_tree() else transform.basis.z.normalized()
 	if is_inside_tree():
-		global_position += push_dir * 1.2
+		global_position += push_back * 1.2
 	else:
-		position += push_dir * 1.2
+		position += push_back * 1.2
 	_set_state(State.IDLE)
 
 func break_pin_rope_break() -> void:
@@ -765,6 +785,10 @@ func _play_state_animation(st: State) -> void:
 		anim_player.play(anim_name)
 
 func _clamp_within_ring() -> void:
+	# Single authoritative ownership: attacker solely controls defender's position during throws
+	if current_state == State.GRAPPLING_DEFENDER:
+		return
+		
 	var bound: float = MatchRules.RING_MAT_RADIUS - 0.35
 	if is_inside_tree():
 		global_position.x = clamp(global_position.x, -bound, bound)

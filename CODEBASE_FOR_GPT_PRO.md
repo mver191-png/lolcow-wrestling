@@ -11,12 +11,13 @@
 
 ## 2. Git Commit History
 `	ext
-* 41a525f docs: add comprehensive project README with architecture, roster, and controls
-* d58c46a fix(launcher): resolve batch path escaping, update window overrides and docs
-* 86d1405 refactor(polish): add character_loaded HUD synchronization and audio feedback to CharacterSelect
-* eca4161 feat(roster): implement full 8-character roster 3D assets, character select UI, audio stingers, and match persistence
-* 8f28b5e docs: record M1 verification, top 3 observable defects, and M2 next task
-* 234b626 feat: complete M0 foundation and M1 playable loop (Tophiachu vs Cyraxx with KingCobraJFS referee)
+b8247d9 docs: add CODEBASE_FOR_GPT_PRO markdown digest and update gitignore
+41a525f docs: add comprehensive project README with architecture, roster, and controls
+d58c46a fix(launcher): resolve batch path escaping, update window overrides and docs
+86d1405 refactor(polish): add character_loaded HUD synchronization and audio feedback to CharacterSelect
+eca4161 feat(roster): implement full 8-character roster 3D assets, character select UI, audio stingers, and match persistence
+8f28b5e docs: record M1 verification, top 3 observable defects, and M2 next task
+234b626 feat: complete M0 foundation and M1 playable loop (Tophiachu vs Cyraxx with KingCobraJFS referee)
 `
 
 ## 3. Repository File Manifest
@@ -29,65 +30,69 @@
 | README.md | Source Code / Scene | README.md |
 | START_GAME.bat | Source Code / Scene | START_GAME.bat |
 | STATE.md | Source Code / Scene | STATE.md |
-| assets/models/anacondasin.glb | Binary 3D Model | anacondasin.glb |
-| assets/models/andy_ditch.glb | Binary 3D Model | andy_ditch.glb |
-| assets/models/candy_rooks.glb | Binary 3D Model | candy_rooks.glb |
-| assets/models/cyraxx.glb | Binary 3D Model | cyraxx.glb |
-| assets/models/daniel_larson.glb | Binary 3D Model | daniel_larson.glb |
-| assets/models/jupiter_the_hybrid.glb | Binary 3D Model | jupiter_the_hybrid.glb |
-| assets/models/novaonline.glb | Binary 3D Model | novaonline.glb |
-| assets/models/referee_cobra.glb | Binary 3D Model | referee_cobra.glb |
-| assets/models/ring_arena.glb | Binary 3D Model | ring_arena.glb |
-| assets/models/tophiachu.glb | Binary 3D Model | tophiachu.glb |
-| blender/generate_assets.py | Source Code / Scene | generate_assets.py |
+| assets\models\anacondasin.glb | Binary 3D Model | anacondasin.glb |
+| assets\models\andy_ditch.glb | Binary 3D Model | andy_ditch.glb |
+| assets\models\candy_rooks.glb | Binary 3D Model | candy_rooks.glb |
+| assets\models\cyraxx.glb | Binary 3D Model | cyraxx.glb |
+| assets\models\daniel_larson.glb | Binary 3D Model | daniel_larson.glb |
+| assets\models\jupiter_the_hybrid.glb | Binary 3D Model | jupiter_the_hybrid.glb |
+| assets\models\novaonline.glb | Binary 3D Model | novaonline.glb |
+| assets\models\referee_cobra.glb | Binary 3D Model | referee_cobra.glb |
+| assets\models\ring_arena.glb | Binary 3D Model | ring_arena.glb |
+| assets\models\tophiachu.glb | Binary 3D Model | tophiachu.glb |
+| blender\generate_assets.py | Source Code / Scene | generate_assets.py |
 | project.godot | Source Code / Scene | project.godot |
-| scenes/arena/ring_arena.tscn | Source Code / Scene | ring_arena.tscn |
-| scenes/fighter/fighter.tscn | Source Code / Scene | fighter.tscn |
-| scenes/main.tscn | Source Code / Scene | main.tscn |
-| scenes/referee/referee.tscn | Source Code / Scene | referee.tscn |
-| scenes/ui/character_select.tscn | Source Code / Scene | character_select.tscn |
-| scenes/ui/match_hud.tscn | Source Code / Scene | match_hud.tscn |
-| scripts/ai/cpu_controller.gd | Source Code / Scene | cpu_controller.gd |
-| scripts/ai/cpu_controller.gd.uid | UID Metadata | cpu_controller.gd.uid |
-| scripts/core/audio_manager.gd | Source Code / Scene | audio_manager.gd |
-| scripts/core/audio_manager.gd.uid | UID Metadata | audio_manager.gd.uid |
-| scripts/core/main_scene.gd | Source Code / Scene | main_scene.gd |
-| scripts/core/main_scene.gd.uid | UID Metadata | main_scene.gd.uid |
-| scripts/core/match_config.gd | Source Code / Scene | match_config.gd |
-| scripts/core/match_config.gd.uid | UID Metadata | match_config.gd.uid |
-| scripts/core/match_manager.gd | Source Code / Scene | match_manager.gd |
-| scripts/core/match_manager.gd.uid | UID Metadata | match_manager.gd.uid |
-| scripts/core/match_rules.gd | Source Code / Scene | match_rules.gd |
-| scripts/core/match_rules.gd.uid | UID Metadata | match_rules.gd.uid |
-| scripts/core/roster_data.gd | Source Code / Scene | roster_data.gd |
-| scripts/core/roster_data.gd.uid | UID Metadata | roster_data.gd.uid |
-| scripts/fighter/fighter.gd | Source Code / Scene | fighter.gd |
-| scripts/fighter/fighter.gd.uid | UID Metadata | fighter.gd.uid |
-| scripts/referee/referee.gd | Source Code / Scene | referee.gd |
-| scripts/referee/referee.gd.uid | UID Metadata | referee.gd.uid |
-| scripts/ring/broadcast_camera.gd | Source Code / Scene | broadcast_camera.gd |
-| scripts/ring/broadcast_camera.gd.uid | UID Metadata | broadcast_camera.gd.uid |
-| scripts/ring/ring.gd | Source Code / Scene | ring.gd |
-| scripts/ring/ring.gd.uid | UID Metadata | ring.gd.uid |
-| scripts/ui/character_select.gd | Source Code / Scene | character_select.gd |
-| scripts/ui/character_select.gd.uid | UID Metadata | character_select.gd.uid |
-| scripts/ui/match_hud.gd | Source Code / Scene | match_hud.gd |
-| scripts/ui/match_hud.gd.uid | UID Metadata | match_hud.gd.uid |
-| tests/test_suite.gd | Source Code / Scene | test_suite.gd |
-| tests/test_suite.gd.uid | UID Metadata | test_suite.gd.uid |
+| scenes\arena\ring_arena.tscn | Source Code / Scene | ring_arena.tscn |
+| scenes\fighter\fighter.tscn | Source Code / Scene | fighter.tscn |
+| scenes\main.tscn | Source Code / Scene | main.tscn |
+| scenes\referee\referee.tscn | Source Code / Scene | referee.tscn |
+| scenes\ui\character_select.tscn | Source Code / Scene | character_select.tscn |
+| scenes\ui\match_hud.tscn | Source Code / Scene | match_hud.tscn |
+| scripts\ai\cpu_controller.gd | Source Code / Scene | cpu_controller.gd |
+| scripts\ai\cpu_controller.gd.uid | UID Metadata | cpu_controller.gd.uid |
+| scripts\core\audio_manager.gd | Source Code / Scene | audio_manager.gd |
+| scripts\core\audio_manager.gd.uid | UID Metadata | audio_manager.gd.uid |
+| scripts\core\main_scene.gd | Source Code / Scene | main_scene.gd |
+| scripts\core\main_scene.gd.uid | UID Metadata | main_scene.gd.uid |
+| scripts\core\match_config.gd | Source Code / Scene | match_config.gd |
+| scripts\core\match_config.gd.uid | UID Metadata | match_config.gd.uid |
+| scripts\core\match_manager.gd | Source Code / Scene | match_manager.gd |
+| scripts\core\match_manager.gd.uid | UID Metadata | match_manager.gd.uid |
+| scripts\core\match_rules.gd | Source Code / Scene | match_rules.gd |
+| scripts\core\match_rules.gd.uid | UID Metadata | match_rules.gd.uid |
+| scripts\core\roster_data.gd | Source Code / Scene | roster_data.gd |
+| scripts\core\roster_data.gd.uid | UID Metadata | roster_data.gd.uid |
+| scripts\fighter\fighter.gd | Source Code / Scene | fighter.gd |
+| scripts\fighter\fighter.gd.uid | UID Metadata | fighter.gd.uid |
+| scripts\referee\referee.gd | Source Code / Scene | referee.gd |
+| scripts\referee\referee.gd.uid | UID Metadata | referee.gd.uid |
+| scripts\ring\broadcast_camera.gd | Source Code / Scene | broadcast_camera.gd |
+| scripts\ring\broadcast_camera.gd.uid | UID Metadata | broadcast_camera.gd.uid |
+| scripts\ring\ring.gd | Source Code / Scene | ring.gd |
+| scripts\ring\ring.gd.uid | UID Metadata | ring.gd.uid |
+| scripts\ui\character_select.gd | Source Code / Scene | character_select.gd |
+| scripts\ui\character_select.gd.uid | UID Metadata | character_select.gd.uid |
+| scripts\ui\match_hud.gd | Source Code / Scene | match_hud.gd |
+| scripts\ui\match_hud.gd.uid | UID Metadata | match_hud.gd.uid |
+| tests\test_suite.gd | Source Code / Scene | test_suite.gd |
+| tests\test_suite.gd.uid | UID Metadata | test_suite.gd.uid |
 
 ---
 
 ## 4. Complete Source Code & Scene Definitions
 
 ### File: .gitignore
-`
+`text
 # Godot 4+ .gitignore
 .godot/
 *.translation
 *.import
 export_presets.cfg
 test_out.txt
+*.zip
+*.bundle
+*.log
+
 `
 
 ### File: DECISIONS.md
@@ -113,6 +118,7 @@ test_out.txt
   - Grapples break turtling blocks.
   - Reversals punish predictable strike/grapple commitments at the cost of stamina/reversal stat.
   - Finishers require 100 Hype and a valid opening/setup.
+
 `
 
 ### File: KNOWN_ISSUES.md
@@ -129,14 +135,22 @@ test_out.txt
 4. **Desktop Launcher Script Trailing Quote Bug (Resolved in M3 Polish)**:
    - Fixed `%~dp0` trailing backslash in `START_GAME.bat` which previously caused Godot to abort due to escaped quote in arguments.
    - Created direct Windows Desktop shortcut at `C:\Users\mauri\Desktop\LOLCOW WRESTLING.lnk`.
+
+
 `
 
 ### File: NEXT_TASK.md
 `markdown
-# Next Implementation Task: M4 (Tournament & Spectator Modes)
+# Next Implementation Task: Pass B (Combat Reliability & Edge Cases)
 
-## Single Next Implementation Task
-**Milestone M4 Pass**: Implement an 8-player single-elimination offline Tournament bracket mode and Spectator (CPU vs CPU) broadcast mode, with bracket visualization UI, match progression tracking, and championship trophy celebration with referee KingCobraJFS presenting the belt.
+## Next Implementation Task
+**Pass B: Combat Reliability & Edge Case Hardening**:
+1. Implement corner bounce and rope spring physics during running collisions.
+2. Polish turnbuckle collision and climbing state transitions.
+3. Harden multi-frame reversal windows with stat-scaled timing leniency.
+4. Verify edge-of-ring grapple positioning so throws near ropes naturally interact or trigger rope breaks without ring clipping.
+5. Expand test suite to validate edge-case combat scenarios before proceeding to M4 Tournament Mode.
+
 `
 
 ### File: README.md
@@ -162,15 +176,14 @@ Every fighter has an authoritative, canonical 42-point attribute distribution ac
 
 | ID | Name | Archetype | Style Summary | Signature Finisher |
 | :--- | :--- | :--- | :--- | :--- |
-| 	ophiachu | Tophiachu | Heavyweight Brawler | Slow heavy tank, devastating strikes & high powerslams | *The Chu Slam* |
-| 
-ovaonline | Nova Online | Momentum Heavyweight | Balanced heavyweight with forward burst | *Supernova Drop* |
-| cyraxx | Cyraxx | Burst Striker | Compact, lightning strikes, low leverage throws | *Goblin Flurry* |
-| candy_rooks | Candy Rooks | Powerhouse Brute | High power and durability brawler | *Sugar Rush Slam* |
-| ndy_ditch | Andy Ditch | Territory Grappler | Anchor wrestler with high grappling defense | *Babysitter Suplex* |
-| jupiter_the_hybrid | Jupiter The Hybrid | Celestial Martial Artist | Agile kicks, swift escapes, aerial offense | *Cosmic Impact* |
-| nacondasin | Anacondasin | Submission Specialist | Dangerous lock specialist, rapid tap-out inducer | *Viper Coil Hold* |
-| daniel_larson | Daniel Larson | Erratic Scrapper | Unpredictable, fast scrambler and reversal threat | *Cease & Desist* |
+| tophiachu | Tophiachu | Heavyweight Counter-Brawler | Slow heavy tank, devastating strikes & high powerslams | *Live-Stream Shutdown* |
+| novaonline | NovaOnline | Momentum Heavyweight | Balanced heavyweight with forward burst | *Going Offline* |
+| cyraxx | Cyraxx | Lightweight Burst Striker | Compact, lightning strikes, low leverage throws | *Raxx and Ruin* |
+| candy_rooks | Candy Rooks | Combination Grappler | High power and durability combination brawler | *Ribs & Kidney Beans* |
+| andy_ditch | Andy Ditch | Territory Anchor Grappler | Anchor wrestler with high grappling defense | *Case Closed* |
+| jupiter_the_hybrid | Jupiter the Hybrid | Stance-Shift Grappler | Agile kicks, swift escapes, aerial offense | *Eclipse Driver* |
+| anacondasin | AnacondaSin | Positional Submission Specialist | Dangerous lock specialist, rapid tap-out inducer | *Anaconda Lock* |
+| daniel_larson | Daniel Larson | Mobile Opportunist | Unpredictable, fast scrambler and reversal threat | *Final Encore* |
 
 ---
 
@@ -237,13 +250,13 @@ Run tests headlessly:
 `ash
 godot_console --headless -s tests/test_suite.gd
 `
-**Current Status**: 112 / 112 Passed (100% Pass, 0 Failures, 0 Warnings).
+**Current Status**: 136 / 136 Passed (100% Pass, 0 Failures, 0 Warnings).
 
 ---
 
 ## 6. Directory Layout
 
-`
+```
 .
 ├── assets/models/         # Compiled GLB 3D assets (all 8 fighters + ring + referee)
 ├── blender/               # Blender 5.0 automated generation pipeline (generate_assets.py)
@@ -259,14 +272,15 @@ godot_console --headless -s tests/test_suite.gd
 │   ├── referee/           # KingCobraJFS ring positioning and 3-count officiating
 │   ├── ring/              # Ring boundary and broadcast camera shake
 │   └── ui/                # UI controllers
-├── tests/                 # 112-case headless automated test suite
+├── tests/                 # 136-case headless automated test suite
 ├── project.godot          # Engine configuration & input mappings
 └── START_GAME.bat         # Direct Windows standalone launcher
-`
+```
+
 `
 
 ### File: START_GAME.bat
-`bat
+`batch
 @echo off
 title LOLCOW WRESTLING: OFFLINE MAYHEM
 cd /d "%~dp0"
@@ -280,17 +294,31 @@ if exist "%GODOT_EXE%" (
 
 start "" "godot.exe" --path "%CD%"
 exit /b 0
+
 `
 
 ### File: STATE.md
 `markdown
 # Project State: LOLCOW WRESTLING: OFFLINE MAYHEM
 
-## Milestone Status: M0 (Complete) -> M1 (Complete) -> M2 & M3 (Complete & Verified)
+## Milestone Status: M0-M3 Complete -> Pass A Codebase Repair (Complete & Verified)
 - **Engine**: Godot 4.7.2 (stable official, Windows x64) - Installed & Verified.
 - **3D DCC Pipeline**: Blender 5.0.1 (headless Python automation) - Verified.
 - **Target**: 1080p @ 60 FPS, Windows standalone.
-- **Authoritative Combat Loop**: Verified with 112 automated headless unit tests (0 failures, 0 warnings).
+- **Authoritative Combat Loop**: Verified with 136 automated headless unit tests (0 failures, 0 warnings).
+
+### Pass A Codebase Repairs (Verified):
+1. **Unified Command Interface for Escapes**:
+   - `Fighter` escape logic consumes command inputs (`input_pin`, `input_strike`, `input_grapple`, `input_block`, `input_hold_pin`) rather than polling `Input.is_action_*` during physics process.
+   - CPU controller pulses escape inputs at cadenced intervals based on `stat_reversal`, enabling CPU to kick out of pins and escape submissions autonomously.
+2. **Throw Height Ownership**:
+   - `_clamp_within_ring` skips vertical clamping during `GRAPPLING_DEFENDER`, granting attacker sole authority over lift height (1.55m peak verified).
+   - Canvas grounding enforced at `y = 0.0` on transition to `KNOCKED_DOWN`.
+3. **Standardized Forward-Axis Conventions**:
+   - Synchronized throws and locomotion unified on standard Godot convention `atan2(-dx, -dz)`.
+   - Verified attacker `-basis.z` strictly faces defender and defender faces attacker (dot product = 1.000) across all slot inversions (P1/P2) and cardinal directions.
+4. **Documentation Alignment**:
+   - `README.md` canonical move names and archetypes synced with `scripts/core/roster_data.gd`.
 
 ## Verification Summary
 - **M0 Foundation**:
@@ -324,39 +352,10 @@ exit /b 0
   - Complete Character Selection UI (`scenes/ui/character_select.tscn`) with 8-character roster grid, stat radars, signature move displays, P1/P2 navigation, CPU toggles, and seamless transition to match arena.
   - `MatchConfig` persistent state tracking selected fighters and CPU flags between menus and gameplay.
   - 100% test pass rate across all 64 attacker-defender pairings.
+
 `
 
-### Binary Asset: assets/models/anacondasin.glb
-*Compiled 3D GLB model for Godot. Size: 204672 bytes.*
-
-### Binary Asset: assets/models/andy_ditch.glb
-*Compiled 3D GLB model for Godot. Size: 186396 bytes.*
-
-### Binary Asset: assets/models/candy_rooks.glb
-*Compiled 3D GLB model for Godot. Size: 193428 bytes.*
-
-### Binary Asset: assets/models/cyraxx.glb
-*Compiled 3D GLB model for Godot. Size: 179492 bytes.*
-
-### Binary Asset: assets/models/daniel_larson.glb
-*Compiled 3D GLB model for Godot. Size: 179644 bytes.*
-
-### Binary Asset: assets/models/jupiter_the_hybrid.glb
-*Compiled 3D GLB model for Godot. Size: 211796 bytes.*
-
-### Binary Asset: assets/models/novaonline.glb
-*Compiled 3D GLB model for Godot. Size: 126276 bytes.*
-
-### Binary Asset: assets/models/referee_cobra.glb
-*Compiled 3D GLB model for Godot. Size: 205028 bytes.*
-
-### Binary Asset: assets/models/ring_arena.glb
-*Compiled 3D GLB model for Godot. Size: 134556 bytes.*
-
-### Binary Asset: assets/models/tophiachu.glb
-*Compiled 3D GLB model for Godot. Size: 256596 bytes.*
-
-### File: blender/generate_assets.py
+### File: blender\generate_assets.py
 `python
 import bpy
 import math
@@ -1032,6 +1031,7 @@ if __name__ == "__main__":
     build_daniel_larson(os.path.join(models_dir, "daniel_larson.glb"))
     build_referee_cobra(os.path.join(models_dir, "referee_cobra.glb"))
     print("ALL 8 ROSTER ASSETS + REFEREE GENERATED SUCCESSFULLY!")
+
 `
 
 ### File: project.godot
@@ -1183,9 +1183,10 @@ common/physics_ticks_per_second=60
 
 renderer/rendering_method="forward_plus"
 anti_aliasing/quality/msaa_3d=2
+
 `
 
-### File: scenes/arena/ring_arena.tscn
+### File: scenes\arena\ring_arena.tscn
 `ini
 [gd_scene format=3 uid="uid://dpw54n6g87v8"]
 
@@ -1243,9 +1244,10 @@ collision_mask = 2
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="RopeWest"]
 shape = SubResource("BoxShape3D_rope_ew")
+
 `
 
-### File: scenes/fighter/fighter.tscn
+### File: scenes\fighter\fighter.tscn
 `ini
 [gd_scene format=3 uid="uid://dfighter001"]
 
@@ -1266,9 +1268,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 shape = SubResource("CapsuleShape3D_root")
 
 [node name="VisualRoot" type="Node3D" parent="."]
+
 `
 
-### File: scenes/main.tscn
+### File: scenes\main.tscn
 `ini
 [gd_scene format=3 uid="uid://dmainscene01"]
 
@@ -1358,9 +1361,10 @@ target_2 = NodePath("../Cyraxx")
 
 [node name="MatchHUD" parent="CanvasLayer" node_paths=PackedStringArray("match_manager") instance=ExtResource("8_hud")]
 match_manager = NodePath("../../MatchManager")
+
 `
 
-### File: scenes/referee/referee.tscn
+### File: scenes\referee\referee.tscn
 `ini
 [gd_scene format=3 uid="uid://b23k1v4j7m9n"]
 
@@ -1405,9 +1409,10 @@ billboard = 1
 font_size = 64
 outline_size = 16
 text = "1!"
+
 `
 
-### File: scenes/ui/character_select.tscn
+### File: scenes\ui\character_select.tscn
 `ini
 [gd_scene format=3 uid="uid://dcharselect01"]
 
@@ -1741,9 +1746,10 @@ theme_override_colors/font_color = Color(1, 0.85, 0.3, 0.9)
 theme_override_font_sizes/font_size = 14
 text = "Official Referee: KingCobraJFS (1991–2025) presiding over all bouts with pulsing golden halo."
 horizontal_alignment = 1
+
 `
 
-### File: scenes/ui/match_hud.tscn
+### File: scenes\ui\match_hud.tscn
 `ini
 [gd_scene format=3 uid="uid://dmhud001"]
 
@@ -2017,9 +2023,10 @@ text = "TOPHIACHU WINS!
 Press [R] to Restart Match"
 horizontal_alignment = 1
 vertical_alignment = 1
+
 `
 
-### File: scripts/ai/cpu_controller.gd
+### File: scripts\ai\cpu_controller.gd
 `gdscript
 class_name CPUController
 extends Node
@@ -2030,8 +2037,10 @@ extends Node
 
 @export var fighter: Fighter
 @export var reaction_interval: float = 0.22 # Reaction delay in seconds
+@export var escape_mash_interval: float = 0.10 # Cadence for CPU escape mashing
 
 var timer: float = 0.0
+var escape_timer: float = 0.0
 var think_state: String = "approach"
 
 func _ready() -> void:
@@ -2039,7 +2048,23 @@ func _ready() -> void:
 		fighter.is_cpu = true
 
 func _physics_process(delta: float) -> void:
-	if not is_instance_valid(fighter) or not is_instance_valid(fighter.opponent):
+	if not is_instance_valid(fighter):
+		return
+		
+	# Active escape mashing during PINNED or SUBMISSION_DEFENDER
+	if fighter.current_state in [Fighter.State.PINNED, Fighter.State.SUBMISSION_DEFENDER]:
+		escape_timer += delta
+		# Mashing cadence scales with reversal stat (higher reversal = faster mash)
+		var effective_interval: float = escape_mash_interval * (1.2 - (fighter.stat_reversal * 0.04))
+		if escape_timer >= effective_interval:
+			escape_timer = 0.0
+			fighter.input_pin = true
+			fighter.input_strike = true
+		return
+	else:
+		escape_timer = 0.0
+	
+	if not is_instance_valid(fighter.opponent):
 		return
 	
 	timer += delta
@@ -2049,9 +2074,9 @@ func _physics_process(delta: float) -> void:
 
 func _think() -> void:
 	var opp: Fighter = fighter.opponent
-	var dist: float = fighter.global_position.distance_to(opp.global_position)
-	var opp_pos: Vector3 = opp.global_position
-	var my_pos: Vector3 = fighter.global_position
+	var opp_pos: Vector3 = opp.global_position if opp.is_inside_tree() else opp.position
+	var my_pos: Vector3 = fighter.global_position if fighter.is_inside_tree() else fighter.position
+	var dist: float = my_pos.distance_to(opp_pos)
 	
 	# Clear pulse inputs
 	fighter.input_strike = false
@@ -2071,9 +2096,10 @@ func _think() -> void:
 			fighter.input_dir = Vector2(to_opp.x, to_opp.z)
 		return
 		
-	# Check if I am pinned -> escape mash!
-	if fighter.current_state == Fighter.State.PINNED:
+	# Check if I am pinned or in submission -> escape mash!
+	if fighter.current_state in [Fighter.State.PINNED, Fighter.State.SUBMISSION_DEFENDER]:
 		fighter.input_pin = true
+		fighter.input_strike = true
 		return
 		
 	# Tactical in-ring spacing
@@ -2109,12 +2135,16 @@ func _think() -> void:
 	else:
 		# Approach opponent
 		fighter.input_dir = dir_norm
+
 `
 
-### Binary Asset: scripts/ai/cpu_controller.gd.uid
-*Compiled 3D GLB model for Godot. Size: 20 bytes.*
+### File: scripts\ai\cpu_controller.gd.uid
+`text
+uid://b4la5h6pruqw0
 
-### File: scripts/core/audio_manager.gd
+`
+
+### File: scripts\core\audio_manager.gd
 `gdscript
 class_name AudioManager
 extends Node
@@ -2480,12 +2510,16 @@ func _synthesize_count_tone(count: int) -> AudioStreamWAV:
 		bytes.encode_s16(i * 2, int16)
 		
 	return _create_wav(bytes, rate)
+
 `
 
-### Binary Asset: scripts/core/audio_manager.gd.uid
-*Compiled 3D GLB model for Godot. Size: 20 bytes.*
+### File: scripts\core\audio_manager.gd.uid
+`text
+uid://cuaw8284hamkk
 
-### File: scripts/core/main_scene.gd
+`
+
+### File: scripts\core\main_scene.gd
 `gdscript
 class_name MainScene
 extends Node3D
@@ -2520,12 +2554,16 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_ESCAPE:
 			get_tree().change_scene_to_file("res://scenes/ui/character_select.tscn")
+
 `
 
-### Binary Asset: scripts/core/main_scene.gd.uid
-*Compiled 3D GLB model for Godot. Size: 19 bytes.*
+### File: scripts\core\main_scene.gd.uid
+`text
+uid://dbr2xtmej3d1
 
-### File: scripts/core/match_config.gd
+`
+
+### File: scripts\core\match_config.gd
 `gdscript
 class_name MatchConfig
 extends RefCounted
@@ -2546,12 +2584,16 @@ static func reset_defaults() -> void:
 	p1_character_id = "tophiachu"
 	p2_character_id = "cyraxx"
 	p2_is_cpu = true
+
 `
 
-### Binary Asset: scripts/core/match_config.gd.uid
-*Compiled 3D GLB model for Godot. Size: 20 bytes.*
+### File: scripts\core\match_config.gd.uid
+`text
+uid://dyx1dxr53bn8f
 
-### File: scripts/core/match_manager.gd
+`
+
+### File: scripts\core\match_manager.gd
 `gdscript
 class_name MatchManager
 extends Node
@@ -2805,12 +2847,16 @@ func _end_match(winner: Fighter, method: String) -> void:
 
 func restart_match() -> void:
 	get_tree().reload_current_scene()
+
 `
 
-### Binary Asset: scripts/core/match_manager.gd.uid
-*Compiled 3D GLB model for Godot. Size: 20 bytes.*
+### File: scripts\core\match_manager.gd.uid
+`text
+uid://c46eb7ui44yfk
 
-### File: scripts/core/match_rules.gd
+`
+
+### File: scripts\core\match_rules.gd
 `gdscript
 class_name MatchRules
 extends RefCounted
@@ -2836,12 +2882,16 @@ static func is_near_ropes(position_3d: Vector3) -> bool:
 	var z: float = abs(position_3d.z)
 	var max_coord: float = max(x, z)
 	return max_coord >= (RING_MAT_RADIUS - ROPE_BREAK_DISTANCE)
+
 `
 
-### Binary Asset: scripts/core/match_rules.gd.uid
-*Compiled 3D GLB model for Godot. Size: 20 bytes.*
+### File: scripts\core\match_rules.gd.uid
+`text
+uid://cvekox0v1s3o2
 
-### File: scripts/core/roster_data.gd
+`
+
+### File: scripts\core\roster_data.gd
 `gdscript
 class_name RosterData
 extends RefCounted
@@ -3089,12 +3139,16 @@ static func get_character(id: String) -> Dictionary:
 
 static func get_all_ids() -> Array:
 	return CHARACTERS.keys()
+
 `
 
-### Binary Asset: scripts/core/roster_data.gd.uid
-*Compiled 3D GLB model for Godot. Size: 20 bytes.*
+### File: scripts\core\roster_data.gd.uid
+`text
+uid://bfq0ya5qktxky
 
-### File: scripts/fighter/fighter.gd
+`
+
+### File: scripts\fighter\fighter.gd
 `gdscript
 class_name Fighter
 extends CharacterBody3D
@@ -3196,6 +3250,7 @@ var input_block: bool = false
 var input_reversal: bool = false
 var input_pin: bool = false
 var input_finisher: bool = false
+var input_hold_pin: bool = false
 
 func _ready() -> void:
 	load_character_data()
@@ -3252,6 +3307,7 @@ func _physics_process(delta: float) -> void:
 	_tick_stamina(delta)
 	_update_state_machine(delta)
 	_clamp_within_ring()
+	_clear_consumed_pulse_inputs()
 
 func _gather_player_inputs() -> void:
 	var prefix: String = "p" + str(player_index) + "_"
@@ -3273,6 +3329,14 @@ func _gather_player_inputs() -> void:
 	input_reversal = Input.is_action_just_pressed(prefix + "reversal")
 	input_pin = Input.is_action_just_pressed(prefix + "pin")
 	input_finisher = Input.is_action_just_pressed(prefix + "finisher")
+	input_hold_pin = Input.is_action_pressed(prefix + "pin")
+
+func _clear_consumed_pulse_inputs() -> void:
+	input_strike = false
+	input_grapple = false
+	input_reversal = false
+	input_pin = false
+	input_finisher = false
 
 func _tick_stamina(delta: float) -> void:
 	if current_state == State.BLOCKING:
@@ -3387,8 +3451,8 @@ func _handle_locomotion(delta: float) -> void:
 		if is_inside_tree():
 			move_and_slide()
 		
-		# Rotate towards movement direction
-		var target_angle: float = atan2(input_dir.x, input_dir.y)
+		# Rotate towards movement direction using standard Godot -Z forward convention
+		var target_angle: float = atan2(-input_dir.x, -input_dir.y)
 		rotation.y = lerp_angle(rotation.y, target_angle, 10.0 * delta)
 		
 		if current_state != State.MOVING:
@@ -3400,13 +3464,14 @@ func _handle_locomotion(delta: float) -> void:
 		if current_state != State.IDLE:
 			_set_state(State.IDLE)
 		
-		# Face opponent when standing still
+		# Face opponent when standing still using standard Godot -Z forward convention
 		if is_instance_valid(opponent):
 			var my_pos: Vector3 = global_position if is_inside_tree() else position
 			var opp_pos: Vector3 = opponent.global_position if opponent.is_inside_tree() else opponent.position
-			var look_pos: Vector3 = Vector3(opp_pos.x, my_pos.y, opp_pos.z)
-			if not my_pos.is_equal_approx(look_pos):
-				var target_rot: float = atan2(look_pos.x - my_pos.x, look_pos.z - my_pos.z)
+			var look_dir: Vector3 = Vector3(opp_pos.x - my_pos.x, 0.0, opp_pos.z - my_pos.z)
+			if look_dir.length_squared() > 0.001:
+				var look_norm: Vector3 = look_dir.normalized()
+				var target_rot: float = atan2(-look_norm.x, -look_norm.z)
 				rotation.y = lerp_angle(rotation.y, target_rot, 6.0 * delta)
 
 func _check_standing_actions() -> void:
@@ -3532,13 +3597,13 @@ func _start_synchronized_throw(target: Fighter) -> void:
 	_set_state(State.GRAPPLING_ATTACKER)
 	target.on_locked_by_throw(self)
 	
-	# Face each other
+	# Face each other using standard Godot -Z forward convention
 	var p1: Vector3 = global_position if is_inside_tree() else position
 	var p2: Vector3 = target.global_position if target.is_inside_tree() else target.position
-	var forward_dir: Vector3 = (p2 - p1).normalized()
+	var forward_dir: Vector3 = Vector3(p2.x - p1.x, 0.0, p2.z - p1.z).normalized()
 	if not forward_dir.is_zero_approx():
-		rotation.y = atan2(forward_dir.x, forward_dir.z)
-		target.rotation.y = atan2(-forward_dir.x, -forward_dir.z)
+		rotation.y = atan2(-forward_dir.x, -forward_dir.z)
+		target.rotation.y = atan2(forward_dir.x, forward_dir.z)
 
 func on_locked_by_throw(attacker: Fighter) -> void:
 	synchronized_partner = attacker
@@ -3607,10 +3672,19 @@ func _process_synchronized_attacker() -> void:
 		var partner: Fighter = synchronized_partner
 		synchronized_partner = null
 		_set_state(State.IDLE)
-		partner.on_throw_released()
+		if is_instance_valid(partner):
+			if partner.is_inside_tree():
+				partner.global_position.y = 0.0
+			else:
+				partner.position.y = 0.0
+			partner.on_throw_released()
 
 func on_throw_released() -> void:
 	synchronized_partner = null
+	if is_inside_tree():
+		global_position.y = 0.0
+	else:
+		position.y = 0.0
 	knockdown_duration = 3.0 + clamp((1.0 - (vitality / max_vitality)) * 2.0, 0.0, 2.5)
 	_set_state(State.KNOCKED_DOWN)
 
@@ -3683,12 +3757,12 @@ func _process_submission_attacker(delta: float) -> void:
 			defender.on_tap_out()
 
 func _process_submission_defender(delta: float) -> void:
-	var prefix: String = "p" + str(player_index) + "_"
 	var escape_gain: float = 0.0
 	
-	if Input.is_action_just_pressed(prefix + "pin") or Input.is_action_just_pressed(prefix + "strike") or Input.is_action_just_pressed(prefix + "grapple"):
+	# Any mash press (pin, strike, grapple) yields immediate burst escape gain
+	if input_pin or input_strike or input_grapple:
 		escape_gain += 15.0
-	elif Input.is_action_pressed(prefix + "pin") or Input.is_action_pressed(prefix + "strike"):
+	elif input_hold_pin or input_block:
 		escape_gain += MatchRules.PIN_ESCAPE_BASE_RATE * delta
 		
 	var stamina_factor: float = 0.4 + 0.6 * (stamina / max_stamina)
@@ -3710,11 +3784,12 @@ func _execute_submission_escape() -> void:
 func on_submission_broken_by_escape() -> void:
 	if visual_root:
 		visual_root.position = Vector3.ZERO
-	var push_dir: Vector3 = -global_transform.basis.z.normalized() if is_inside_tree() else -transform.basis.z.normalized()
+	# Push backward away from opponent
+	var push_back: Vector3 = global_transform.basis.z.normalized() if is_inside_tree() else transform.basis.z.normalized()
 	if is_inside_tree():
-		global_position += push_dir * 1.2
+		global_position += push_back * 1.2
 	else:
-		position += push_dir * 1.2
+		position += push_back * 1.2
 	_set_state(State.IDLE)
 	synchronized_partner = null
 	if AudioManager.instance:
@@ -3771,13 +3846,12 @@ func on_pinned(attacker: Fighter) -> void:
 	_set_state(State.PINNED)
 
 func _process_pin_escape(delta: float) -> void:
-	# Accumulate escape progress via button presses or hold
-	var prefix: String = "p" + str(player_index) + "_"
+	# Accumulate escape progress via button presses or hold using unified fighter command interface
 	var escape_gain: float = 0.0
 	
-	if Input.is_action_just_pressed(prefix + "pin") or Input.is_action_just_pressed(prefix + "strike") or Input.is_action_just_pressed(prefix + "grapple"):
+	if input_pin or input_strike or input_grapple:
 		escape_gain += 16.0
-	elif Input.is_action_pressed(prefix + "pin"): # Accessibility hold-to-resist
+	elif input_hold_pin: # Accessibility hold-to-resist
 		escape_gain += MatchRules.PIN_ESCAPE_BASE_RATE * delta
 	
 	# Scale with remaining stamina & vitality
@@ -3801,12 +3875,12 @@ func _execute_kick_out() -> void:
 func on_kick_out_received() -> void:
 	if visual_root:
 		visual_root.position = Vector3.ZERO
-	# Stumble back
-	var push_dir: Vector3 = -global_transform.basis.z.normalized() if is_inside_tree() else -transform.basis.z.normalized()
+	# Stumble backward away from opponent
+	var push_back: Vector3 = global_transform.basis.z.normalized() if is_inside_tree() else transform.basis.z.normalized()
 	if is_inside_tree():
-		global_position += push_dir * 1.2
+		global_position += push_back * 1.2
 	else:
-		position += push_dir * 1.2
+		position += push_back * 1.2
 	_set_state(State.IDLE)
 
 func break_pin_rope_break() -> void:
@@ -3863,6 +3937,10 @@ func _play_state_animation(st: State) -> void:
 		anim_player.play(anim_name)
 
 func _clamp_within_ring() -> void:
+	# Single authoritative ownership: attacker solely controls defender's position during throws
+	if current_state == State.GRAPPLING_DEFENDER:
+		return
+		
 	var bound: float = MatchRules.RING_MAT_RADIUS - 0.35
 	if is_inside_tree():
 		global_position.x = clamp(global_position.x, -bound, bound)
@@ -3878,12 +3956,16 @@ func set_victory() -> void:
 
 func set_defeated() -> void:
 	_set_state(State.DEFEATED)
+
 `
 
-### Binary Asset: scripts/fighter/fighter.gd.uid
-*Compiled 3D GLB model for Godot. Size: 20 bytes.*
+### File: scripts\fighter\fighter.gd.uid
+`text
+uid://bqpvjiuv0hfwp
 
-### File: scripts/referee/referee.gd
+`
+
+### File: scripts\referee\referee.gd
 `gdscript
 class_name Referee
 extends Node3D
@@ -4058,12 +4140,16 @@ func _update_halo_visuals(delta: float) -> void:
 		halo_node.scale = halo_base_scale
 		if halo_material:
 			halo_material.emission_energy_multiplier = 2.5
+
 `
 
-### Binary Asset: scripts/referee/referee.gd.uid
-*Compiled 3D GLB model for Godot. Size: 20 bytes.*
+### File: scripts\referee\referee.gd.uid
+`text
+uid://caup5e5uvggiv
 
-### File: scripts/ring/broadcast_camera.gd
+`
+
+### File: scripts\ring\broadcast_camera.gd
 `gdscript
 class_name BroadcastCamera
 extends Camera3D
@@ -4125,12 +4211,16 @@ func _physics_process(delta: float) -> void:
 	
 	var look_target: Vector3 = Vector3(midpoint.x, 0.9, midpoint.z)
 	look_at(look_target, Vector3.UP)
+
 `
 
-### Binary Asset: scripts/ring/broadcast_camera.gd.uid
-*Compiled 3D GLB model for Godot. Size: 20 bytes.*
+### File: scripts\ring\broadcast_camera.gd.uid
+`text
+uid://c7mmfqtsnl4ee
 
-### File: scripts/ring/ring.gd
+`
+
+### File: scripts\ring\ring.gd
 `gdscript
 class_name WrestlingRing
 extends Node3D
@@ -4142,12 +4232,16 @@ extends Node3D
 
 func _ready() -> void:
 	pass
+
 `
 
-### Binary Asset: scripts/ring/ring.gd.uid
-*Compiled 3D GLB model for Godot. Size: 19 bytes.*
+### File: scripts\ring\ring.gd.uid
+`text
+uid://147axnxhu0v2
 
-### File: scripts/ui/character_select.gd
+`
+
+### File: scripts\ui\character_select.gd
 `gdscript
 class_name CharacterSelect
 extends Control
@@ -4405,12 +4499,16 @@ func _start_match() -> void:
 		AudioManager.instance.play_ring_bell()
 	character_selected.emit(p1_id, p2_id, p2_is_cpu)
 	get_tree().change_scene_to_file("res://scenes/main.tscn")
+
 `
 
-### Binary Asset: scripts/ui/character_select.gd.uid
-*Compiled 3D GLB model for Godot. Size: 20 bytes.*
+### File: scripts\ui\character_select.gd.uid
+`text
+uid://d4b8jl8pfrjhu
 
-### File: scripts/ui/match_hud.gd
+`
+
+### File: scripts\ui\match_hud.gd
 `gdscript
 class_name MatchHUD
 extends Control
@@ -4615,12 +4713,16 @@ func _on_match_ended(winner: Fighter, method: String) -> void:
 		victory_panel.visible = true
 		if victory_label:
 			victory_label.text = winner.char_name.to_upper() + " WINS!\n[" + method + "]\n\nPress [R] to Rematch | [ESC] Character Select"
+
 `
 
-### Binary Asset: scripts/ui/match_hud.gd.uid
-*Compiled 3D GLB model for Godot. Size: 20 bytes.*
+### File: scripts\ui\match_hud.gd.uid
+`text
+uid://dkflk2qlqo1g2
 
-### File: tests/test_suite.gd
+`
+
+### File: tests\test_suite.gd
 `gdscript
 extends SceneTree
 
@@ -4649,6 +4751,9 @@ func _init() -> void:
 	test_audio_and_trauma_shake()
 	test_match_config_and_character_select()
 	test_roster_pair_matrix_compatibility()
+	test_pass_a_cpu_escape_mechanisms()
+	test_pass_a_throw_height_and_ownership()
+	test_pass_a_slot_inversions_and_facing_vectors()
 	
 	print("==================================================")
 	print("TEST RESULTS: %d Passed, %d Failed, %d Total" % [passed_tests, failed_tests, total_tests])
@@ -5011,8 +5116,166 @@ func test_match_config_and_character_select() -> void:
 	
 	# Reset MatchConfig to defaults
 	MatchConfig.reset_defaults()
+
+func test_pass_a_cpu_escape_mechanisms() -> void:
+	# 1. Test CPU Pin Escape without keyboard input
+	var cpu_fighter: Fighter = Fighter.new()
+	var opponent: Fighter = Fighter.new()
+	var cpu_ctrl: CPUController = CPUController.new()
+	
+	root.add_child(cpu_fighter)
+	root.add_child(opponent)
+	root.add_child(cpu_ctrl)
+	
+	cpu_fighter.character_id = "cyraxx"
+	opponent.character_id = "tophiachu"
+	cpu_fighter.load_character_data()
+	opponent.load_character_data()
+	
+	cpu_fighter.opponent = opponent
+	opponent.opponent = cpu_fighter
+	cpu_fighter.is_cpu = true
+	cpu_ctrl.fighter = cpu_fighter
+	
+	# Lock into pin
+	opponent.current_state = Fighter.State.PINNING
+	cpu_fighter.on_pinned(opponent)
+	assert_true(cpu_fighter.current_state == Fighter.State.PINNED, "Pass A: Defender enters PINNED state")
+	assert_true(cpu_fighter.pin_escape_progress == 0.0, "Pass A: Pin escape progress starts at 0")
+	
+	# Simulate in-tree physics processing
+	var kicked_out: Array[bool] = [false]
+	cpu_fighter.kick_out_succeeded.connect(func(_f): kicked_out[0] = true)
+	
+	# Tick through physics updates until kickout or max frames
+	for frame in range(90):
+		cpu_ctrl._physics_process(1.0 / 60.0)
+		cpu_fighter._physics_process(1.0 / 60.0)
+		if kicked_out[0]:
+			break
+			
+	assert_true(cpu_fighter.pin_escape_progress > 20.0, "Pass A: CPU defender accumulates pin escape progress without keyboard input")
+	assert_true(kicked_out[0] and cpu_fighter.current_state == Fighter.State.GETTING_UP, "Pass A: CPU defender successfully kicks out via command interface")
+	
+	# 2. Test CPU Submission Escape without keyboard input
+	opponent.current_state = Fighter.State.SUBMISSION_ATTACKER
+	opponent.synchronized_partner = cpu_fighter
+	cpu_fighter.on_locked_by_submission(opponent)
+	assert_true(cpu_fighter.current_state == Fighter.State.SUBMISSION_DEFENDER, "Pass A: Defender enters SUBMISSION_DEFENDER state")
+	
+	var submission_escaped: Array[bool] = [false]
+	cpu_fighter.submission_escaped.connect(func(_f): submission_escaped[0] = true)
+	
+	for frame in range(90):
+		cpu_ctrl._physics_process(1.0 / 60.0)
+		cpu_fighter._physics_process(1.0 / 60.0)
+		if submission_escaped[0]:
+			break
+			
+	assert_true(submission_escaped[0] and cpu_fighter.current_state == Fighter.State.GETTING_UP, "Pass A: CPU defender successfully escapes submission via command interface")
+	
+	cpu_ctrl.free()
+	cpu_fighter.free()
+	opponent.free()
+
+func test_pass_a_throw_height_and_ownership() -> void:
+	var atk: Fighter = Fighter.new()
+	var def: Fighter = Fighter.new()
+	root.add_child(atk)
+	root.add_child(def)
+	
+	atk.character_id = "tophiachu"
+	def.character_id = "cyraxx"
+	atk.load_character_data()
+	def.load_character_data()
+	
+	atk.position = Vector3(0, 0, -1.0)
+	def.position = Vector3(0, 0, 1.0)
+	atk.opponent = def
+	def.opponent = atk
+	
+	atk._start_synchronized_throw(def)
+	assert_true(atk.current_state == Fighter.State.GRAPPLING_ATTACKER, "Pass A: Attacker in GRAPPLING_ATTACKER")
+	assert_true(def.current_state == Fighter.State.GRAPPLING_DEFENDER, "Pass A: Defender in GRAPPLING_DEFENDER")
+	
+	# Advance physics frames into the mid-lift peak (state_timer ~ 0.3s)
+	var peak_height_observed: float = 0.0
+	for frame in range(20):
+		atk._physics_process(0.016)
+		def._physics_process(0.016)
+		var def_y: float = def.global_position.y if def.is_inside_tree() else def.position.y
+		if def_y > peak_height_observed:
+			peak_height_observed = def_y
+			
+	assert_true(peak_height_observed > 1.2, "Pass A: Defender reaches peak throw height (> 1.2m) without being clamped to 0 by _clamp_within_ring (Observed: %.2fm)" % peak_height_observed)
+	
+	# Continue to throw completion
+	for frame in range(60):
+		atk._physics_process(0.016)
+		def._physics_process(0.016)
+		
+	assert_true(atk.current_state == Fighter.State.IDLE, "Pass A: Attacker cleanly transitions to IDLE after throw")
+	assert_true(def.current_state == Fighter.State.KNOCKED_DOWN, "Pass A: Defender transitions to KNOCKED_DOWN after throw")
+	var final_y: float = def.global_position.y if def.is_inside_tree() else def.position.y
+	assert_true(is_equal_approx(final_y, 0.0), "Pass A: Defender cleanly grounded on canvas after throw (Y=%.2f)" % final_y)
+	
+	atk.free()
+	def.free()
+
+func test_pass_a_slot_inversions_and_facing_vectors() -> void:
+	var configs = [
+		{"atk_id": "tophiachu", "atk_slot": 1, "atk_pos": Vector3(-1.5, 0, 0), "def_id": "cyraxx", "def_slot": 2, "def_pos": Vector3(1.5, 0, 0), "desc": "P1 Attacker (-X) vs P2 Defender (+X)"},
+		{"atk_id": "tophiachu", "atk_slot": 2, "atk_pos": Vector3(1.5, 0, 0), "def_id": "cyraxx", "def_slot": 1, "def_pos": Vector3(-1.5, 0, 0), "desc": "P2 Attacker (+X) vs P1 Defender (-X)"},
+		{"atk_id": "cyraxx", "atk_slot": 1, "atk_pos": Vector3(0, 0, -1.5), "def_id": "tophiachu", "def_slot": 2, "def_pos": Vector3(0, 0, 1.5), "desc": "P1 Attacker (-Z) vs P2 Defender (+Z)"},
+		{"atk_id": "cyraxx", "atk_slot": 2, "atk_pos": Vector3(0, 0, 1.5), "def_id": "tophiachu", "def_slot": 1, "def_pos": Vector3(0, 0, -1.5), "desc": "P2 Attacker (+Z) vs P1 Defender (-Z)"}
+	]
+	
+	for cfg in configs:
+		var atk: Fighter = Fighter.new()
+		var def: Fighter = Fighter.new()
+		root.add_child(atk)
+		root.add_child(def)
+		
+		atk.character_id = cfg["atk_id"]
+		atk.player_index = cfg["atk_slot"]
+		def.character_id = cfg["def_id"]
+		def.player_index = cfg["def_slot"]
+		atk.load_character_data()
+		def.load_character_data()
+		
+		atk.position = cfg["atk_pos"]
+		def.position = cfg["def_pos"]
+		atk.opponent = def
+		def.opponent = atk
+		
+		atk._start_synchronized_throw(def)
+		
+		var atk_fwd: Vector3 = -atk.transform.basis.z.normalized()
+		var def_fwd: Vector3 = -def.transform.basis.z.normalized()
+		var expected_atk_dir: Vector3 = (cfg["def_pos"] - cfg["atk_pos"]).normalized()
+		var expected_def_dir: Vector3 = (cfg["atk_pos"] - cfg["def_pos"]).normalized()
+		
+		var atk_facing_dot: float = atk_fwd.dot(expected_atk_dir)
+		var def_facing_dot: float = def_fwd.dot(expected_def_dir)
+		assert_true(atk_facing_dot > 0.98, "Pass A Facing: Attacker faces defender in %s (dot=%.3f)" % [cfg["desc"], atk_facing_dot])
+		assert_true(def_facing_dot > 0.98, "Pass A Facing: Defender faces attacker in %s (dot=%.3f)" % [cfg["desc"], def_facing_dot])
+		
+		# Advance to post-impact slam
+		atk.state_timer = 0.65
+		atk._process_synchronized_attacker()
+		
+		# Slam position must be in front of attacker along attacker forward vector
+		var slam_offset: Vector3 = (def.position - atk.position).normalized()
+		var slam_in_front: float = slam_offset.dot(atk_fwd)
+		assert_true(slam_in_front > 0.95, "Pass A Trajectory: Slam position is in front of attacker in %s (dot=%.3f)" % [cfg["desc"], slam_in_front])
+		
+		atk.free()
+		def.free()
+
 `
 
-### Binary Asset: tests/test_suite.gd.uid
-*Compiled 3D GLB model for Godot. Size: 20 bytes.*
+### File: tests\test_suite.gd.uid
+`text
+uid://c64otbq5rkpy7
 
+`

@@ -1,4 +1,9 @@
-# Next Implementation Task: M4 (Tournament & Spectator Modes)
+# Next Implementation Task: Pass B (Combat Reliability & Edge Cases)
 
-## Single Next Implementation Task
-**Milestone M4 Pass**: Implement an 8-player single-elimination offline Tournament bracket mode and Spectator (CPU vs CPU) broadcast mode, with bracket visualization UI, match progression tracking, and championship trophy celebration with referee KingCobraJFS presenting the belt.
+## Next Implementation Task
+**Pass B: Combat Reliability & Edge Case Hardening**:
+1. Implement corner bounce and rope spring physics during running collisions.
+2. Polish turnbuckle collision and climbing state transitions.
+3. Harden multi-frame reversal windows with stat-scaled timing leniency.
+4. Verify edge-of-ring grapple positioning so throws near ropes naturally interact or trigger rope breaks without ring clipping.
+5. Expand test suite to validate edge-case combat scenarios before proceeding to M4 Tournament Mode.

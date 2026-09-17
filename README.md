@@ -19,15 +19,14 @@ Every fighter has an authoritative, canonical 42-point attribute distribution ac
 
 | ID | Name | Archetype | Style Summary | Signature Finisher |
 | :--- | :--- | :--- | :--- | :--- |
-| 	ophiachu | Tophiachu | Heavyweight Brawler | Slow heavy tank, devastating strikes & high powerslams | *The Chu Slam* |
-| 
-ovaonline | Nova Online | Momentum Heavyweight | Balanced heavyweight with forward burst | *Supernova Drop* |
-| cyraxx | Cyraxx | Burst Striker | Compact, lightning strikes, low leverage throws | *Goblin Flurry* |
-| candy_rooks | Candy Rooks | Powerhouse Brute | High power and durability brawler | *Sugar Rush Slam* |
-| ndy_ditch | Andy Ditch | Territory Grappler | Anchor wrestler with high grappling defense | *Babysitter Suplex* |
-| jupiter_the_hybrid | Jupiter The Hybrid | Celestial Martial Artist | Agile kicks, swift escapes, aerial offense | *Cosmic Impact* |
-| nacondasin | Anacondasin | Submission Specialist | Dangerous lock specialist, rapid tap-out inducer | *Viper Coil Hold* |
-| daniel_larson | Daniel Larson | Erratic Scrapper | Unpredictable, fast scrambler and reversal threat | *Cease & Desist* |
+| tophiachu | Tophiachu | Heavyweight Counter-Brawler | Slow heavy tank, devastating strikes & high powerslams | *Live-Stream Shutdown* |
+| novaonline | NovaOnline | Momentum Heavyweight | Balanced heavyweight with forward burst | *Going Offline* |
+| cyraxx | Cyraxx | Lightweight Burst Striker | Compact, lightning strikes, low leverage throws | *Raxx and Ruin* |
+| candy_rooks | Candy Rooks | Combination Grappler | High power and durability combination brawler | *Ribs & Kidney Beans* |
+| andy_ditch | Andy Ditch | Territory Anchor Grappler | Anchor wrestler with high grappling defense | *Case Closed* |
+| jupiter_the_hybrid | Jupiter the Hybrid | Stance-Shift Grappler | Agile kicks, swift escapes, aerial offense | *Eclipse Driver* |
+| anacondasin | AnacondaSin | Positional Submission Specialist | Dangerous lock specialist, rapid tap-out inducer | *Anaconda Lock* |
+| daniel_larson | Daniel Larson | Mobile Opportunist | Unpredictable, fast scrambler and reversal threat | *Final Encore* |
 
 ---
 
@@ -94,13 +93,13 @@ Run tests headlessly:
 `ash
 godot_console --headless -s tests/test_suite.gd
 `
-**Current Status**: 112 / 112 Passed (100% Pass, 0 Failures, 0 Warnings).
+**Current Status**: 136 / 136 Passed (100% Pass, 0 Failures, 0 Warnings).
 
 ---
 
 ## 6. Directory Layout
 
-`
+```
 .
 ├── assets/models/         # Compiled GLB 3D assets (all 8 fighters + ring + referee)
 ├── blender/               # Blender 5.0 automated generation pipeline (generate_assets.py)
@@ -116,7 +115,7 @@ godot_console --headless -s tests/test_suite.gd
 │   ├── referee/           # KingCobraJFS ring positioning and 3-count officiating
 │   ├── ring/              # Ring boundary and broadcast camera shake
 │   └── ui/                # UI controllers
-├── tests/                 # 112-case headless automated test suite
+├── tests/                 # 136-case headless automated test suite
 ├── project.godot          # Engine configuration & input mappings
 └── START_GAME.bat         # Direct Windows standalone launcher
-`
+```
