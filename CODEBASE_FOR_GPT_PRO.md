@@ -1,1078 +1,7 @@
 # LOLCOW WRESTLING: OFFLINE MAYHEM - COMPLETE CODEBASE DIGEST FOR GPT PRO
-> Generated for ChatGPT Pro / LLM context injection. Contains full source code, scenes, configs, assets manifest, and design rules.
 
-## 1. Project Context & Non-Negotiables for GPT Pro
-- **Engine**: Godot 4.7.2 (stable official, Windows x64, Forward+ Vulkan)
-- **3D DCC**: Blender 5.0 (Python procedural asset generation)
-- **Target**: 1080p @ 60 FPS standalone arcade wrestling on Windows
-- **In Memoriam Rule**: KingCobraJFS (1991–2025) is the neutral, untargetable official referee with a permanent glowing gold halo across ALL matches.
-- **Roster Rule**: All 8 distinct fighters maintain their exact canonical 42-point stat allocations and unique combat behaviors.
-- **Authoritative State Gate**: Combat movements and throws are strictly synchronized with deterministic state-machine locks.
+## File: project.godot
 
-## 2. Git Commit History
-`	ext
-7c0697a fix(combat): complete Pass A codebase repair (escape inputs, throw height, forward facing)
-b8247d9 docs: add CODEBASE_FOR_GPT_PRO markdown digest and update gitignore
-41a525f docs: add comprehensive project README with architecture, roster, and controls
-d58c46a fix(launcher): resolve batch path escaping, update window overrides and docs
-86d1405 refactor(polish): add character_loaded HUD synchronization and audio feedback to CharacterSelect
-eca4161 feat(roster): implement full 8-character roster 3D assets, character select UI, audio stingers, and match persistence
-8f28b5e docs: record M1 verification, top 3 observable defects, and M2 next task
-234b626 feat: complete M0 foundation and M1 playable loop (Tophiachu vs Cyraxx with KingCobraJFS referee)
-`
-
-## 3. Repository File Manifest
-| File Path | Type | Description |
-| :--- | :--- | :--- |
-| .gitignore | Source Code / Scene | .gitignore |
-| DECISIONS.md | Source Code / Scene | DECISIONS.md |
-| KNOWN_ISSUES.md | Source Code / Scene | KNOWN_ISSUES.md |
-| NEXT_TASK.md | Source Code / Scene | NEXT_TASK.md |
-| README.md | Source Code / Scene | README.md |
-| START_GAME.bat | Source Code / Scene | START_GAME.bat |
-| STATE.md | Source Code / Scene | STATE.md |
-| assets\models\anacondasin.glb | Binary 3D Model | anacondasin.glb |
-| assets\models\andy_ditch.glb | Binary 3D Model | andy_ditch.glb |
-| assets\models\candy_rooks.glb | Binary 3D Model | candy_rooks.glb |
-| assets\models\cyraxx.glb | Binary 3D Model | cyraxx.glb |
-| assets\models\daniel_larson.glb | Binary 3D Model | daniel_larson.glb |
-| assets\models\jupiter_the_hybrid.glb | Binary 3D Model | jupiter_the_hybrid.glb |
-| assets\models\novaonline.glb | Binary 3D Model | novaonline.glb |
-| assets\models\referee_cobra.glb | Binary 3D Model | referee_cobra.glb |
-| assets\models\ring_arena.glb | Binary 3D Model | ring_arena.glb |
-| assets\models\tophiachu.glb | Binary 3D Model | tophiachu.glb |
-| blender\generate_assets.py | Source Code / Scene | generate_assets.py |
-| project.godot | Source Code / Scene | project.godot |
-| scenes\arena\ring_arena.tscn | Source Code / Scene | ring_arena.tscn |
-| scenes\fighter\fighter.tscn | Source Code / Scene | fighter.tscn |
-| scenes\main.tscn | Source Code / Scene | main.tscn |
-| scenes\referee\referee.tscn | Source Code / Scene | referee.tscn |
-| scenes\ui\character_select.tscn | Source Code / Scene | character_select.tscn |
-| scenes\ui\match_hud.tscn | Source Code / Scene | match_hud.tscn |
-| scripts\ai\cpu_controller.gd | Source Code / Scene | cpu_controller.gd |
-| scripts\ai\cpu_controller.gd.uid | UID Metadata | cpu_controller.gd.uid |
-| scripts\core\audio_manager.gd | Source Code / Scene | audio_manager.gd |
-| scripts\core\audio_manager.gd.uid | UID Metadata | audio_manager.gd.uid |
-| scripts\core\main_scene.gd | Source Code / Scene | main_scene.gd |
-| scripts\core\main_scene.gd.uid | UID Metadata | main_scene.gd.uid |
-| scripts\core\match_config.gd | Source Code / Scene | match_config.gd |
-| scripts\core\match_config.gd.uid | UID Metadata | match_config.gd.uid |
-| scripts\core\match_manager.gd | Source Code / Scene | match_manager.gd |
-| scripts\core\match_manager.gd.uid | UID Metadata | match_manager.gd.uid |
-| scripts\core\match_rules.gd | Source Code / Scene | match_rules.gd |
-| scripts\core\match_rules.gd.uid | UID Metadata | match_rules.gd.uid |
-| scripts\core\roster_data.gd | Source Code / Scene | roster_data.gd |
-| scripts\core\roster_data.gd.uid | UID Metadata | roster_data.gd.uid |
-| scripts\fighter\fighter.gd | Source Code / Scene | fighter.gd |
-| scripts\fighter\fighter.gd.uid | UID Metadata | fighter.gd.uid |
-| scripts\referee\referee.gd | Source Code / Scene | referee.gd |
-| scripts\referee\referee.gd.uid | UID Metadata | referee.gd.uid |
-| scripts\ring\broadcast_camera.gd | Source Code / Scene | broadcast_camera.gd |
-| scripts\ring\broadcast_camera.gd.uid | UID Metadata | broadcast_camera.gd.uid |
-| scripts\ring\ring.gd | Source Code / Scene | ring.gd |
-| scripts\ring\ring.gd.uid | UID Metadata | ring.gd.uid |
-| scripts\ui\character_select.gd | Source Code / Scene | character_select.gd |
-| scripts\ui\character_select.gd.uid | UID Metadata | character_select.gd.uid |
-| scripts\ui\match_hud.gd | Source Code / Scene | match_hud.gd |
-| scripts\ui\match_hud.gd.uid | UID Metadata | match_hud.gd.uid |
-| tests\test_suite.gd | Source Code / Scene | test_suite.gd |
-| tests\test_suite.gd.uid | UID Metadata | test_suite.gd.uid |
-
----
-
-## 4. Complete Source Code & Scene Definitions
-
-### File: .gitignore
-`text
-# Godot 4+ .gitignore
-.godot/
-*.translation
-*.import
-export_presets.cfg
-test_out.txt
-*.zip
-*.bundle
-*.log
-
-`
-
-### File: DECISIONS.md
-`markdown
-# Architectural Decisions: LOLCOW WRESTLING: OFFLINE MAYHEM
-
-## Decision 1: Single Authoritative Movement Ownership
-- **Context**: Wrestling games frequently suffer from sliding while downed, attacks while prone, or physics fighting animations.
-- **Decision**: `FighterState` acts as strict gatekeeper. In `KNOCKED_DOWN`, `GETTING_UP`, `PINNED`, or `GRAPPLING_DEFENDER`, input movement vectors are discarded, velocity is clamped to zero, and position is driven purely by authored sequence or pin lock.
-
-## Decision 2: Synchronized Grapple & Throw Resolution
-- **Context**: Independent colliders during throws cause hand disconnection, clipping, or missed impacts.
-- **Decision**: An initiated grapple validates range, angle, and state. When accepted, attacker locks defender into `GRAPPLING_DEFENDER` and becomes owner of defender's transform relative to attacker's root. At impact keyframe, authoritative single damage is applied, defender is transitioned to `KNOCKED_DOWN` at the exact canvas landing spot, and mutual lock is released.
-
-## Decision 3: KingCobraJFS Referee Design & Memorial
-- **Context**: KingCobraJFS passed away on 21 August 2025.
-- **Decision**: KingCobraJFS serves as the neutral, respectful referee throughout all matches. He wears a referee uniform with restrained gothic accents and features a permanently visible soft gold halo. The halo pulses rhythmically with each count of the match (1, 2, 3). He is strictly non-targetable, non-colliding with fighters, and non-exploitable; match rules dictate the authoritative count, while the referee provides the visual in-ring storytelling.
-
-## Decision 4: Combat Timing & Reversals
-- **Context**: Button-mashing or spamming leads to degenerate gameplay.
-- **Decision**: Explicit rock-paper-scissors arcade dynamics:
-  - Strikes interrupt exposed grapple startup.
-  - Grapples break turtling blocks.
-  - Reversals punish predictable strike/grapple commitments at the cost of stamina/reversal stat.
-  - Finishers require 100 Hype and a valid opening/setup.
-
-`
-
-### File: KNOWN_ISSUES.md
-`markdown
-## Active Open Issues & Defects Under Repair
-
-1. **Boundary Safety During Throws (High Priority - Open)**:
-   - `_clamp_within_ring()` skips clamping during `GRAPPLING_DEFENDER` to allow vertical lifting without clipping to the floor. However, an attacker facing outward near the ropes (e.g. $x = 3.0\text{m}$, defender at $x = 3.6\text{m}$) can slam the defender outside the physical ring bounds ($x = 4.1\text{m}$ vs $3.65\text{m}$ ring limit).
-   - *Required Fix*: Implement pre-throw spatial boundary validation that repositions the pair inwards, reorients the throw, or breaks/deflects off ropes rather than placing the defender outside before snap-back.
-
-2. **Directional Attack Contact & Grapple Startup (High Priority - Open)**:
-   - `_handle_strike_active_window()` evaluates distance between fighter origins without verifying a forward directional cone, allowing strikes to hit opponents behind the attacker.
-   - `_attempt_grapple()` immediately initiates the throw rather than pausing in `GRAPPLE_STARTUP` for a measurable vulnerability/counter window.
-   - *Required Fix*: Add forward directional dot-product gating to strike resolution and enforce a distinct startup window on grapples allowing interruptions and reversals.
-
-3. **Simultaneous Submission Outcome Ordering (Medium Priority - Open)**:
-   - While partner references are now cleared on both sides during escapes, a frame in which vitality depletes to 0 simultaneously with escape progress reaching 100 depends on node processing order (attacker update vs defender update).
-   - *Required Fix*: Establish an explicit authoritative priority policy in `MatchManager` for simultaneous tap-out vs escape frames.
-
-4. **Skeletal Animation Pipeline & Unique Moveset Data (Open)**:
-   - 3D character models are composed of procedural primitive geometries without bones or skeletal clips. Throws and strikes utilize parameterized programmatic tweening rather than distinct motion-captured or keyframed animation clips.
-
----
-
-## Resolved in Pass A & Prior Milestones
-
-1. **CPU Pinfall Guarantee Defect (Resolved in Pass A Pinfall Balance)**:
-   - Replaced flat-rate escape formula with a resource-aware model factoring in quadratic vitality, stamina, reversal stats, and finisher impact disorientation.
-   - CPU and human players now legitimately kick out when fresh (< Count 2) and legitimately lose by 3-count pinfall when exhausted or hit with finishers.
-2. **CPU Pin & Submission Escape Command Disconnection (Resolved in Pass A)**:
-   - Unified all escape checks to consume the `Fighter` command interface (`input_pin`, `input_hold_pin`, `input_strike`, `input_grapple`, `input_block`) rather than polling global hardware keys during combat physics.
-3. **Conflicting Throw Height Ownership (Resolved in Pass A Baseline)**:
-   - Removed canvas grounding conflicts in central ring throws so overhead powerslams reach full 1.55m vertical peak before canvas impact.
-4. **Forward-Axis Facing Vector Standardization (Resolved in Pass A)**:
-   - Standardized all locomotion, stationary facing, and synchronized throw vectors to Godot's `-basis.z` forward convention (`atan2(-dx, -dz)`).
-5. **Canonical Finisher Names Alignment (Resolved in Pass A)**:
-   - Synchronized `README.md` to canonical names in `scripts/core/roster_data.gd`.
-6. **Desktop Launcher Script Trailing Quote Bug (Resolved in M3 Polish)**:
-   - Fixed `%~dp0` trailing backslash CRT escaping issue in `START_GAME.bat`.
-
-
-`
-
-### File: NEXT_TASK.md
-`markdown
-# Next Implementation Task: Pass A Priority 2 (Boundary-Safe Paired Throws)
-
-## Immediate Next Task
-**Priority 2: Boundary-Safe Paired Throws**:
-1. Implement shared pre-throw spatial and trajectory validation in `Fighter._attempt_grapple()` and `_start_synchronized_throw()`.
-2. When a throw is initiated near ropes ($|x| > 2.8\text{m}$ or $|z| > 2.8\text{m}$), automatically adjust the attacker-defender pair inwards, reorient facing inward toward the ring center, or trigger a rope collision/break rather than writing defender coordinates outside ring boundary ($|x| > 3.65\text{m}$) during slam arcs.
-3. Validate complete throw cycles near all 4 ring edges and 4 corners in both scene tree processing orders (P1/P2 and P2/P1) without defender clipping or snap-back.
-
-## Subsequent Backlog (In Strict Priority Order)
-- **Priority 3**: Directional hit cones (`_handle_strike_active_window`) and distinct grapple startup vulnerability window (`GRAPPLE_STARTUP`).
-- **Priority 4**: Centralized hold cleanup and deterministic outcome priority for simultaneous tap-out vs escape frames in `MatchManager`.
-- **Priority 5**: Scene integration and visual verification across all 64 matchups.
-
-`
-
-### File: README.md
-`markdown
-# LOLCOW WRESTLING: OFFLINE MAYHEM
-
-> A stylized 3D arcade wrestling game built in Godot 4.7.2 Forward+ with Blender 5.0 DCC procedural assets, targeting 1080p @ 60 FPS on Windows standalone.
-
----
-
-## 1. Project Overview
-
-*LOLCOW WRESTLING: OFFLINE MAYHEM* is an arcade-style 3D professional wrestling title featuring 8 distinct fighters, synchronized grapple and throw sequences, continuous submission holds, dynamic referee officiating, and an integrated Character Selection system.
-
-### In Memoriam: KingCobraJFS (1991–2025)
-Reporting confirms that KingCobraJFS passed away on 21 August 2025. Throughout the entire game across all game modes, KingCobraJFS serves as the neutral, untargetable official referee. He features a permanently visible, pulsing emissive gold halo hovering above his gothic cap as an enduring memorial tribute.
-
----
-
-## 2. The 8-Character Canonical Roster
-
-Every fighter has an authoritative, canonical 42-point attribute distribution across 7 stats (Power, Mobility, Grappling, Stamina, Durability, Reversal, Showmanship; all rated 1–10).
-
-| ID | Name | Archetype | Style Summary | Signature Finisher |
-| :--- | :--- | :--- | :--- | :--- |
-| tophiachu | Tophiachu | Heavyweight Counter-Brawler | Slow heavy tank, devastating strikes & high powerslams | *Live-Stream Shutdown* |
-| novaonline | NovaOnline | Momentum Heavyweight | Balanced heavyweight with forward burst | *Going Offline* |
-| cyraxx | Cyraxx | Lightweight Burst Striker | Compact, lightning strikes, low leverage throws | *Raxx and Ruin* |
-| candy_rooks | Candy Rooks | Combination Grappler | High power and durability combination brawler | *Ribs & Kidney Beans* |
-| andy_ditch | Andy Ditch | Territory Anchor Grappler | Anchor wrestler with high grappling defense | *Case Closed* |
-| jupiter_the_hybrid | Jupiter the Hybrid | Stance-Shift Grappler | Agile kicks, swift escapes, aerial offense | *Eclipse Driver* |
-| anacondasin | AnacondaSin | Positional Submission Specialist | Dangerous lock specialist, rapid tap-out inducer | *Anaconda Lock* |
-| daniel_larson | Daniel Larson | Mobile Opportunist | Unpredictable, fast scrambler and reversal threat | *Final Encore* |
-
----
-
-## 3. Core Mechanics & Architecture
-
-1. **Deterministic Combat State Machine**:
-   - Strictly authoritative state gating on Fighter (IDLE, WALK, STRIKE, BLOCK, REVERSAL, GRAPPLE_INIT, GRAPPLE_LIFT, THROW_ATTACKER, THROW_DEFENDER, KNOCKDOWN, GETUP, PINNING, PINNED, SUBMISSION_ATTACKER, SUBMISSION_DEFENDER, VICTORY, DEFEATED).
-   - Zero sliding or desynchronization during mutual grapple locks.
-   - Attacker and defender trajectories are mutually locked and frame-synchronized.
-
-2. **Leverage & Weight-Class Throw Scaling**:
-   - Grapples dynamically evaluate the attacker-to-defender weight/power ratio.
-   - Heavyweights lifting lighter opponents execute high overhead powerslams (1.55m vertical peak).
-   - Lightweight strikers throwing heavyweights route to low-angle leverage trips (0.38m vertical peak), ensuring believable physical interactions.
-
-3. **Submissions & Pinning**:
-   - **Continuous Submissions**: Lock holds drain defender vitality and stamina continuously. Defender can mash kick-out keys to escape; if vitality drops to zero during a hold, a tap-out victory is declared.
-   - **Pinning & 3-Count**: Pin attempts alert referee KingCobraJFS to drop into position and begin 1-2-3 counts. A kick-out meter allows escapes before count 3.
-   - **Rope Break Priority**: Being within 0.8m of the ring ropes immediately breaks pins and submissions.
-
-4. **16-Bit PCM Procedural Audio Synthesizer (scripts/core/audio_manager.gd)**:
-   - Zero external WAV dependencies; all sounds synthesized in real time via 16-bit PCM waveforms:
-     - Mat slam impacts, canvas slaps, clean strike snaps, blocked thuds.
-     - Ring bell chimes and elastic rope twangs.
-     - Referee count tone accents (Count 1: 350 Hz, Count 2: 440 Hz, Count 3: 530 Hz).
-     - Rope break alert buzzer.
-     - Rising finisher power chord stinger.
-     - Triumphant 4-note brass victory fanfare.
-
-5. **Broadcast Presentation**:
-   - Dynamic 3D arena with canvas, apron, steel corner posts, and 3-tier ropes.
-   - Broadcast camera with zoom framing and trauma-based screen shake.
-   - Full arcade Character Select menu with dual navigation (WASD for P1, Arrows for P2), stat radars, CPU toggle, and match persistence.
-
----
-
-## 4. Default Input Controls
-
-### Character Select
-- **P1 Selection**: W / A / S / D
-- **P2 Selection**: Up / Left / Down / Right
-- **Toggle P2 CPU/Human**: C key
-- **Confirm / Start Match**: Space or Enter
-
-### In-Ring Combat
-| Action | Player 1 | Player 2 (If Human) |
-| :--- | :--- | :--- |
-| **Move Up / Down / Left / Right** | W / S / A / D | Up / Down / Left / Right |
-| **Strike** | J | Numpad 1 |
-| **Grapple / Throw** | K | Numpad 2 |
-| **Block / Submission** | L | Numpad 3 |
-| **Reversal** | U | Numpad 4 |
-| **Pin / Kick-out** | Space | Numpad 0 |
-| **Signature Finisher** | I | Numpad 5 |
-| **Return to Menu** | Escape | Escape |
-
----
-
-## 5. Verification & Test Suite
-
-The project includes an automated headless verification suite testing the combat state machine, 3D model geometry, audio synthesis, and all 64 attacker-defender matchups ( \times 8$).
-
-Run tests headlessly:
-`ash
-godot_console --headless -s tests/test_suite.gd
-`
-**Current Status**: 150 / 150 Passed (100% Pass, 0 Failures, 0 Warnings).
-
----
-
-## 6. Directory Layout
-
-```
-.
-├── assets/models/         # Compiled GLB 3D assets (all 8 fighters + ring + referee)
-├── blender/               # Blender 5.0 automated generation pipeline (generate_assets.py)
-├── scenes/
-│   ├── arena/             # 3D Ring arena scene
-│   ├── fighter/           # Instantiable 3D fighter entity
-│   ├── referee/           # KingCobraJFS referee entity
-│   └── ui/                # Character select and broadcast match HUD
-├── scripts/
-│   ├── ai/                # Autonomous CPU combat controller
-│   ├── core/              # RosterData, MatchRules, MatchManager, AudioManager, MatchConfig
-│   ├── fighter/           # State machine, movement, grapple sync, combat logic
-│   ├── referee/           # KingCobraJFS ring positioning and 3-count officiating
-│   ├── ring/              # Ring boundary and broadcast camera shake
-│   └── ui/                # UI controllers
-├── tests/                 # 150-case headless automated test suite
-├── project.godot          # Engine configuration & input mappings
-└── START_GAME.bat         # Direct Windows standalone launcher
-```
-
-`
-
-### File: START_GAME.bat
-`batch
-@echo off
-title LOLCOW WRESTLING: OFFLINE MAYHEM
-cd /d "%~dp0"
-echo Starting LOLCOW WRESTLING: OFFLINE MAYHEM...
-
-set "GODOT_EXE=C:\Users\mauri\AppData\Local\Microsoft\WinGet\Packages\GodotEngine.GodotEngine_Microsoft.Winget.Source_8wekyb3d8bbwe\Godot_v4.7.2-stable_win64.exe"
-if exist "%GODOT_EXE%" (
-    start "" "%GODOT_EXE%" --path "%CD%"
-    exit /b 0
-)
-
-start "" "godot.exe" --path "%CD%"
-exit /b 0
-
-`
-
-### File: STATE.md
-`markdown
-# Project State: LOLCOW WRESTLING: OFFLINE MAYHEM
-
-## Milestone Status: M0-M1 Functional -> Pass A Repairs (In Progress - Pinfall Balance Verified)
-- **Engine**: Godot 4.7.2 (stable official, Windows x64) - Installed & Verified.
-- **3D DCC Pipeline**: Blender 5.0.1 (headless Python automation) - Verified.
-- **Target**: 1080p @ 60 FPS, Windows standalone.
-- **Authoritative Combat Loop**: Verified with 150 automated headless unit tests (0 failures, 0 warnings).
-- **M2/M3 Status**: Functional baseline established (Character Select, 16-bit procedural audio synthesis, 8-character 3D meshes, parameterized weight scaling). Skeletal animation rigging and authored unique animation clips remain pending/unverified per code review.
-
-### Pass A Codebase Repairs & Verifications:
-1. **Resource-Aware Pin Escape & CPU Pinfall Balance (Verified)**:
-   - Repaired critical defect where CPU escaped all pins in 1.28s regardless of vitality.
-   - Built a unified, resource-aware escape model scaling with quadratic vitality, remaining stamina, reversal rating, and recent finisher impact penalties.
-   - Verified that fresh CPU/human defenders kick out cleanly (< Count 2) while exhausted/weakened defenders legitimately lose by 3-count pinfall.
-   - Tested across both player slots (P1/P2), tree processing orders, active mashing, hold-to-resist, and rope breaks (150 tests passing).
-2. **Unified Command Interface for Escapes (Verified)**:
-   - `Fighter` escape logic consumes command inputs (`input_pin`, `input_strike`, `input_grapple`, `input_block`, `input_hold_pin`) rather than polling `Input.is_action_*` during physics process.
-   - CPU controller pulses escape inputs at cadenced intervals based on `stat_reversal` and physical fatigue.
-3. **Throw Height Ownership (Verified in Center Ring)**:
-   - `_clamp_within_ring` skips vertical clamping during `GRAPPLING_DEFENDER`, granting attacker sole authority over lift height (1.55m peak verified in center).
-   - Canvas grounding enforced at `y = 0.0` on transition to `KNOCKED_DOWN`.
-4. **Standardized Forward-Axis Conventions (Verified)**:
-   - Synchronized throws and locomotion unified on standard Godot convention `atan2(-dx, -dz)`.
-   - Verified attacker `-basis.z` strictly faces defender and defender faces attacker (dot product = 1.000) across all slot inversions (P1/P2) and cardinal directions.
-5. **Documentation Alignment (Verified)**:
-   - `README.md` canonical move names and archetypes synced with `scripts/core/roster_data.gd`.
-
-### Active Open Items from Code Review (In Priority Order):
-1. **Boundary-Safe Throws**: Prevent attacker throws near ropes from placing defender out of ring bounds ($x > 3.65\text{m}$) before snap-back.
-2. **Directional Contact & Grapple Startup**: Replace omnidirectional distance strike checks with forward cone checks; enforce a real startup window on grapples.
-3. **Submission Simultaneous Outcome Resolution**: Formalize authoritative priority in `MatchManager` when tap-out and escape coincide on the same physics tick.
-
-## Verification Summary
-- **M0 Foundation**:
-  - Full 8-character roster defined with verified 42-point attribute allocations.
-  - Complete two-player arcade input mapping configured in `project.godot`.
-- **M1 Playable Match Loop**:
-  - Playable arena with canvas, apron, turnbuckles, ropes, and bounds.
-  - Neutral official referee KingCobraJFS (1991-2025) with permanently visible, pulsing gold memorial halo.
-  - Rigid state machine with authoritative movement ownership (zero sliding during knockdowns or throws).
-  - Single-hit active damage windows.
-  - Synchronized grapple and throw sequence with mutual locking, lift, impact canvas slap, and clean release.
-  - Pinning, 3-count progression, hold/mash kick-out escape, and rope break priority.
-- **M2 Polished Slice**:
-  - Asymmetric leverage-based throw routing: lighter attackers route to low-angle leverage trips (0.38m peak) while heavyweights execute overhead powerslams (1.55m peak).
-  - Submissions system: continuous pressure damage, stamina drain, hold/mash escape, and tap-out victory condition.
-  - Procedural 16-bit PCM (22050 Hz) audio synthesis: ring bell, deep mat slam thud, clean/blocked strike snaps, canvas palm slaps, elastic rope twangs, crowd cheers, and crowd gasps.
-  - Dynamic announcer audio stingers: rising finisher power chord, triumphant brass victory fanfare, count voice accents (1, 2, 3), and rope break buzzer alert.
-  - Dynamic broadcast camera trauma shake with quadratic decay and accessibility scaling.
-  - Animation architecture: `Fighter` supports `AnimationPlayer` bindings to state transitions with procedural visual deformation fallback.
-- **M3 Full 8-Character Roster & Match Setup**:
-  - All 8 distinct 3D fighter models authored and exported to GLB in Blender 5.0:
-    - `tophiachu`: Heavyweight brawler, purple gear, curly silhouette.
-    - `novaonline`: Athletic heavyweight, fiery red/gold attire, high boots.
-    - `cyraxx`: Compact burst striker, olive gear, black beanie.
-    - `candy_rooks`: Kitchen-sink powerhouse brute, pink apron aesthetic, forearm tape.
-    - `andy_ditch`: Territory anchor grappler, padded denim blue wrestling singlet.
-    - `jupiter_the_hybrid`: Celestial martial artist, deep violet and silver split design.
-    - `anacondasin`: Submission technician, serpentine emerald/gold tights.
-    - `daniel_larson`: Erratic scrapper, lanky silhouette, bright orange jacket.
-  - KingCobraJFS (1991-2025) referee model with glowing golden halo.
-  - Complete Character Selection UI (`scenes/ui/character_select.tscn`) with 8-character roster grid, stat radars, signature move displays, P1/P2 navigation, CPU toggles, and seamless transition to match arena.
-  - `MatchConfig` persistent state tracking selected fighters and CPU flags between menus and gameplay.
-  - 100% test pass rate across all 64 attacker-defender pairings.
-
-`
-
-### File: blender\generate_assets.py
-`python
-import bpy
-import math
-import os
-
-def clear_scene():
-    bpy.ops.wm.read_factory_settings(use_empty=True)
-
-def create_material(name, diffuse_color, roughness=0.5, metallic=0.0, emission_color=None, emission_strength=0.0):
-    mat = bpy.data.materials.new(name=name)
-    mat.use_nodes = True
-    nodes = mat.node_tree.nodes
-    bsdf = nodes.get("Principled BSDF")
-    if bsdf:
-        bsdf.inputs['Base Color'].default_value = diffuse_color
-        bsdf.inputs['Roughness'].default_value = roughness
-        bsdf.inputs['Metallic'].default_value = metallic
-        if emission_color and 'Emission Color' in bsdf.inputs:
-            bsdf.inputs['Emission Color'].default_value = emission_color
-            bsdf.inputs['Emission Strength'].default_value = emission_strength
-    return mat
-
-def build_ring(output_path):
-    clear_scene()
-    
-    mat_canvas = create_material("MatCanvas", (0.88, 0.85, 0.78, 1.0), roughness=0.9)
-    mat_apron = create_material("MatApron", (0.1, 0.1, 0.12, 1.0), roughness=0.7)
-    mat_post_red = create_material("MatPostRed", (0.8, 0.1, 0.1, 1.0), roughness=0.3, metallic=0.7)
-    mat_post_blue = create_material("MatPostBlue", (0.1, 0.2, 0.8, 1.0), roughness=0.3, metallic=0.7)
-    mat_post_white = create_material("MatPostWhite", (0.9, 0.9, 0.9, 1.0), roughness=0.4, metallic=0.5)
-    mat_rope = create_material("MatRope", (0.85, 0.05, 0.05, 1.0), roughness=0.6)
-    mat_floor = create_material("MatFloor", (0.05, 0.05, 0.06, 1.0), roughness=0.8)
-    
-    # Arena floor
-    bpy.ops.mesh.primitive_plane_add(size=30.0, location=(0, 0, -1.0))
-    floor = bpy.context.active_object
-    floor.name = "ArenaFloor"
-    floor.data.materials.append(mat_floor)
-    
-    # Canvas platform
-    bpy.ops.mesh.primitive_cube_add(size=1.0, location=(0, 0, -0.5))
-    canvas_box = bpy.context.active_object
-    canvas_box.name = "RingPlatform"
-    canvas_box.scale = (8.0, 8.0, 1.0)
-    bpy.ops.object.transform_apply(scale=True)
-    canvas_box.data.materials.append(mat_apron)
-    
-    # Canvas top sheet
-    bpy.ops.mesh.primitive_plane_add(size=7.6, location=(0, 0, 0.01))
-    canvas_sheet = bpy.context.active_object
-    canvas_sheet.name = "RingCanvas"
-    canvas_sheet.data.materials.append(mat_canvas)
-    
-    # Corner posts at (+-3.8, +-3.8)
-    corners = [
-        ("PostRed", 3.8, 3.8, mat_post_red),
-        ("PostBlue", -3.8, -3.8, mat_post_blue),
-        ("PostWhite1", -3.8, 3.8, mat_post_white),
-        ("PostWhite2", 3.8, -3.8, mat_post_white),
-    ]
-    
-    for name, cx, cy, cmat in corners:
-        bpy.ops.mesh.primitive_cylinder_add(radius=0.1, depth=2.6, location=(cx, cy, 0.3))
-        post = bpy.context.active_object
-        post.name = name
-        post.data.materials.append(cmat)
-        
-        for h in [0.5, 1.0, 1.5]:
-            bpy.ops.mesh.primitive_cube_add(size=0.18, location=(cx * 0.96, cy * 0.96, h))
-            pad = bpy.context.active_object
-            pad.name = f"{name}_Pad_{h}"
-            pad.data.materials.append(cmat)
-            
-    # 3-tier Ropes
-    for h in [0.5, 1.0, 1.5]:
-        for y_pos in [-3.8, 3.8]:
-            bpy.ops.mesh.primitive_cylinder_add(radius=0.035, depth=7.6, location=(0, y_pos, h))
-            rope = bpy.context.active_object
-            rope.rotation_euler = (0, math.radians(90), 0)
-            rope.name = f"Rope_NS_{y_pos}_{h}"
-            rope.data.materials.append(mat_rope)
-        for x_pos in [-3.8, 3.8]:
-            bpy.ops.mesh.primitive_cylinder_add(radius=0.035, depth=7.6, location=(x_pos, 0, h))
-            rope = bpy.context.active_object
-            rope.rotation_euler = (math.radians(90), 0, 0)
-            rope.name = f"Rope_EW_{x_pos}_{h}"
-            rope.data.materials.append(mat_rope)
-            
-    bpy.ops.export_scene.gltf(filepath=output_path, export_format='GLB')
-    print(f"Exported arena to {output_path}")
-
-def build_tophiachu(output_path):
-    clear_scene()
-    mat_skin = create_material("SkinTophiachu", (0.55, 0.38, 0.28, 1.0), roughness=0.6)
-    mat_hair = create_material("HairTophiachu", (0.12, 0.08, 0.05, 1.0), roughness=0.9)
-    mat_outfit = create_material("OutfitTophiachu", (0.45, 0.22, 0.58, 1.0), roughness=0.5)
-    mat_boots = create_material("BootsTophiachu", (0.12, 0.12, 0.14, 1.0), roughness=0.4)
-    mat_wraps = create_material("WrapsTophiachu", (0.85, 0.85, 0.85, 1.0), roughness=0.8)
-    
-    root = bpy.data.objects.new("TophiachuRoot", None)
-    bpy.context.collection.objects.link(root)
-    
-    # Heavyweight Torso
-    bpy.ops.mesh.primitive_uv_sphere_add(radius=0.55, location=(0, 0, 1.15))
-    torso = bpy.context.active_object
-    torso.scale = (1.35, 0.95, 1.30)
-    bpy.ops.object.transform_apply(scale=True)
-    torso.name = "Torso"
-    torso.data.materials.append(mat_outfit)
-    torso.parent = root
-    
-    # Head & curly hair
-    bpy.ops.mesh.primitive_uv_sphere_add(radius=0.32, location=(0, 0, 1.78))
-    head = bpy.context.active_object
-    head.scale = (1.05, 1.0, 1.05)
-    bpy.ops.object.transform_apply(scale=True)
-    head.name = "Head"
-    head.data.materials.append(mat_skin)
-    head.parent = root
-    
-    bpy.ops.mesh.primitive_uv_sphere_add(radius=0.40, location=(0, -0.05, 1.92))
-    hair = bpy.context.active_object
-    hair.scale = (1.3, 1.2, 1.0)
-    bpy.ops.object.transform_apply(scale=True)
-    hair.name = "Hair"
-    hair.data.materials.append(mat_hair)
-    hair.parent = root
-    
-    for side, x in [("L", -0.68), ("R", 0.68)]:
-        bpy.ops.mesh.primitive_cylinder_add(radius=0.18, depth=0.72, location=(x, 0, 1.25))
-        arm = bpy.context.active_object
-        arm.name = f"Arm_{side}"
-        arm.data.materials.append(mat_skin)
-        arm.parent = root
-        
-        bpy.ops.mesh.primitive_cylinder_add(radius=0.20, depth=0.22, location=(x, 0, 0.95))
-        wrap = bpy.context.active_object
-        wrap.name = f"Wrap_{side}"
-        wrap.data.materials.append(mat_wraps)
-        wrap.parent = root
-        
-    for side, x in [("L", -0.34), ("R", 0.34)]:
-        bpy.ops.mesh.primitive_cylinder_add(radius=0.24, depth=0.6, location=(x, 0, 0.55))
-        leg = bpy.context.active_object
-        leg.name = f"Leg_{side}"
-        leg.data.materials.append(mat_outfit)
-        leg.parent = root
-        
-        bpy.ops.mesh.primitive_cube_add(size=0.32, location=(x, 0.05, 0.16))
-        boot = bpy.context.active_object
-        boot.scale = (1.0, 1.4, 1.0)
-        bpy.ops.object.transform_apply(scale=True)
-        boot.name = f"Boot_{side}"
-        boot.data.materials.append(mat_boots)
-        boot.parent = root
-
-    bpy.ops.export_scene.gltf(filepath=output_path, export_format='GLB')
-    print(f"Exported Tophiachu to {output_path}")
-
-def build_novaonline(output_path):
-    clear_scene()
-    mat_skin = create_material("SkinNova", (0.82, 0.68, 0.58, 1.0), roughness=0.5)
-    mat_hair = create_material("HairNova", (0.15, 0.10, 0.08, 1.0), roughness=0.7)
-    mat_gear = create_material("GearNova", (0.85, 0.15, 0.15, 1.0), roughness=0.4, metallic=0.3)
-    mat_gold = create_material("GoldNova", (0.9, 0.8, 0.2, 1.0), roughness=0.25, metallic=0.7)
-    mat_boots = create_material("BootsNova", (0.1, 0.1, 0.1, 1.0), roughness=0.3)
-    
-    root = bpy.data.objects.new("NovaRoot", None)
-    bpy.context.collection.objects.link(root)
-    
-    bpy.ops.mesh.primitive_cube_add(size=0.75, location=(0, 0, 1.25))
-    torso = bpy.context.active_object
-    torso.scale = (1.25, 0.85, 1.20)
-    bpy.ops.object.transform_apply(scale=True)
-    torso.name = "Torso"
-    torso.data.materials.append(mat_gear)
-    torso.parent = root
-    
-    bpy.ops.mesh.primitive_cube_add(size=0.78, location=(0, 0, 0.95))
-    belt = bpy.context.active_object
-    belt.scale = (1.28, 0.88, 0.22)
-    bpy.ops.object.transform_apply(scale=True)
-    belt.name = "Belt"
-    belt.data.materials.append(mat_gold)
-    belt.parent = root
-    
-    bpy.ops.mesh.primitive_uv_sphere_add(radius=0.28, location=(0, 0, 1.85))
-    head = bpy.context.active_object
-    head.name = "Head"
-    head.data.materials.append(mat_skin)
-    head.parent = root
-    
-    bpy.ops.mesh.primitive_cylinder_add(radius=0.15, depth=0.4, location=(0, -0.22, 1.95))
-    hair = bpy.context.active_object
-    hair.rotation_euler = (math.radians(-35), 0, 0)
-    hair.name = "Hair"
-    hair.data.materials.append(mat_hair)
-    hair.parent = root
-    
-    for side, x in [("L", -0.60), ("R", 0.60)]:
-        bpy.ops.mesh.primitive_cylinder_add(radius=0.16, depth=0.75, location=(x, 0, 1.30))
-        arm = bpy.context.active_object
-        arm.name = f"Arm_{side}"
-        arm.data.materials.append(mat_skin)
-        arm.parent = root
-        
-        bpy.ops.mesh.primitive_cylinder_add(radius=0.18, depth=0.20, location=(x, 0, 1.0))
-        wrist = bpy.context.active_object
-        wrist.name = f"Wrist_{side}"
-        wrist.data.materials.append(mat_gold)
-        wrist.parent = root
-        
-    for side, x in [("L", -0.28), ("R", 0.28)]:
-        bpy.ops.mesh.primitive_cylinder_add(radius=0.18, depth=0.68, location=(x, 0, 0.58))
-        leg = bpy.context.active_object
-        leg.name = f"Leg_{side}"
-        leg.data.materials.append(mat_gear)
-        leg.parent = root
-        
-        bpy.ops.mesh.primitive_cube_add(size=0.28, location=(x, 0.06, 0.16))
-        boot = bpy.context.active_object
-        boot.scale = (0.95, 1.35, 1.1)
-        bpy.ops.object.transform_apply(scale=True)
-        boot.name = f"Boot_{side}"
-        boot.data.materials.append(mat_boots)
-        boot.parent = root
-
-    bpy.ops.export_scene.gltf(filepath=output_path, export_format='GLB')
-    print(f"Exported NovaOnline to {output_path}")
-
-def build_cyraxx(output_path):
-    clear_scene()
-    mat_skin = create_material("SkinCyraxx", (0.75, 0.65, 0.55, 1.0), roughness=0.6)
-    mat_beanie = create_material("BeanieCyraxx", (0.15, 0.15, 0.18, 1.0), roughness=0.8)
-    mat_gear = create_material("GearCyraxx", (0.15, 0.55, 0.35, 1.0), roughness=0.5)
-    mat_boots = create_material("BootsCyraxx", (0.08, 0.08, 0.08, 1.0), roughness=0.3)
-    
-    root = bpy.data.objects.new("CyraxxRoot", None)
-    bpy.context.collection.objects.link(root)
-    
-    bpy.ops.mesh.primitive_cylinder_add(radius=0.28, depth=0.65, location=(0, 0, 1.05))
-    torso = bpy.context.active_object
-    torso.scale = (0.78, 0.70, 0.88)
-    bpy.ops.object.transform_apply(scale=True)
-    torso.name = "Torso"
-    torso.data.materials.append(mat_gear)
-    torso.parent = root
-    
-    bpy.ops.mesh.primitive_uv_sphere_add(radius=0.22, location=(0, 0, 1.52))
-    head = bpy.context.active_object
-    head.name = "Head"
-    head.data.materials.append(mat_skin)
-    head.parent = root
-    
-    bpy.ops.mesh.primitive_uv_sphere_add(radius=0.25, location=(0, -0.02, 1.62))
-    beanie = bpy.context.active_object
-    beanie.scale = (1.05, 1.1, 0.8)
-    bpy.ops.object.transform_apply(scale=True)
-    beanie.name = "Beanie"
-    beanie.data.materials.append(mat_beanie)
-    beanie.parent = root
-    
-    for side, x in [("L", -0.42), ("R", 0.42)]:
-        bpy.ops.mesh.primitive_cylinder_add(radius=0.09, depth=0.6, location=(x, 0, 1.1))
-        arm = bpy.context.active_object
-        arm.name = f"Arm_{side}"
-        arm.data.materials.append(mat_skin)
-        arm.parent = root
-        
-    for side, x in [("L", -0.2), ("R", 0.2)]:
-        bpy.ops.mesh.primitive_cylinder_add(radius=0.12, depth=0.55, location=(x, 0, 0.55))
-        leg = bpy.context.active_object
-        leg.name = f"Leg_{side}"
-        leg.data.materials.append(mat_gear)
-        leg.parent = root
-        
-        bpy.ops.mesh.primitive_cube_add(size=0.22, location=(x, 0.05, 0.14))
-        boot = bpy.context.active_object
-        boot.scale = (0.8, 1.3, 1.2)
-        bpy.ops.object.transform_apply(scale=True)
-        boot.name = f"Boot_{side}"
-        boot.data.materials.append(mat_boots)
-        boot.parent = root
-
-    bpy.ops.export_scene.gltf(filepath=output_path, export_format='GLB')
-    print(f"Exported Cyraxx to {output_path}")
-
-def build_candy_rooks(output_path):
-    clear_scene()
-    mat_skin = create_material("SkinCandy", (0.84, 0.70, 0.60, 1.0), roughness=0.6)
-    mat_apron = create_material("ApronCandy", (0.85, 0.45, 0.65, 1.0), roughness=0.5)
-    mat_bandana = create_material("BandanaCandy", (0.95, 0.95, 0.95, 1.0), roughness=0.6)
-    mat_boots = create_material("BootsCandy", (0.15, 0.12, 0.15, 1.0), roughness=0.4)
-    mat_wrap = create_material("WrapCandy", (0.9, 0.9, 0.9, 1.0), roughness=0.7)
-    
-    root = bpy.data.objects.new("CandyRoot", None)
-    bpy.context.collection.objects.link(root)
-    
-    bpy.ops.mesh.primitive_uv_sphere_add(radius=0.52, location=(0, 0, 1.15))
-    torso = bpy.context.active_object
-    torso.scale = (1.22, 0.96, 1.20)
-    bpy.ops.object.transform_apply(scale=True)
-    torso.name = "Torso"
-    torso.data.materials.append(mat_apron)
-    torso.parent = root
-    
-    bpy.ops.mesh.primitive_uv_sphere_add(radius=0.30, location=(0, 0, 1.74))
-    head = bpy.context.active_object
-    head.name = "Head"
-    head.data.materials.append(mat_skin)
-    head.parent = root
-    
-    bpy.ops.mesh.primitive_cylinder_add(radius=0.33, depth=0.25, location=(0, 0, 1.90))
-    bandana = bpy.context.active_object
-    bandana.name = "Bandana"
-    bandana.data.materials.append(mat_bandana)
-    bandana.parent = root
-    
-    for side, x in [("L", -0.62), ("R", 0.62)]:
-        bpy.ops.mesh.primitive_cylinder_add(radius=0.17, depth=0.70, location=(x, 0, 1.22))
-        arm = bpy.context.active_object
-        arm.name = f"Arm_{side}"
-        arm.data.materials.append(mat_skin)
-        arm.parent = root
-        
-        bpy.ops.mesh.primitive_cylinder_add(radius=0.19, depth=0.24, location=(x, 0, 0.95))
-        tape = bpy.context.active_object
-        tape.name = f"Tape_{side}"
-        tape.data.materials.append(mat_wrap)
-        tape.parent = root
-        
-    for side, x in [("L", -0.30), ("R", 0.30)]:
-        bpy.ops.mesh.primitive_cylinder_add(radius=0.21, depth=0.62, location=(x, 0, 0.55))
-        leg = bpy.context.active_object
-        leg.name = f"Leg_{side}"
-        leg.data.materials.append(mat_apron)
-        leg.parent = root
-        
-        bpy.ops.mesh.primitive_cube_add(size=0.30, location=(x, 0.05, 0.15))
-        boot = bpy.context.active_object
-        boot.scale = (1.0, 1.35, 1.0)
-        bpy.ops.object.transform_apply(scale=True)
-        boot.name = f"Boot_{side}"
-        boot.data.materials.append(mat_boots)
-        boot.parent = root
-
-    bpy.ops.export_scene.gltf(filepath=output_path, export_format='GLB')
-    print(f"Exported Candy Rooks to {output_path}")
-
-def build_andy_ditch(output_path):
-    clear_scene()
-    mat_skin = create_material("SkinAndy", (0.86, 0.72, 0.62, 1.0), roughness=0.6)
-    mat_dungarees = create_material("DungareesAndy", (0.25, 0.35, 0.65, 1.0), roughness=0.7)
-    mat_pads = create_material("PadsAndy", (0.6, 0.6, 0.6, 1.0), roughness=0.5)
-    mat_boots = create_material("BootsAndy", (0.1, 0.1, 0.1, 1.0), roughness=0.4)
-    
-    root = bpy.data.objects.new("AndyRoot", None)
-    bpy.context.collection.objects.link(root)
-    
-    bpy.ops.mesh.primitive_uv_sphere_add(radius=0.56, location=(0, 0, 1.15))
-    torso = bpy.context.active_object
-    torso.scale = (1.30, 0.92, 1.25)
-    bpy.ops.object.transform_apply(scale=True)
-    torso.name = "Torso"
-    torso.data.materials.append(mat_dungarees)
-    torso.parent = root
-    
-    bpy.ops.mesh.primitive_uv_sphere_add(radius=0.31, location=(0, 0, 1.75))
-    head = bpy.context.active_object
-    head.name = "Head"
-    head.data.materials.append(mat_skin)
-    head.parent = root
-    
-    for side, x in [("L", -0.65), ("R", 0.65)]:
-        bpy.ops.mesh.primitive_cylinder_add(radius=0.17, depth=0.68, location=(x, 0, 1.20))
-        arm = bpy.context.active_object
-        arm.name = f"Arm_{side}"
-        arm.data.materials.append(mat_skin)
-        arm.parent = root
-        
-        bpy.ops.mesh.primitive_cylinder_add(radius=0.20, depth=0.20, location=(x, 0, 1.20))
-        pad = bpy.context.active_object
-        pad.name = f"Pad_{side}"
-        pad.data.materials.append(mat_pads)
-        pad.parent = root
-        
-    for side, x in [("L", -0.32), ("R", 0.32)]:
-        bpy.ops.mesh.primitive_cylinder_add(radius=0.22, depth=0.58, location=(x, 0, 0.54))
-        leg = bpy.context.active_object
-        leg.name = f"Leg_{side}"
-        leg.data.materials.append(mat_dungarees)
-        leg.parent = root
-        
-        bpy.ops.mesh.primitive_cube_add(size=0.31, location=(x, 0.05, 0.15))
-        boot = bpy.context.active_object
-        boot.scale = (1.05, 1.35, 1.0)
-        bpy.ops.object.transform_apply(scale=True)
-        boot.name = f"Boot_{side}"
-        boot.data.materials.append(mat_boots)
-        boot.parent = root
-
-    bpy.ops.export_scene.gltf(filepath=output_path, export_format='GLB')
-    print(f"Exported Andy Ditch to {output_path}")
-
-def build_jupiter_the_hybrid(output_path):
-    clear_scene()
-    mat_skin = create_material("SkinJupiter", (0.80, 0.68, 0.58, 1.0), roughness=0.5)
-    mat_violet = create_material("VioletJupiter", (0.2, 0.1, 0.35, 1.0), roughness=0.4)
-    mat_silver = create_material("SilverJupiter", (0.8, 0.8, 0.9, 1.0), roughness=0.2, metallic=0.6)
-    mat_hair = create_material("HairJupiter", (0.1, 0.05, 0.15, 1.0), roughness=0.6)
-    mat_boots = create_material("BootsJupiter", (0.15, 0.15, 0.18, 1.0), roughness=0.4)
-    
-    root = bpy.data.objects.new("JupiterRoot", None)
-    bpy.context.collection.objects.link(root)
-    
-    bpy.ops.mesh.primitive_cylinder_add(radius=0.32, depth=0.75, location=(0, 0, 1.25))
-    torso = bpy.context.active_object
-    torso.scale = (1.05, 0.82, 1.02)
-    bpy.ops.object.transform_apply(scale=True)
-    torso.name = "Torso"
-    torso.data.materials.append(mat_violet)
-    torso.parent = root
-    
-    bpy.ops.mesh.primitive_torus_add(major_radius=0.36, minor_radius=0.06, location=(0, 0, 1.0))
-    sash = bpy.context.active_object
-    sash.name = "Sash"
-    sash.data.materials.append(mat_silver)
-    sash.parent = root
-    
-    bpy.ops.mesh.primitive_uv_sphere_add(radius=0.27, location=(0, 0, 1.82))
-    head = bpy.context.active_object
-    head.name = "Head"
-    head.data.materials.append(mat_skin)
-    head.parent = root
-    
-    bpy.ops.mesh.primitive_cylinder_add(radius=0.18, depth=0.5, location=(0, -0.22, 1.90))
-    hair = bpy.context.active_object
-    hair.rotation_euler = (math.radians(-45), 0, 0)
-    hair.name = "Hair"
-    hair.data.materials.append(mat_hair)
-    hair.parent = root
-    
-    for side, x in [("L", -0.52), ("R", 0.52)]:
-        bpy.ops.mesh.primitive_cylinder_add(radius=0.12, depth=0.72, location=(x, 0, 1.25))
-        arm = bpy.context.active_object
-        arm.name = f"Arm_{side}"
-        arm.data.materials.append(mat_skin)
-        arm.parent = root
-        
-        bpy.ops.mesh.primitive_cylinder_add(radius=0.14, depth=0.20, location=(x, 0, 0.98))
-        wrap = bpy.context.active_object
-        wrap.name = f"SilverWrap_{side}"
-        wrap.data.materials.append(mat_silver)
-        wrap.parent = root
-        
-    for side, x in [("L", -0.24), ("R", 0.24)]:
-        bpy.ops.mesh.primitive_cylinder_add(radius=0.16, depth=0.68, location=(x, 0, 0.58))
-        leg = bpy.context.active_object
-        leg.name = f"Leg_{side}"
-        leg.data.materials.append(mat_violet)
-        leg.parent = root
-        
-        bpy.ops.mesh.primitive_cube_add(size=0.26, location=(x, 0.05, 0.15))
-        boot = bpy.context.active_object
-        boot.scale = (0.9, 1.3, 1.1)
-        bpy.ops.object.transform_apply(scale=True)
-        boot.name = f"Boot_{side}"
-        boot.data.materials.append(mat_boots)
-        boot.parent = root
-
-    bpy.ops.export_scene.gltf(filepath=output_path, export_format='GLB')
-    print(f"Exported Jupiter the Hybrid to {output_path}")
-
-def build_anacondasin(output_path):
-    clear_scene()
-    mat_skin = create_material("SkinAnaconda", (0.78, 0.65, 0.54, 1.0), roughness=0.5)
-    mat_green = create_material("GreenAnaconda", (0.15, 0.45, 0.25, 1.0), roughness=0.3)
-    mat_gold = create_material("GoldAnaconda", (0.85, 0.75, 0.3, 1.0), roughness=0.25, metallic=0.7)
-    mat_boots = create_material("BootsAnaconda", (0.1, 0.15, 0.1, 1.0), roughness=0.3)
-    
-    root = bpy.data.objects.new("AnacondaRoot", None)
-    bpy.context.collection.objects.link(root)
-    
-    bpy.ops.mesh.primitive_cylinder_add(radius=0.33, depth=0.70, location=(0, 0, 1.18))
-    torso = bpy.context.active_object
-    torso.scale = (1.10, 0.85, 1.10)
-    bpy.ops.object.transform_apply(scale=True)
-    torso.name = "Torso"
-    torso.data.materials.append(mat_green)
-    torso.parent = root
-    
-    bpy.ops.mesh.primitive_torus_add(major_radius=0.36, minor_radius=0.05, location=(0, 0, 0.95))
-    belt = bpy.context.active_object
-    belt.name = "SerpentBelt"
-    belt.data.materials.append(mat_gold)
-    belt.parent = root
-    
-    bpy.ops.mesh.primitive_uv_sphere_add(radius=0.26, location=(0, 0, 1.70))
-    head = bpy.context.active_object
-    head.name = "Head"
-    head.data.materials.append(mat_skin)
-    head.parent = root
-    
-    for side, x in [("L", -0.52), ("R", 0.52)]:
-        bpy.ops.mesh.primitive_cylinder_add(radius=0.13, depth=0.68, location=(x, 0, 1.20))
-        arm = bpy.context.active_object
-        arm.name = f"Arm_{side}"
-        arm.data.materials.append(mat_skin)
-        arm.parent = root
-        
-        bpy.ops.mesh.primitive_cylinder_add(radius=0.15, depth=0.18, location=(x, 0, 1.15))
-        wrap = bpy.context.active_object
-        wrap.name = f"ElbowWrap_{side}"
-        wrap.data.materials.append(mat_gold)
-        wrap.parent = root
-        
-    for side, x in [("L", -0.25), ("R", 0.25)]:
-        bpy.ops.mesh.primitive_cylinder_add(radius=0.17, depth=0.64, location=(x, 0, 0.55))
-        leg = bpy.context.active_object
-        leg.name = f"Leg_{side}"
-        leg.data.materials.append(mat_green)
-        leg.parent = root
-        
-        bpy.ops.mesh.primitive_cube_add(size=0.27, location=(x, 0.05, 0.14))
-        boot = bpy.context.active_object
-        boot.scale = (0.9, 1.35, 1.1)
-        bpy.ops.object.transform_apply(scale=True)
-        boot.name = f"Boot_{side}"
-        boot.data.materials.append(mat_boots)
-        boot.parent = root
-
-    bpy.ops.export_scene.gltf(filepath=output_path, export_format='GLB')
-    print(f"Exported AnacondaSin to {output_path}")
-
-def build_daniel_larson(output_path):
-    clear_scene()
-    mat_skin = create_material("SkinDaniel", (0.85, 0.72, 0.62, 1.0), roughness=0.6)
-    mat_orange = create_material("OrangeDaniel", (0.85, 0.45, 0.1, 1.0), roughness=0.5)
-    mat_slate = create_material("SlateDaniel", (0.2, 0.2, 0.25, 1.0), roughness=0.6)
-    mat_hair = create_material("HairDaniel", (0.45, 0.35, 0.25, 1.0), roughness=0.9)
-    mat_shoes = create_material("ShoesDaniel", (0.8, 0.8, 0.8, 1.0), roughness=0.4)
-    
-    root = bpy.data.objects.new("DanielRoot", None)
-    bpy.context.collection.objects.link(root)
-    
-    bpy.ops.mesh.primitive_cylinder_add(radius=0.27, depth=0.72, location=(0, 0, 1.25))
-    torso = bpy.context.active_object
-    torso.scale = (0.82, 0.75, 1.02)
-    bpy.ops.object.transform_apply(scale=True)
-    torso.name = "Torso"
-    torso.data.materials.append(mat_orange)
-    torso.parent = root
-    
-    bpy.ops.mesh.primitive_uv_sphere_add(radius=0.25, location=(0, 0, 1.78))
-    head = bpy.context.active_object
-    head.name = "Head"
-    head.data.materials.append(mat_skin)
-    head.parent = root
-    
-    bpy.ops.mesh.primitive_uv_sphere_add(radius=0.28, location=(0, -0.02, 1.90))
-    hair = bpy.context.active_object
-    hair.scale = (1.1, 1.05, 0.75)
-    bpy.ops.object.transform_apply(scale=True)
-    hair.name = "MessyHair"
-    hair.data.materials.append(mat_hair)
-    hair.parent = root
-    
-    for side, x in [("L", -0.46), ("R", 0.46)]:
-        bpy.ops.mesh.primitive_cylinder_add(radius=0.09, depth=0.74, location=(x, 0, 1.22))
-        arm = bpy.context.active_object
-        arm.name = f"Arm_{side}"
-        arm.data.materials.append(mat_orange)
-        arm.parent = root
-        
-    for side, x in [("L", -0.22), ("R", 0.22)]:
-        bpy.ops.mesh.primitive_cylinder_add(radius=0.12, depth=0.72, location=(x, 0, 0.58))
-        leg = bpy.context.active_object
-        leg.name = f"Leg_{side}"
-        leg.data.materials.append(mat_slate)
-        leg.parent = root
-        
-        bpy.ops.mesh.primitive_cube_add(size=0.24, location=(x, 0.06, 0.14))
-        shoe = bpy.context.active_object
-        shoe.scale = (0.85, 1.4, 0.9)
-        bpy.ops.object.transform_apply(scale=True)
-        shoe.name = f"Shoe_{side}"
-        shoe.data.materials.append(mat_shoes)
-        shoe.parent = root
-
-    bpy.ops.export_scene.gltf(filepath=output_path, export_format='GLB')
-    print(f"Exported Daniel Larson to {output_path}")
-
-def build_referee_cobra(output_path):
-    clear_scene()
-    mat_skin = create_material("SkinCobra", (0.7, 0.58, 0.48, 1.0), roughness=0.6)
-    mat_stripes = create_material("RefereeShirt", (0.9, 0.9, 0.9, 1.0), roughness=0.6)
-    mat_hat = create_material("GothicHat", (0.05, 0.05, 0.06, 1.0), roughness=0.5)
-    mat_pants = create_material("RefereePants", (0.08, 0.08, 0.1, 1.0), roughness=0.5)
-    mat_halo = create_material("HaloGold", (1.0, 0.82, 0.2, 1.0), roughness=0.1, metallic=0.2, emission_color=(1.0, 0.85, 0.25, 1.0), emission_strength=4.0)
-    
-    root = bpy.data.objects.new("RefereeRoot", None)
-    bpy.context.collection.objects.link(root)
-    
-    bpy.ops.mesh.primitive_cylinder_add(radius=0.34, depth=0.75, location=(0, 0, 1.15))
-    torso = bpy.context.active_object
-    torso.name = "Torso"
-    torso.data.materials.append(mat_stripes)
-    torso.parent = root
-    
-    bpy.ops.mesh.primitive_uv_sphere_add(radius=0.26, location=(0, 0, 1.68))
-    head = bpy.context.active_object
-    head.name = "Head"
-    head.data.materials.append(mat_skin)
-    head.parent = root
-    
-    bpy.ops.mesh.primitive_cylinder_add(radius=0.48, depth=0.05, location=(0, 0, 1.82))
-    brim = bpy.context.active_object
-    brim.name = "HatBrim"
-    brim.data.materials.append(mat_hat)
-    brim.parent = root
-    
-    bpy.ops.mesh.primitive_cylinder_add(radius=0.28, depth=0.32, location=(0, 0, 2.0))
-    crown = bpy.context.active_object
-    crown.name = "HatCrown"
-    crown.data.materials.append(mat_hat)
-    crown.parent = root
-    
-    # Permanent Gold Memorial Halo
-    bpy.ops.mesh.primitive_torus_add(major_radius=0.35, minor_radius=0.045, location=(0, 0, 2.30))
-    halo = bpy.context.active_object
-    halo.name = "HaloMesh"
-    halo.data.materials.append(mat_halo)
-    halo.parent = root
-    
-    for side, x in [("L", -0.48), ("R", 0.48)]:
-        bpy.ops.mesh.primitive_cylinder_add(radius=0.11, depth=0.65, location=(x, 0, 1.2))
-        arm = bpy.context.active_object
-        arm.name = f"Arm_{side}"
-        arm.data.materials.append(mat_stripes)
-        arm.parent = root
-        
-    for side, x in [("L", -0.22), ("R", 0.22)]:
-        bpy.ops.mesh.primitive_cylinder_add(radius=0.15, depth=0.65, location=(x, 0, 0.58))
-        leg = bpy.context.active_object
-        leg.name = f"Leg_{side}"
-        leg.data.materials.append(mat_pants)
-        leg.parent = root
-        
-        bpy.ops.mesh.primitive_cube_add(size=0.26, location=(x, 0.05, 0.14))
-        boot = bpy.context.active_object
-        boot.scale = (0.9, 1.3, 1.0)
-        bpy.ops.object.transform_apply(scale=True)
-        boot.name = f"Boot_{side}"
-        boot.data.materials.append(mat_hat)
-        boot.parent = root
-
-    bpy.ops.export_scene.gltf(filepath=output_path, export_format='GLB')
-    print(f"Exported Referee to {output_path}")
-
-if __name__ == "__main__":
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    models_dir = os.path.join(base_dir, "assets", "models")
-    os.makedirs(models_dir, exist_ok=True)
-    
-    build_ring(os.path.join(models_dir, "ring_arena.glb"))
-    build_tophiachu(os.path.join(models_dir, "tophiachu.glb"))
-    build_novaonline(os.path.join(models_dir, "novaonline.glb"))
-    build_cyraxx(os.path.join(models_dir, "cyraxx.glb"))
-    build_candy_rooks(os.path.join(models_dir, "candy_rooks.glb"))
-    build_andy_ditch(os.path.join(models_dir, "andy_ditch.glb"))
-    build_jupiter_the_hybrid(os.path.join(models_dir, "jupiter_the_hybrid.glb"))
-    build_anacondasin(os.path.join(models_dir, "anacondasin.glb"))
-    build_daniel_larson(os.path.join(models_dir, "daniel_larson.glb"))
-    build_referee_cobra(os.path.join(models_dir, "referee_cobra.glb"))
-    print("ALL 8 ROSTER ASSETS + REFEREE GENERATED SUCCESSFULLY!")
-
-`
-
-### File: project.godot
 `ini
 ; Engine configuration file.
 ; It's best edited using the editor UI and not directly,
@@ -1224,968 +153,881 @@ anti_aliasing/quality/msaa_3d=2
 
 `
 
-### File: scenes\arena\ring_arena.tscn
-`ini
-[gd_scene format=3 uid="uid://dpw54n6g87v8"]
+---
 
-[ext_resource type="PackedScene" path="res://assets/models/ring_arena.glb" id="1_arena"]
+## File: README.md
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_mat"]
-size = Vector3(8, 0.4, 8)
+`md
+# LOLCOW WRESTLING: OFFLINE MAYHEM
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_rope_ns"]
-size = Vector3(8, 2, 0.2)
+> A stylized 3D arcade wrestling game built in Godot 4.7.2 Forward+ with Blender 5.0 DCC procedural assets, targeting 1080p @ 60 FPS on Windows standalone.
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_rope_ew"]
-size = Vector3(0.2, 2, 8)
+---
 
-[node name="RingArena" type="Node3D"]
+## 1. Project Overview
 
-[node name="Model" parent="." instance=ExtResource("1_arena")]
+*LOLCOW WRESTLING: OFFLINE MAYHEM* is an arcade-style 3D professional wrestling title featuring 8 distinct fighters, synchronized grapple and throw sequences, continuous submission holds, dynamic referee officiating, and an integrated Character Selection system.
 
-[node name="RingFloorCollision" type="StaticBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.2, 0)
-collision_layer = 1
-collision_mask = 3
+### In Memoriam: KingCobraJFS (1991–2025)
+Reporting confirms that KingCobraJFS passed away on 21 August 2025. Throughout the entire game across all game modes, KingCobraJFS serves as the neutral, untargetable official referee. He features a permanently visible, pulsing emissive gold halo hovering above his gothic cap as an enduring memorial tribute.
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="RingFloorCollision"]
-shape = SubResource("BoxShape3D_mat")
+---
 
-[node name="RopeNorth" type="StaticBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 3.85)
-collision_layer = 1
-collision_mask = 2
+## 2. The 8-Character Canonical Roster
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="RopeNorth"]
-shape = SubResource("BoxShape3D_rope_ns")
+Every fighter has an authoritative, canonical 42-point attribute distribution across 7 stats (Power, Mobility, Grappling, Stamina, Durability, Reversal, Showmanship; all rated 1–10).
 
-[node name="RopeSouth" type="StaticBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -3.85)
-collision_layer = 1
-collision_mask = 2
+| ID | Name | Archetype | Style Summary | Signature Finisher |
+| :--- | :--- | :--- | :--- | :--- |
+| tophiachu | Tophiachu | Heavyweight Counter-Brawler | Slow heavy tank, devastating strikes & high powerslams | *Live-Stream Shutdown* |
+| novaonline | NovaOnline | Momentum Heavyweight | Balanced heavyweight with forward burst | *Going Offline* |
+| cyraxx | Cyraxx | Lightweight Burst Striker | Compact, lightning strikes, low leverage throws | *Raxx and Ruin* |
+| candy_rooks | Candy Rooks | Combination Grappler | High power and durability combination brawler | *Ribs & Kidney Beans* |
+| andy_ditch | Andy Ditch | Territory Anchor Grappler | Anchor wrestler with high grappling defense | *Case Closed* |
+| jupiter_the_hybrid | Jupiter the Hybrid | Stance-Shift Grappler | Agile kicks, swift escapes, aerial offense | *Eclipse Driver* |
+| anacondasin | AnacondaSin | Positional Submission Specialist | Dangerous lock specialist, rapid tap-out inducer | *Anaconda Lock* |
+| daniel_larson | Daniel Larson | Mobile Opportunist | Unpredictable, fast scrambler and reversal threat | *Final Encore* |
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="RopeSouth"]
-shape = SubResource("BoxShape3D_rope_ns")
+---
 
-[node name="RopeEast" type="StaticBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.85, 1, 0)
-collision_layer = 1
-collision_mask = 2
+## 3. Core Mechanics & Architecture
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="RopeEast"]
-shape = SubResource("BoxShape3D_rope_ew")
+1. **Deterministic Combat State Machine**:
+   - Strictly authoritative state gating on Fighter (IDLE, WALK, STRIKE, BLOCK, REVERSAL, GRAPPLE_INIT, GRAPPLE_LIFT, THROW_ATTACKER, THROW_DEFENDER, KNOCKDOWN, GETUP, PINNING, PINNED, SUBMISSION_ATTACKER, SUBMISSION_DEFENDER, VICTORY, DEFEATED).
+   - Zero sliding or desynchronization during mutual grapple locks.
+   - Attacker and defender trajectories are mutually locked and frame-synchronized.
 
-[node name="RopeWest" type="StaticBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.85, 1, 0)
-collision_layer = 1
-collision_mask = 2
+2. **Leverage & Weight-Class Throw Scaling**:
+   - Grapples dynamically evaluate the attacker-to-defender weight/power ratio.
+   - Heavyweights lifting lighter opponents execute high overhead powerslams (1.55m vertical peak).
+   - Lightweight strikers throwing heavyweights route to low-angle leverage trips (0.38m vertical peak), ensuring believable physical interactions.
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="RopeWest"]
-shape = SubResource("BoxShape3D_rope_ew")
+3. **Submissions & Pinning**:
+   - **Continuous Submissions**: Lock holds drain defender vitality and stamina continuously. Defender can mash kick-out keys to escape; if vitality drops to zero during a hold, a tap-out victory is declared.
+   - **Pinning & 3-Count**: Pin attempts alert referee KingCobraJFS to drop into position and begin 1-2-3 counts. A kick-out meter allows escapes before count 3.
+   - **Rope Break Priority**: Being within 0.8m of the ring ropes immediately breaks pins and submissions.
+
+4. **16-Bit PCM Procedural Audio Synthesizer (scripts/core/audio_manager.gd)**:
+   - Zero external WAV dependencies; all sounds synthesized in real time via 16-bit PCM waveforms:
+     - Mat slam impacts, canvas slaps, clean strike snaps, blocked thuds.
+     - Ring bell chimes and elastic rope twangs.
+     - Referee count tone accents (Count 1: 350 Hz, Count 2: 440 Hz, Count 3: 530 Hz).
+     - Rope break alert buzzer.
+     - Rising finisher power chord stinger.
+     - Triumphant 4-note brass victory fanfare.
+
+5. **Broadcast Presentation**:
+   - Dynamic 3D arena with canvas, apron, steel corner posts, and 3-tier ropes.
+   - Broadcast camera with zoom framing and trauma-based screen shake.
+   - Full arcade Character Select menu with dual navigation (WASD for P1, Arrows for P2), stat radars, CPU toggle, and match persistence.
+
+---
+
+## 4. Default Input Controls
+
+### Character Select
+- **P1 Selection**: W / A / S / D
+- **P2 Selection**: Up / Left / Down / Right
+- **Toggle P2 CPU/Human**: C key
+- **Confirm / Start Match**: Space or Enter
+
+### In-Ring Combat
+| Action | Player 1 | Player 2 (If Human) |
+| :--- | :--- | :--- |
+| **Move Up / Down / Left / Right** | W / S / A / D | Up / Down / Left / Right |
+| **Strike** | J | Numpad 1 |
+| **Grapple / Throw** | K | Numpad 2 |
+| **Block / Submission** | L | Numpad 3 |
+| **Reversal** | U | Numpad 4 |
+| **Pin / Kick-out** | Space | Numpad 0 |
+| **Signature Finisher** | I | Numpad 5 |
+| **Return to Menu** | Escape | Escape |
+
+---
+
+## 5. Verification & Test Suite
+
+The project includes an automated headless verification suite testing the combat state machine, 3D model geometry, audio synthesis, and all 64 attacker-defender matchups ( \times 8$).
+
+Run tests headlessly:
+`ash
+godot_console --headless -s tests/test_suite.gd
+`
+**Current Status**: 150 / 150 Passed (100% Pass, 0 Failures, 0 Warnings).
+
+---
+
+## 6. Directory Layout
+
+```
+.
+├── assets/models/         # Compiled GLB 3D assets (all 8 fighters + ring + referee)
+├── blender/               # Blender 5.0 automated generation pipeline (generate_assets.py)
+├── scenes/
+│   ├── arena/             # 3D Ring arena scene
+│   ├── fighter/           # Instantiable 3D fighter entity
+│   ├── referee/           # KingCobraJFS referee entity
+│   └── ui/                # Character select and broadcast match HUD
+├── scripts/
+│   ├── ai/                # Autonomous CPU combat controller
+│   ├── core/              # RosterData, MatchRules, MatchManager, AudioManager, MatchConfig
+│   ├── fighter/           # State machine, movement, grapple sync, combat logic
+│   ├── referee/           # KingCobraJFS ring positioning and 3-count officiating
+│   ├── ring/              # Ring boundary and broadcast camera shake
+│   └── ui/                # UI controllers
+├── tests/                 # 150-case headless automated test suite
+├── project.godot          # Engine configuration & input mappings
+└── START_GAME.bat         # Direct Windows standalone launcher
+```
 
 `
 
-### File: scenes\fighter\fighter.tscn
-`ini
-[gd_scene format=3 uid="uid://dfighter001"]
+---
 
-[ext_resource type="Script" path="res://scripts/fighter/fighter.gd" id="1_script"]
+## File: STATE.md
 
-[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_root"]
-radius = 0.45
-height = 1.8
+`md
+# Project State: LOLCOW WRESTLING: OFFLINE MAYHEM
 
-[node name="Fighter" type="CharacterBody3D" node_paths=PackedStringArray("visual_root")]
-collision_layer = 2
-collision_mask = 3
-script = ExtResource("1_script")
-visual_root = NodePath("VisualRoot")
+## Milestone Status: M0-M1 Functional -> Pass A Repairs (Pin-Balance Acceptance Complete)
+- **Engine**: Godot 4.7.2 (stable official, Windows x64) - Installed & Verified.
+- **3D DCC Pipeline**: Blender 5.0.1 (headless Python automation) - Verified.
+- **Target**: 1080p @ 60 FPS, Windows standalone.
+- **Authoritative Combat Loop & Integration**: Verified with 210 automated headless tests (154 focused unit tests + 56 full scene physics integration tests, 0 failures, 0 warnings).
+- **M2/M3 Status**: Functional baseline established. Skeletal animation rigging, authored unique animation clips, and manual visual inspections remain **NOT RUN / PENDING** per code review requirements.
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
-shape = SubResource("CapsuleShape3D_root")
+### Pass A Codebase Repairs & Verifications:
+1. **Pin-Balance Acceptance & Empirical Sequence Validation (Verified & Accepted)**:
+   - Evaluated actual gameplay throw-to-pin sequences in Godot scene physics (`scenes/fighter/fighter.tscn`, `MatchManager`, `Referee`, `CPUController` using engine `await physics_frame` steps).
+   - Verified that fresh Cyraxx taking an ordinary Tophiachu throw (177 damage, HP 663/850, 100% stamina) kicks out before Count 2 (~1.5s–1.6s) across all 4 modes:
+     - Mode 1 (CPU commands): Count 1, 1.62s KICKOUT.
+     - Mode 2 (Human 10 Hz mash): Count 1, 1.52s KICKOUT.
+     - Mode 3 (Hold-to-resist on entry): Count 1, 1.53s KICKOUT.
+     - Mode 4 (Hold-to-resist pre-held): Count 1, 1.62s KICKOUT.
+   - Verified that weakened Cyraxx taking a genuine finisher throw from Tophiachu suffers legitimate 3-count pinfall defeats across all 4 modes.
+2. **Explicit Move-Metadata Impact Classification (Verified)**:
+   - Repaired flaw where `amount >= 100.0` caused ordinary heavy throws (177 damage) to trigger 45% finisher escape penalties.
+   - Decoupled move pressure:
+     - Finisher pressure (`recent_finisher_impact_timer`): 4.5s duration, 0.55 multiplier, gated strictly by `is_finisher == true`.
+     - Ordinary heavy impact pressure (`recent_heavy_impact_timer`): 1.5s duration, 0.85 multiplier, triggered on unblocked hits $\ge 80.0$ damage.
+3. **Hold-to-Resist Accessibility Parity (Verified)**:
+   - Tuned `PIN_ESCAPE_BASE_RATE = 85.0`/s and `PIN_ESCAPE_MASH_BASE = 10.0`/pulse (at 10 Hz = 100.0/s).
+   - Proportional stamina consumption: hold drains 8.0/s; mash drains 0.8/pulse (8.0/s at 10 Hz).
+4. **Deterministic Final-Tick Priority Resolution (Tick 198 / 3.30s) (Verified)**:
+   - Fixed floating point epsilon (`+ 0.0005`) ensuring Count 3 resolves at tick 198 (3.30s).
+   - Enforced strict preemptive priority: kick-out ($\ge 100.0$) and rope breaks immediately waive off 3-count and return match state to `IN_PROGRESS`.
+   - Verified across both player slots (P1/P2 and P2/P1) and tree processing orders (Fighter before MatchManager and MatchManager before Fighter).
+   - Guarded `_end_match` against repeat calls, ensuring `match_ended` is emitted strictly once.
+5. **Unified Command Interface for Escapes (Verified in Pass A)**:
+   - `Fighter` escape logic consumes command inputs (`input_pin`, `input_strike`, `input_grapple`, `input_block`, `input_hold_pin`) rather than polling `Input.is_action_*` during physics process.
+6. **Throw Height Ownership (Verified in Center Ring)**:
+   - Attacker retains sole vertical authority (1.55m peak verified in center ring).
+7. **Standardized Forward-Axis Conventions (Verified in Pass A)**:
+   - Synchronized throws and locomotion unified on standard Godot convention `atan2(-dx, -dz)`.
 
-[node name="VisualRoot" type="Node3D" parent="."]
+### Active Open Items from Code Review (In Priority Order):
+1. **Boundary-Safe Throws (Pass A Priority 2 - Open)**: Prevent attacker throws near ropes from placing defender out of ring bounds ($|x| > 3.65\text{m}$) before snap-back.
+2. **Directional Contact & Grapple Startup (Pass A Priority 3 - Open)**: Replace omnidirectional distance strike checks with forward cone checks; enforce a real startup window on grapples.
+3. **Submission Simultaneous Outcome Resolution (Pass A Priority 4 - Open)**: Formalize authoritative priority in `MatchManager` when tap-out and escape coincide on the same physics tick.
+4. **Manual Visual Inspection & Skeletal Rigging**: Visual checks and authored animations remain **NOT RUN**.
 
-`
-
-### File: scenes\main.tscn
-`ini
-[gd_scene format=3 uid="uid://dmainscene01"]
-
-[ext_resource type="Script" path="res://scripts/core/main_scene.gd" id="1_main"]
-[ext_resource type="PackedScene" path="res://scenes/arena/ring_arena.tscn" id="2_arena"]
-[ext_resource type="PackedScene" path="res://scenes/fighter/fighter.tscn" id="3_fighter"]
-[ext_resource type="PackedScene" path="res://scenes/referee/referee.tscn" id="4_referee"]
-[ext_resource type="Script" path="res://scripts/core/match_manager.gd" id="5_match"]
-[ext_resource type="Script" path="res://scripts/ring/broadcast_camera.gd" id="6_cam"]
-[ext_resource type="Script" path="res://scripts/ai/cpu_controller.gd" id="7_cpu"]
-[ext_resource type="PackedScene" path="res://scenes/ui/match_hud.tscn" id="8_hud"]
-[ext_resource type="Script" path="res://scripts/core/audio_manager.gd" id="9_audio"]
-
-[sub_resource type="Environment" id="Environment_arena"]
-background_mode = 1
-background_color = Color(0.04, 0.04, 0.05, 1)
-ambient_light_source = 2
-ambient_light_color = Color(0.25, 0.25, 0.3, 1)
-tonemap_mode = 2
-glow_enabled = true
-glow_intensity = 0.8
-glow_bloom = 0.25
-
-[node name="Main" type="Node3D" node_paths=PackedStringArray("fighter_1", "fighter_2", "cpu_controller_p2", "match_manager")]
-script = ExtResource("1_main")
-fighter_1 = NodePath("Tophiachu")
-fighter_2 = NodePath("Cyraxx")
-cpu_controller_p2 = NodePath("CPUController_P2")
-match_manager = NodePath("MatchManager")
-
-[node name="AudioManager" type="Node" parent="."]
-script = ExtResource("9_audio")
-
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
-environment = SubResource("Environment_arena")
-
-[node name="SpotLight_Center" type="SpotLight3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 9, 0)
-light_color = Color(1, 0.98, 0.9, 1)
-light_energy = 8.0
-spot_range = 16.0
-spot_angle = 45.0
-
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
-transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 5, 8, 5)
-light_color = Color(0.9, 0.9, 0.95, 1)
-light_energy = 1.2
-shadow_enabled = true
-
-[node name="RingArena" parent="." instance=ExtResource("2_arena")]
-
-[node name="Tophiachu" parent="." instance=ExtResource("3_fighter")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.8, 0, 0)
-character_id = "tophiachu"
-player_index = 1
-is_cpu = false
-
-[node name="Cyraxx" parent="." instance=ExtResource("3_fighter")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.8, 0, 0)
-character_id = "cyraxx"
-player_index = 2
-is_cpu = true
-
-[node name="CPUController_P2" type="Node" parent="." node_paths=PackedStringArray("fighter")]
-script = ExtResource("7_cpu")
-fighter = NodePath("../Cyraxx")
-
-[node name="Referee" parent="." instance=ExtResource("4_referee")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -2.4)
-
-[node name="MatchManager" type="Node" parent="." node_paths=PackedStringArray("fighter_1", "fighter_2", "referee", "hud")]
-script = ExtResource("5_match")
-fighter_1 = NodePath("../Tophiachu")
-fighter_2 = NodePath("../Cyraxx")
-referee = NodePath("../Referee")
-hud = NodePath("../CanvasLayer/MatchHUD")
-
-[node name="BroadcastCamera" type="Camera3D" parent="." node_paths=PackedStringArray("target_1", "target_2")]
-transform = Transform3D(1, 0, 0, 0, 0.866025, 0.5, 0, -0.5, 0.866025, 0, 4.8, 9)
-current = true
-fov = 55.0
-script = ExtResource("6_cam")
-target_1 = NodePath("../Tophiachu")
-target_2 = NodePath("../Cyraxx")
-
-[node name="CanvasLayer" type="CanvasLayer" parent="."]
-
-[node name="MatchHUD" parent="CanvasLayer" node_paths=PackedStringArray("match_manager") instance=ExtResource("8_hud")]
-match_manager = NodePath("../../MatchManager")
+## Verification Summary
+- **M0 Foundation**:
+  - Full 8-character roster defined with verified 42-point attribute allocations.
+  - Complete two-player arcade input mapping configured in `project.godot`.
+- **M1 Playable Match Loop**:
+  - Playable arena with canvas, apron, turnbuckles, ropes, and bounds.
+  - Neutral official referee KingCobraJFS (1991-2025) with permanently visible, pulsing gold memorial halo.
+  - Rigid state machine with authoritative movement ownership (zero sliding during knockdowns or throws).
+  - Single-hit active damage windows.
+  - Synchronized grapple and throw sequence with mutual locking, lift, impact canvas slap, and clean release.
+  - Pinning, 3-count progression, hold/mash kick-out escape, and rope break priority.
+- **M2 Polished Slice**:
+  - Asymmetric leverage-based throw routing: lighter attackers route to low-angle leverage trips (0.38m peak) while heavyweights execute overhead powerslams (1.55m peak).
+  - Submissions system: continuous pressure damage, stamina drain, hold/mash escape, and tap-out victory condition.
+  - Procedural 16-bit PCM (22050 Hz) audio synthesis: ring bell, deep mat slam thud, clean/blocked strike snaps, canvas palm slaps, elastic rope twangs, crowd cheers, and crowd gasps.
+  - Dynamic announcer audio stingers: rising finisher power chord, triumphant brass victory fanfare, count voice accents (1, 2, 3), and rope break buzzer alert.
+  - Dynamic broadcast camera trauma shake with quadratic decay and accessibility scaling.
+  - Animation architecture: `Fighter` supports `AnimationPlayer` bindings to state transitions with procedural visual deformation fallback.
+- **M3 Full 8-Character Roster & Match Setup**:
+  - All 8 distinct 3D fighter models authored and exported to GLB in Blender 5.0:
+    - `tophiachu`: Heavyweight brawler, purple gear, curly silhouette.
+    - `novaonline`: Athletic heavyweight, fiery red/gold attire, high boots.
+    - `cyraxx`: Compact burst striker, olive gear, black beanie.
+    - `candy_rooks`: Kitchen-sink powerhouse brute, pink apron aesthetic, forearm tape.
+    - `andy_ditch`: Territory anchor grappler, padded denim blue wrestling singlet.
+    - `jupiter_the_hybrid`: Celestial martial artist, deep violet and silver split design.
+    - `anacondasin`: Submission technician, serpentine emerald/gold tights.
+    - `daniel_larson`: Erratic scrapper, lanky silhouette, bright orange jacket.
+  - KingCobraJFS (1991-2025) referee model with glowing golden halo.
+  - Complete Character Selection UI (`scenes/ui/character_select.tscn`) with 8-character roster grid, stat radars, signature move displays, P1/P2 navigation, CPU toggles, and seamless transition to match arena.
+  - `MatchConfig` persistent state tracking selected fighters and CPU flags between menus and gameplay.
+  - 100% test pass rate across all 64 attacker-defender pairings.
 
 `
 
-### File: scenes\referee\referee.tscn
-`ini
-[gd_scene format=3 uid="uid://b23k1v4j7m9n"]
+---
 
-[ext_resource type="Script" path="res://scripts/referee/referee.gd" id="1_script"]
-[ext_resource type="PackedScene" path="res://assets/models/referee_cobra.glb" id="2_model"]
+## File: KNOWN_ISSUES.md
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_halo"]
-albedo_color = Color(1, 0.85, 0.2, 1)
-metallic = 0.2
-roughness = 0.1
-emission_enabled = true
-emission = Color(1, 0.85, 0.2, 1)
-emission_energy_multiplier = 3.0
+`md
+## Active Open Issues & Defects Under Repair
 
-[sub_resource type="TorusMesh" id="TorusMesh_halo"]
-material = SubResource("StandardMaterial3D_halo")
-inner_radius = 0.3
-outer_radius = 0.38
-rings = 24
-ring_segments = 16
+1. **Boundary Safety During Throws (High Priority - Open)**:
+   - `_clamp_within_ring()` skips clamping during `GRAPPLING_DEFENDER` to allow vertical lifting without clipping to the floor. However, an attacker facing outward near the ropes (e.g. $x = 3.0\text{m}$, defender at $x = 3.6\text{m}$) can slam the defender outside the physical ring bounds ($x = 4.1\text{m}$ vs $3.65\text{m}$ ring limit).
+   - *Required Fix*: Implement pre-throw spatial boundary validation that repositions the pair inwards, reorients the throw, or breaks/deflects off ropes rather than placing the defender outside before snap-back.
 
-[node name="Referee" type="Node3D" node_paths=PackedStringArray("halo_node", "mesh_instance", "count_label_3d")]
-script = ExtResource("1_script")
-halo_node = NodePath("HaloAnchor")
-mesh_instance = NodePath("ModelAnchor")
-count_label_3d = NodePath("CountLabel3D")
+2. **Directional Attack Contact & Grapple Startup (High Priority - Open)**:
+   - `_handle_strike_active_window()` evaluates distance between fighter origins without verifying a forward directional cone, allowing strikes to hit opponents behind the attacker.
+   - `_attempt_grapple()` immediately initiates the throw rather than pausing in `GRAPPLE_STARTUP` for a measurable vulnerability/counter window.
+   - *Required Fix*: Add forward directional dot-product gating to strike resolution and enforce a distinct startup window on grapples allowing interruptions and reversals.
 
-[node name="ModelAnchor" type="Node3D" parent="."]
+3. **Simultaneous Submission Outcome Ordering (Medium Priority - Open)**:
+   - While partner references are now cleared on both sides during escapes, a frame in which vitality depletes to 0 simultaneously with escape progress reaching 100 depends on node processing order (attacker update vs defender update).
+   - *Required Fix*: Establish an explicit authoritative priority policy in `MatchManager` for simultaneous tap-out vs escape frames.
 
-[node name="Model" parent="ModelAnchor" instance=ExtResource("2_model")]
+4. **Skeletal Animation Pipeline & Unique Moveset Data (Open)**:
+   - 3D character models are composed of procedural primitive geometries without bones or skeletal clips. Throws and strikes utilize parameterized programmatic tweening rather than distinct motion-captured or keyframed animation clips.
 
-[node name="HaloAnchor" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.3, 0)
+---
 
-[node name="HaloMesh" type="MeshInstance3D" parent="HaloAnchor"]
-mesh = SubResource("TorusMesh_halo")
-surface_material_override/0 = SubResource("StandardMaterial3D_halo")
+## Resolved in Pass A & Prior Milestones
 
-[node name="CountLabel3D" type="Label3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.7, 0)
-billboard = 1
-font_size = 64
-outline_size = 16
-text = "1!"
+1. **Pin-Balance Acceptance & Empirical Sequence Validation (Resolved in Pass A Pinfall Balance)**:
+   - Replaced flat-rate escape formula with an authoritative resource-aware model factoring in quadratic vitality, remaining stamina, reversal stats, and explicit move-metadata impact disorientation.
+   - Eliminated the bug where ordinary heavy throws ($\ge 100$ damage) inflicted finisher disorientation; ordinary heavy throws (177 dmg) now trigger a mild 1.5s heavy impact timer (0.85 mult) allowing healthy defenders to kick out swiftly, while genuine finishers inflict a 4.5s disorientation (0.55 mult).
+   - Balanced hold-to-resist as an accessibility alternative at 85.0 base/sec with proportional 8.0/s stamina drain (~85% of 10 Hz mashing speed).
+   - Resolved tick 198 (3.30s) floating point boundary precision (`+ 0.0005`) and made kickout ($\ge 100.0$) and rope break strictly preempt the 3-count pinfall across all slot inversions and tree processing orders.
+   - Empirically validated across 56 real engine physics tests (`tests/test_pin_balance_scene.gd`) that fresh Cyraxx kicks out at Count 1 (~1.5s–1.6s) across all 4 modes (CPU, 10 Hz mash, hold-on-entry, pre-held), and weakened Cyraxx loses by 3-count pinfall across all 4 modes.
+2. **CPU Pin & Submission Escape Command Disconnection (Resolved in Pass A Baseline)**:
+   - Unified all escape checks to consume the `Fighter` command interface (`input_pin`, `input_hold_pin`, `input_strike`, `input_grapple`, `input_block`) rather than polling global hardware keys during combat physics.
+3. **Conflicting Throw Height Ownership (Resolved in Pass A Baseline)**:
+   - Removed canvas grounding conflicts in central ring throws so overhead powerslams reach full 1.55m vertical peak before canvas impact.
+4. **Forward-Axis Facing Vector Standardization (Resolved in Pass A Baseline)**:
+   - Standardized all locomotion, stationary facing, and synchronized throw vectors to Godot's `-basis.z` forward convention (`atan2(-dx, -dz)`).
+5. **Canonical Finisher Names Alignment (Resolved in Pass A Baseline)**:
+   - Synchronized `README.md` to canonical names in `scripts/core/roster_data.gd`.
+6. **Desktop Launcher Script Trailing Quote Bug (Resolved in M3 Polish)**:
+   - Fixed `%~dp0` trailing backslash CRT escaping issue in `START_GAME.bat`.
 
-`
-
-### File: scenes\ui\character_select.tscn
-`ini
-[gd_scene format=3 uid="uid://dcharselect01"]
-
-[ext_resource type="Script" path="res://scripts/ui/character_select.gd" id="1_script"]
-[ext_resource type="Script" path="res://scripts/core/audio_manager.gd" id="2_audio"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
-bg_color = Color(0.06, 0.06, 0.08, 1)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card_p1"]
-bg_color = Color(0.08, 0.12, 0.16, 0.9)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.2, 0.7, 0.9, 0.8)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card_p2"]
-bg_color = Color(0.16, 0.08, 0.08, 0.9)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.9, 0.3, 0.3, 0.8)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_grid"]
-bg_color = Color(0.1, 0.1, 0.12, 0.85)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[node name="CharacterSelect" type="Control" node_paths=PackedStringArray("grid_container", "p1_name_label", "p1_title_label", "p1_archetype_label", "p1_stats_container", "p1_finisher_label", "p1_trait_label", "p2_name_label", "p2_title_label", "p2_archetype_label", "p2_stats_container", "p2_finisher_label", "p2_trait_label", "cpu_toggle_button", "start_match_button")]
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-script = ExtResource("1_script")
-grid_container = NodePath("CenterPanel/GridContainer")
-p1_name_label = NodePath("P1_Card/VBox/Name")
-p1_title_label = NodePath("P1_Card/VBox/Title")
-p1_archetype_label = NodePath("P1_Card/VBox/Archetype")
-p1_stats_container = NodePath("P1_Card/VBox/Stats")
-p1_finisher_label = NodePath("P1_Card/VBox/Finisher")
-p1_trait_label = NodePath("P1_Card/VBox/Trait")
-p2_name_label = NodePath("P2_Card/VBox/Name")
-p2_title_label = NodePath("P2_Card/VBox/Title")
-p2_archetype_label = NodePath("P2_Card/VBox/Archetype")
-p2_stats_container = NodePath("P2_Card/VBox/Stats")
-p2_finisher_label = NodePath("P2_Card/VBox/Finisher")
-p2_trait_label = NodePath("P2_Card/VBox/Trait")
-cpu_toggle_button = NodePath("CenterPanel/VBoxActions/CPUToggleBtn")
-start_match_button = NodePath("CenterPanel/VBoxActions/StartMatchBtn")
-
-[node name="AudioManager" type="Node" parent="."]
-script = ExtResource("2_audio")
-
-[node name="Background" type="Panel" parent="."]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_bg")
-
-[node name="Header" type="VBoxContainer" parent="."]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_top = 25.0
-offset_bottom = 105.0
-grow_horizontal = 2
-theme_override_constants/separation = 4
-
-[node name="Title" type="Label" parent="Header"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.85, 0.25, 1)
-theme_override_font_sizes/font_size = 36
-text = "LOLCOW WRESTLING: OFFLINE MAYHEM"
-horizontal_alignment = 1
-
-[node name="Subtitle" type="Label" parent="Header"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.7, 0.7, 0.75, 1)
-theme_override_font_sizes/font_size = 18
-text = "CHOOSE YOUR FIGHTER"
-horizontal_alignment = 1
-
-[node name="P1_Card" type="PanelContainer" parent="."]
-layout_mode = 1
-anchors_preset = 9
-anchor_bottom = 1.0
-offset_left = 40.0
-offset_top = 130.0
-offset_right = 380.0
-offset_bottom = -70.0
-grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_card_p1")
-
-[node name="VBox" type="VBoxContainer" parent="P1_Card"]
-layout_mode = 2
-offset_left = 15.0
-offset_top = 15.0
-offset_right = 325.0
-offset_bottom = 865.0
-theme_override_constants/separation = 10
-
-[node name="Tag" type="Label" parent="P1_Card/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.2, 0.8, 1, 1)
-theme_override_font_sizes/font_size = 20
-text = "PLAYER 1"
-
-[node name="Name" type="Label" parent="P1_Card/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 26
-text = "TOPHIACHU"
-
-[node name="Title" type="Label" parent="P1_Card/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.8, 0.8, 0.5, 1)
-theme_override_font_sizes/font_size = 14
-text = "\"Live & Unfiltered\""
-
-[node name="Archetype" type="Label" parent="P1_Card/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.65, 0.85, 0.65, 1)
-theme_override_font_sizes/font_size = 15
-text = "Heavyweight Counter-Brawler"
-
-[node name="HSeparator1" type="HSeparator" parent="P1_Card/VBox"]
-layout_mode = 2
-
-[node name="Stats" type="VBoxContainer" parent="P1_Card/VBox"]
-layout_mode = 2
-theme_override_constants/separation = 6
-
-[node name="HSeparator2" type="HSeparator" parent="P1_Card/VBox"]
-layout_mode = 2
-
-[node name="Finisher" type="Label" parent="P1_Card/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.6, 0.3, 1)
-theme_override_font_sizes/font_size = 15
-text = "FINISHER: Live-Stream Shutdown"
-autowrap_mode = 2
-
-[node name="Trait" type="Label" parent="P1_Card/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.9, 0.9, 0.5, 1)
-theme_override_font_sizes/font_size = 14
-text = "TRAIT: Last Word"
-autowrap_mode = 2
-
-[node name="Prompt" type="Label" parent="P1_Card/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.5, 0.7, 0.8, 1)
-theme_override_font_sizes/font_size = 13
-text = "\n[W/A/S/D] Navigate P1"
-
-[node name="P2_Card" type="PanelContainer" parent="."]
-layout_mode = 1
-anchors_preset = 11
-anchor_left = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -380.0
-offset_top = 130.0
-offset_right = -40.0
-offset_bottom = -70.0
-grow_horizontal = 0
-grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_card_p2")
-
-[node name="VBox" type="VBoxContainer" parent="P2_Card"]
-layout_mode = 2
-offset_left = 15.0
-offset_top = 15.0
-offset_right = 325.0
-offset_bottom = 865.0
-theme_override_constants/separation = 10
-
-[node name="Tag" type="Label" parent="P2_Card/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.3, 0.3, 1)
-theme_override_font_sizes/font_size = 20
-text = "PLAYER 2"
-
-[node name="Name" type="Label" parent="P2_Card/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 26
-text = "CYRAXX"
-
-[node name="Title" type="Label" parent="P2_Card/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.8, 0.8, 0.5, 1)
-theme_override_font_sizes/font_size = 14
-text = "\"Feedback Frenzy\""
-
-[node name="Archetype" type="Label" parent="P2_Card/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.65, 0.85, 0.65, 1)
-theme_override_font_sizes/font_size = 15
-text = "Lightweight Burst Striker"
-
-[node name="HSeparator1" type="HSeparator" parent="P2_Card/VBox"]
-layout_mode = 2
-
-[node name="Stats" type="VBoxContainer" parent="P2_Card/VBox"]
-layout_mode = 2
-theme_override_constants/separation = 6
-
-[node name="HSeparator2" type="HSeparator" parent="P2_Card/VBox"]
-layout_mode = 2
-
-[node name="Finisher" type="Label" parent="P2_Card/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.6, 0.3, 1)
-theme_override_font_sizes/font_size = 15
-text = "FINISHER: Raxx and Ruin"
-autowrap_mode = 2
-
-[node name="Trait" type="Label" parent="P2_Card/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.9, 0.9, 0.5, 1)
-theme_override_font_sizes/font_size = 14
-text = "TRAIT: Overdrive"
-autowrap_mode = 2
-
-[node name="Prompt" type="Label" parent="P2_Card/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.8, 0.5, 0.5, 1)
-theme_override_font_sizes/font_size = 13
-text = "\n[Arrows] Navigate P2"
-
-[node name="CenterPanel" type="Panel" parent="."]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -540.0
-offset_top = -410.0
-offset_right = 540.0
-offset_bottom = 470.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_grid")
-
-[node name="GridContainer" type="GridContainer" parent="CenterPanel"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -380.0
-offset_top = -180.0
-offset_right = 380.0
-offset_bottom = 60.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/h_separation = 20
-theme_override_constants/v_separation = 20
-columns = 4
-
-[node name="VBoxActions" type="VBoxContainer" parent="CenterPanel"]
-layout_mode = 1
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -220.0
-offset_top = -340.0
-offset_right = 220.0
-offset_bottom = -200.0
-grow_horizontal = 2
-grow_vertical = 0
-theme_override_constants/separation = 16
-
-[node name="CPUToggleBtn" type="Button" parent="CenterPanel/VBoxActions"]
-custom_minimum_size = Vector2(0, 48)
-layout_mode = 2
-theme_override_font_sizes/font_size = 18
-text = "P2 MODE: [CPU]"
-
-[node name="StartMatchBtn" type="Button" parent="CenterPanel/VBoxActions"]
-custom_minimum_size = Vector2(0, 56)
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.9, 0.2, 1)
-theme_override_font_sizes/font_size = 22
-text = "FIGHT! [SPACE / ENTER]"
-
-[node name="Footer" type="VBoxContainer" parent="."]
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -65.0
-offset_bottom = -15.0
-grow_horizontal = 2
-grow_vertical = 0
-theme_override_constants/separation = 4
-
-[node name="Instructions" type="Label" parent="Footer"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.7, 0.7, 0.75, 1)
-theme_override_font_sizes/font_size = 15
-text = "[W/A/S/D] P1 Select  |  [Arrows] P2 Select  |  [C] Toggle P2 CPU  |  [SPACE / ENTER] Start Match"
-horizontal_alignment = 1
-
-[node name="RefereeMemorial" type="Label" parent="Footer"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.85, 0.3, 0.9)
-theme_override_font_sizes/font_size = 14
-text = "Official Referee: KingCobraJFS (1991–2025) presiding over all bouts with pulsing golden halo."
-horizontal_alignment = 1
 
 `
 
-### File: scenes\ui\match_hud.tscn
-`ini
-[gd_scene format=3 uid="uid://dmhud001"]
+---
 
-[ext_resource type="Script" path="res://scripts/ui/match_hud.gd" id="1_script"]
+## File: NEXT_TASK.md
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_p1_hp"]
-bg_color = Color(0.85, 0.15, 0.2, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
+`md
+# Next Implementation Task: Pass A Priority 2 (Boundary-Safe Paired Throws)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_p1_sta"]
-bg_color = Color(0.2, 0.75, 0.35, 1)
-corner_radius_top_left = 2
-corner_radius_top_right = 2
-corner_radius_bottom_right = 2
-corner_radius_bottom_left = 2
+## Immediate Next Task
+**Priority 2: Boundary-Safe Paired Throws**:
+1. Implement shared pre-throw spatial and trajectory validation in `Fighter._attempt_grapple()` and `_start_synchronized_throw()`.
+2. When a throw is initiated near ropes ($|x| > 2.8\text{m}$ or $|z| > 2.8\text{m}$), automatically adjust the attacker-defender pair inwards, reorient facing inward toward the ring center, or trigger a rope collision/break rather than writing defender coordinates outside ring boundary ($|x| > 3.65\text{m}$) during slam arcs.
+3. Validate complete throw cycles near all 4 ring edges and 4 corners in both scene tree processing orders (P1/P2 and P2/P1) without defender clipping or snap-back.
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hype"]
-bg_color = Color(0.85, 0.65, 0.1, 1)
-corner_radius_top_left = 2
-corner_radius_top_right = 2
-corner_radius_bottom_right = 2
-corner_radius_bottom_left = 2
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
-bg_color = Color(0.1, 0.1, 0.12, 0.8)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
-bg_color = Color(0.05, 0.05, 0.07, 0.88)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.9, 0.75, 0.2, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[node name="MatchHUD" type="Control" node_paths=PackedStringArray("p1_name_label", "p1_title_label", "p1_vitality_bar", "p1_stamina_bar", "p1_hype_bar", "p1_state_label", "p2_name_label", "p2_title_label", "p2_vitality_bar", "p2_stamina_bar", "p2_hype_bar", "p2_state_label", "center_announcement", "pin_escape_container", "pin_escape_bar", "victory_panel", "victory_label")]
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-script = ExtResource("1_script")
-p1_name_label = NodePath("P1_Container/Name")
-p1_title_label = NodePath("P1_Container/Title")
-p1_vitality_bar = NodePath("P1_Container/VitalityBar")
-p1_stamina_bar = NodePath("P1_Container/StaminaBar")
-p1_hype_bar = NodePath("P1_Container/HypeBar")
-p1_state_label = NodePath("P1_Container/State")
-p2_name_label = NodePath("P2_Container/Name")
-p2_title_label = NodePath("P2_Container/Title")
-p2_vitality_bar = NodePath("P2_Container/VitalityBar")
-p2_stamina_bar = NodePath("P2_Container/StaminaBar")
-p2_hype_bar = NodePath("P2_Container/HypeBar")
-p2_state_label = NodePath("P2_Container/State")
-center_announcement = NodePath("CenterAnnouncement")
-pin_escape_container = NodePath("PinEscapeContainer")
-pin_escape_bar = NodePath("PinEscapeContainer/ProgressBar")
-victory_panel = NodePath("VictoryPanel")
-victory_label = NodePath("VictoryPanel/Label")
-
-[node name="P1_Container" type="VBoxContainer" parent="."]
-layout_mode = 0
-offset_left = 40.0
-offset_top = 30.0
-offset_right = 460.0
-offset_bottom = 160.0
-
-[node name="Name" type="Label" parent="P1_Container"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 26
-text = "TOPHIACHU"
-
-[node name="Title" type="Label" parent="P1_Container"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
-theme_override_font_sizes/font_size = 14
-text = "Live & Unfiltered"
-
-[node name="VitalityBar" type="ProgressBar" parent="P1_Container"]
-custom_minimum_size = Vector2(0, 24)
-layout_mode = 2
-theme_override_styles/background = SubResource("StyleBoxFlat_bg")
-theme_override_styles/fill = SubResource("StyleBoxFlat_p1_hp")
-value = 100.0
-show_percentage = false
-
-[node name="StaminaBar" type="ProgressBar" parent="P1_Container"]
-custom_minimum_size = Vector2(0, 10)
-layout_mode = 2
-theme_override_styles/background = SubResource("StyleBoxFlat_bg")
-theme_override_styles/fill = SubResource("StyleBoxFlat_p1_sta")
-value = 100.0
-show_percentage = false
-
-[node name="HypeBar" type="ProgressBar" parent="P1_Container"]
-custom_minimum_size = Vector2(0, 8)
-layout_mode = 2
-theme_override_styles/background = SubResource("StyleBoxFlat_bg")
-theme_override_styles/fill = SubResource("StyleBoxFlat_hype")
-value = 0.0
-show_percentage = false
-
-[node name="State" type="Label" parent="P1_Container"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.9, 0.7, 0.2, 1)
-theme_override_font_sizes/font_size = 14
-text = "IDLE"
-
-[node name="P2_Container" type="VBoxContainer" parent="."]
-layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -460.0
-offset_top = 30.0
-offset_right = -40.0
-offset_bottom = 160.0
-grow_horizontal = 0
-
-[node name="Name" type="Label" parent="P2_Container"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 26
-text = "CYRAXX"
-horizontal_alignment = 2
-
-[node name="Title" type="Label" parent="P2_Container"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
-theme_override_font_sizes/font_size = 14
-text = "Feedback Frenzy"
-horizontal_alignment = 2
-
-[node name="VitalityBar" type="ProgressBar" parent="P2_Container"]
-custom_minimum_size = Vector2(0, 24)
-layout_mode = 2
-theme_override_styles/background = SubResource("StyleBoxFlat_bg")
-theme_override_styles/fill = SubResource("StyleBoxFlat_p1_hp")
-value = 100.0
-fill_mode = 1
-show_percentage = false
-
-[node name="StaminaBar" type="ProgressBar" parent="P2_Container"]
-custom_minimum_size = Vector2(0, 10)
-layout_mode = 2
-theme_override_styles/background = SubResource("StyleBoxFlat_bg")
-theme_override_styles/fill = SubResource("StyleBoxFlat_p1_sta")
-value = 100.0
-fill_mode = 1
-show_percentage = false
-
-[node name="HypeBar" type="ProgressBar" parent="P2_Container"]
-custom_minimum_size = Vector2(0, 8)
-layout_mode = 2
-theme_override_styles/background = SubResource("StyleBoxFlat_bg")
-theme_override_styles/fill = SubResource("StyleBoxFlat_hype")
-value = 0.0
-fill_mode = 1
-show_percentage = false
-
-[node name="State" type="Label" parent="P2_Container"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.9, 0.7, 0.2, 1)
-theme_override_font_sizes/font_size = 14
-text = "IDLE"
-horizontal_alignment = 2
-
-[node name="CenterAnnouncement" type="Label" parent="."]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -300.0
-offset_top = -120.0
-offset_right = 300.0
-offset_bottom = -40.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_colors/font_color = Color(1, 0.9, 0.2, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 12
-theme_override_font_sizes/font_size = 48
-text = "COUNT: 1!"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="PinEscapeContainer" type="VBoxContainer" parent="."]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -250.0
-offset_top = 20.0
-offset_right = 250.0
-offset_bottom = 90.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="Label" type="Label" parent="PinEscapeContainer"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 8
-theme_override_font_sizes/font_size = 20
-text = "TAP [SPACE] / [NUM0] TO KICK OUT!"
-horizontal_alignment = 1
-
-[node name="ProgressBar" type="ProgressBar" parent="PinEscapeContainer"]
-custom_minimum_size = Vector2(0, 22)
-layout_mode = 2
-theme_override_styles/background = SubResource("StyleBoxFlat_bg")
-theme_override_styles/fill = SubResource("StyleBoxFlat_p1_sta")
-value = 0.0
-show_percentage = true
-
-[node name="ControlsReminder" type="Label" parent="."]
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -45.0
-grow_horizontal = 2
-grow_vertical = 0
-theme_override_colors/font_color = Color(0.85, 0.85, 0.9, 0.9)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 6
-theme_override_font_sizes/font_size = 14
-text = "P1: WASD=Move | J=Strike | K=Grapple | L=Block | U=Reversal | SPACE=Pin  ||  P2: Arrows=Move | Num1=Strike | Num2=Grapple | Num3=Block | Num4=Reversal | Num0=Pin  ||  [R] Restart"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="VictoryPanel" type="PanelContainer" parent="."]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -350.0
-offset_top = -140.0
-offset_right = 350.0
-offset_bottom = 140.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
-
-[node name="Label" type="Label" parent="VictoryPanel"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.88, 0.3, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 10
-theme_override_font_sizes/font_size = 36
-text = "TOPHIACHU WINS!
-[PINFALL 3-COUNT]
-
-Press [R] to Restart Match"
-horizontal_alignment = 1
-vertical_alignment = 1
+## Subsequent Backlog (In Strict Priority Order)
+- **Priority 3**: Directional hit cones (`_handle_strike_active_window`) and distinct grapple startup vulnerability window (`GRAPPLE_STARTUP`).
+- **Priority 4**: Centralized hold cleanup and deterministic outcome priority for simultaneous tap-out vs escape frames in `MatchManager`.
+- **Priority 5**: Scene integration and visual verification across all 64 matchups.
 
 `
 
-### File: scripts\ai\cpu_controller.gd
+---
+
+## File: scripts/core/match_rules.gd
+
 `gdscript
-class_name CPUController
+class_name MatchRules
+extends RefCounted
+
+## Authoritative match configuration constants and geometric thresholds
+
+const RING_MAT_RADIUS: float = 4.0 # Distance from center (0,0) to ropes in meters
+const ROPE_BREAK_DISTANCE: float = 0.85 # Distance from rope threshold to trigger rope break
+const PIN_COUNT_INTERVAL: float = 1.1 # Seconds per referee count
+const PIN_ESCAPE_BASE_RATE: float = 85.0 # Percent escape per second base (hold-to-resist accessibility)
+const PIN_ESCAPE_MASH_BASE: float = 10.0 # Base progress gained per active mash pulse (at 10 Hz = 100.0/s)
+const PIN_ESCAPE_DECAY_RATE: float = 8.0 # Passive escape progress decay per second when unresisted
+const PIN_ESCAPE_HOLD_STAMINA_DRAIN: float = 8.0 # Stamina units drained per second while holding to resist
+const PIN_ESCAPE_MASH_STAMINA_COST: float = 0.8 # Stamina units drained per active mash pulse (at 10 Hz = 8.0/s)
+const PIN_ESCAPE_FINISHER_PENALTY: float = 0.55 # Multiplier on escape rate following a genuine finisher impact
+const PIN_ESCAPE_HEAVY_IMPACT_PENALTY: float = 0.85 # Multiplier on escape rate following an ordinary heavy throw/slam
+const FINISHER_DISORIENTATION_DURATION: float = 4.5 # Seconds of finisher impact disorientation
+const HEAVY_IMPACT_DISORIENTATION_DURATION: float = 1.5 # Seconds of ordinary heavy impact disorientation
+const HEAVY_IMPACT_DAMAGE_THRESHOLD: float = 80.0 # Damage threshold for ordinary heavy impact
+const MAX_HYPE: float = 100.0
+const HYPE_GAIN_ON_HIT: float = 12.0
+const HYPE_GAIN_ON_COUNTER: float = 20.0
+const STAMINA_REGEN_RATE: float = 12.0 # Units per second when not attacking or sprinting
+const STRIKE_STAMINA_COST: float = 14.0
+const GRAPPLE_STAMINA_COST: float = 22.0
+const BLOCK_STAMINA_DRAIN: float = 15.0 # Per second held
+const REVERSAL_STAMINA_COST: float = 18.0
+const FINISHER_HYPE_COST: float = 100.0
+
+static func is_near_ropes(position_3d: Vector3) -> bool:
+	var x: float = abs(position_3d.x)
+	var z: float = abs(position_3d.z)
+	var max_coord: float = max(x, z)
+	return max_coord >= (RING_MAT_RADIUS - ROPE_BREAK_DISTANCE)
+
+`
+
+---
+
+## File: scripts/core/roster_data.gd
+
+`gdscript
+class_name RosterData
+extends RefCounted
+
+## Fictional stats and profiles for LOLCOW WRESTLING: OFFLINE MAYHEM.
+## All attributes and abilities are fictional game-design choices.
+
+const CHARACTERS: Dictionary = {
+	"tophiachu": {
+		"id": "tophiachu",
+		"name": "Tophiachu",
+		"title": "Live & Unfiltered",
+		"archetype": "Heavyweight Counter-Brawler",
+		"stats": {
+			"power": 8,
+			"mobility": 3,
+			"grappling": 7,
+			"stamina": 5,
+			"durability": 9,
+			"reversal": 4,
+			"showmanship": 6
+		},
+		"moves": {
+			"strike": "Comment-Section Clothesline",
+			"grapple": "Block-Button Backbreaker",
+			"corner": "Going-Live Corner Splash",
+			"finisher": "Live-Stream Shutdown",
+			"trait": "Last Word"
+		},
+		"visual": {
+			"primary_color": Color(0.45, 0.22, 0.58), # Purple
+			"secondary_color": Color(0.12, 0.12, 0.14), # Dark Charcoal
+			"height": 1.70,
+			"body_scale": Vector3(1.35, 0.95, 1.30),
+			"reach": 1.25
+		}
+	},
+	"novaonline": {
+		"id": "novaonline",
+		"name": "NovaOnline",
+		"title": "Main-Event Energy",
+		"archetype": "Momentum Heavyweight",
+		"stats": {
+			"power": 9,
+			"mobility": 4,
+			"grappling": 6,
+			"stamina": 4,
+			"durability": 9,
+			"reversal": 3,
+			"showmanship": 7
+		},
+		"moves": {
+			"strike": "Buffering Bodycheck",
+			"ground": "Main-Character Elbow",
+			"corner": "Offline Avalanche",
+			"finisher": "Going Offline",
+			"trait": "Momentum Feed"
+		},
+		"visual": {
+			"primary_color": Color(0.85, 0.15, 0.15), # Red
+			"secondary_color": Color(0.9, 0.8, 0.2), # Gold
+			"height": 1.85,
+			"body_scale": Vector3(1.25, 1.05, 1.15),
+			"reach": 1.35
+		}
+	},
+	"cyraxx": {
+		"id": "cyraxx",
+		"name": "Cyraxx",
+		"title": "Feedback Frenzy",
+		"archetype": "Lightweight Burst Striker",
+		"stats": {
+			"power": 4,
+			"mobility": 9,
+			"grappling": 5,
+			"stamina": 6,
+			"durability": 3,
+			"reversal": 8,
+			"showmanship": 7
+		},
+		"moves": {
+			"strike": "Feedback Flurry",
+			"grapple": "Mic-Drop DDT",
+			"counter": "Encore Reversal",
+			"finisher": "Raxx and Ruin",
+			"trait": "Overdrive"
+		},
+		"visual": {
+			"primary_color": Color(0.15, 0.55, 0.35), # Dark Olive Green
+			"secondary_color": Color(0.2, 0.2, 0.2), # Black
+			"height": 1.55,
+			"body_scale": Vector3(0.78, 0.88, 0.78),
+			"reach": 0.95
+		}
+	},
+	"candy_rooks": {
+		"id": "candy_rooks",
+		"name": "Candy Rooks",
+		"title": "Kitchen-Sink Brawler",
+		"archetype": "Combination Grappler",
+		"stats": {
+			"power": 7,
+			"mobility": 4,
+			"grappling": 8,
+			"stamina": 6,
+			"durability": 8,
+			"reversal": 5,
+			"showmanship": 4
+		},
+		"moves": {
+			"strike": "Kitchen-Sink Combo",
+			"rush": "Ragoon Rush",
+			"grapple": "Second-Helping Side Slam",
+			"finisher": "Ribs & Kidney Beans",
+			"trait": "Recipe Combo"
+		},
+		"visual": {
+			"primary_color": Color(0.85, 0.45, 0.65), # Pink/Apron
+			"secondary_color": Color(0.95, 0.95, 0.95), # White
+			"height": 1.68,
+			"body_scale": Vector3(1.22, 0.96, 1.20),
+			"reach": 1.18
+		}
+	},
+	"andy_ditch": {
+		"id": "andy_ditch",
+		"name": "Andy Ditch",
+		"title": "Immovable Object",
+		"archetype": "Territory Anchor Grappler",
+		"stats": {
+			"power": 8,
+			"mobility": 2,
+			"grappling": 9,
+			"stamina": 5,
+			"durability": 10,
+			"reversal": 4,
+			"showmanship": 4
+		},
+		"moves": {
+			"counter": "Sit-Down Counter",
+			"grapple": "Deadweight Takedown",
+			"taunt": "Complaint Department",
+			"finisher": "Case Closed",
+			"trait": "Hold My Ground"
+		},
+		"visual": {
+			"primary_color": Color(0.25, 0.35, 0.65), # Denim Blue
+			"secondary_color": Color(0.6, 0.6, 0.6), # Grey
+			"height": 1.72,
+			"body_scale": Vector3(1.30, 0.92, 1.25),
+			"reach": 1.15
+		}
+	},
+	"jupiter_the_hybrid": {
+		"id": "jupiter_the_hybrid",
+		"name": "Jupiter the Hybrid",
+		"title": "Double Feature",
+		"archetype": "Stance-Shift Grappler",
+		"stats": {
+			"power": 6,
+			"mobility": 7,
+			"grappling": 7,
+			"stamina": 5,
+			"durability": 5,
+			"reversal": 6,
+			"showmanship": 6
+		},
+		"moves": {
+			"stance": "Hybrid Shift",
+			"strike": "Moonrise Lariat",
+			"counter": "Midnight Counter",
+			"finisher": "Eclipse Driver",
+			"trait": "Best of Both"
+		},
+		"visual": {
+			"primary_color": Color(0.2, 0.1, 0.35), # Deep Violet
+			"secondary_color": Color(0.8, 0.8, 0.9), # Silver
+			"height": 1.80,
+			"body_scale": Vector3(1.05, 1.02, 1.02),
+			"reach": 1.28
+		}
+	},
+	"anacondasin": {
+		"id": "anacondasin",
+		"name": "AnacondaSin",
+		"title": "The Counter-Coil",
+		"archetype": "Positional Submission Specialist",
+		"stats": {
+			"power": 5,
+			"mobility": 6,
+			"grappling": 9,
+			"stamina": 6,
+			"durability": 5,
+			"reversal": 7,
+			"showmanship": 4
+		},
+		"moves": {
+			"feint": "Question-Time Feint",
+			"counter": "Coil Counter",
+			"sweep": "Wraparound Sweep",
+			"finisher": "Anaconda Lock",
+			"trait": "Tightening Grip"
+		},
+		"visual": {
+			"primary_color": Color(0.15, 0.45, 0.25), # Emerald Green
+			"secondary_color": Color(0.85, 0.75, 0.3), # Gold
+			"height": 1.65,
+			"body_scale": Vector3(1.10, 0.98, 1.10),
+			"reach": 1.20
+		}
+	},
+	"daniel_larson": {
+		"id": "daniel_larson",
+		"name": "Daniel Larson",
+		"title": "Roaring Thunder",
+		"archetype": "Mobile Opportunist",
+		"stats": {
+			"power": 4,
+			"mobility": 9,
+			"grappling": 4,
+			"stamina": 8,
+			"durability": 3,
+			"reversal": 7,
+			"showmanship": 7
+		},
+		"moves": {
+			"strike": "Roaring Thunder Knee",
+			"aerial": "Stage-Dive Elbow",
+			"escape": "Tour-Bus Escape",
+			"finisher": "Final Encore",
+			"trait": "Touring Legs"
+		},
+		"visual": {
+			"primary_color": Color(0.85, 0.45, 0.1), # Bright Orange
+			"secondary_color": Color(0.2, 0.2, 0.25), # Slate
+			"height": 1.78,
+			"body_scale": Vector3(0.82, 1.02, 0.80),
+			"reach": 1.30
+		}
+	}
+}
+
+static func get_character(id: String) -> Dictionary:
+	return CHARACTERS.get(id, {})
+
+static func get_all_ids() -> Array:
+	return CHARACTERS.keys()
+
+`
+
+---
+
+## File: scripts/core/match_config.gd
+
+`gdscript
+class_name MatchConfig
+extends RefCounted
+
+## Global match configuration tracking selected fighters and CPU state.
+## Persists match selections between Character Select and the Ring Arena.
+
+static var p1_character_id: String = "tophiachu"
+static var p2_character_id: String = "cyraxx"
+static var p2_is_cpu: bool = true
+
+static func set_match(p1_id: String, p2_id: String, cpu_p2: bool = true) -> void:
+	p1_character_id = p1_id
+	p2_character_id = p2_id
+	p2_is_cpu = cpu_p2
+
+static func reset_defaults() -> void:
+	p1_character_id = "tophiachu"
+	p2_character_id = "cyraxx"
+	p2_is_cpu = true
+
+`
+
+---
+
+## File: scripts/core/match_manager.gd
+
+`gdscript
+class_name MatchManager
 extends Node
 
-## Tactical CPU wrestler controller.
-## Drives standard Fighter input interface with realistic reaction intervals
-## and profile-tailored tactical choices.
+## Authoritative match state coordinator.
+## Manages match progression, pin counting, submissions, rope breaks, and victory conditions.
 
-@export var fighter: Fighter
-@export var reaction_interval: float = 0.22 # Reaction delay in seconds
-@export var escape_mash_interval: float = 0.10 # Cadence for CPU escape mashing
+signal match_started()
+signal pin_started(pinner: Fighter, pinned: Fighter)
+signal pin_count_ticked(count: int)
+signal pin_broken(reason: String)
+signal submission_started(attacker: Fighter, defender: Fighter)
+signal submission_escaped()
+signal rope_break_called()
+signal match_ended(winner: Fighter, method: String)
 
-var timer: float = 0.0
-var escape_timer: float = 0.0
-var think_state: String = "approach"
+enum MatchState {
+	INTRO,
+	IN_PROGRESS,
+	PIN_ATTEMPT,
+	SUBMISSION_ATTEMPT,
+	MATCH_OVER
+}
+
+@export var fighter_1: Fighter
+@export var fighter_2: Fighter
+@export var referee: Referee
+@export var hud: Node
+
+var current_state: MatchState = MatchState.IN_PROGRESS
+var current_pinner: Fighter = null
+var current_pinned: Fighter = null
+var pin_timer: float = 0.0
+var current_count: int = 0
 
 func _ready() -> void:
-	if fighter:
-		fighter.is_cpu = true
+	_setup_match()
+
+func _setup_match() -> void:
+	if not is_instance_valid(fighter_1) or not is_instance_valid(fighter_2):
+		return
+	
+	fighter_1.opponent = fighter_2
+	fighter_2.opponent = fighter_1
+	
+	if referee:
+		referee.setup_targets(fighter_1, fighter_2)
+		
+	# Connect fighter pin signals
+	if not fighter_1.pin_initiated.is_connected(_on_fighter_pin_initiated):
+		fighter_1.pin_initiated.connect(_on_fighter_pin_initiated)
+	if not fighter_2.pin_initiated.is_connected(_on_fighter_pin_initiated):
+		fighter_2.pin_initiated.connect(_on_fighter_pin_initiated)
+		
+	if not fighter_1.kick_out_succeeded.is_connected(_on_kick_out_succeeded):
+		fighter_1.kick_out_succeeded.connect(_on_kick_out_succeeded)
+	if not fighter_2.kick_out_succeeded.is_connected(_on_kick_out_succeeded):
+		fighter_2.kick_out_succeeded.connect(_on_kick_out_succeeded)
+
+	# Connect fighter submission signals
+	if not fighter_1.submission_initiated.is_connected(_on_fighter_submission_initiated):
+		fighter_1.submission_initiated.connect(_on_fighter_submission_initiated)
+	if not fighter_2.submission_initiated.is_connected(_on_fighter_submission_initiated):
+		fighter_2.submission_initiated.connect(_on_fighter_submission_initiated)
+		
+	if not fighter_1.submission_escaped.is_connected(_on_submission_escaped):
+		fighter_1.submission_escaped.connect(_on_submission_escaped)
+	if not fighter_2.submission_escaped.is_connected(_on_submission_escaped):
+		fighter_2.submission_escaped.connect(_on_submission_escaped)
+		
+	if not fighter_1.tap_out_submitted.is_connected(_on_tap_out_submitted):
+		fighter_1.tap_out_submitted.connect(_on_tap_out_submitted)
+	if not fighter_2.tap_out_submitted.is_connected(_on_tap_out_submitted):
+		fighter_2.tap_out_submitted.connect(_on_tap_out_submitted)
+
+	if AudioManager.instance:
+		AudioManager.instance.play_ring_bell()
+
+	match_started.emit()
 
 func _physics_process(delta: float) -> void:
-	if not is_instance_valid(fighter):
+	if Input.is_action_just_pressed("match_restart"):
+		restart_match()
 		return
 		
-	# Active escape mashing during PINNED or SUBMISSION_DEFENDER
-	if fighter.current_state in [Fighter.State.PINNED, Fighter.State.SUBMISSION_DEFENDER]:
-		escape_timer += delta
-		var vit_ratio: float = clamp(fighter.vitality / fighter.max_vitality, 0.0, 1.0)
-		var stam_ratio: float = clamp(fighter.stamina / fighter.max_stamina, 0.0, 1.0)
-		var fatigue: float = 1.0 - (0.6 * vit_ratio + 0.4 * stam_ratio)
-		# Mashing cadence scales with reversal stat and physical fatigue (exhausted CPU struggles at ~6-7 Hz, fresh at 10 Hz)
-		var effective_interval: float = (escape_mash_interval + 0.04 * fatigue) * (1.2 - (fighter.stat_reversal * 0.04))
-		if escape_timer >= effective_interval:
-			escape_timer = 0.0
-			fighter.input_pin = true
-			fighter.input_strike = true
-		return
-	else:
-		escape_timer = 0.0
-	
-	if not is_instance_valid(fighter.opponent):
-		return
-	
-	timer += delta
-	if timer >= reaction_interval:
-		timer = 0.0
-		_think()
+	if current_state == MatchState.PIN_ATTEMPT:
+		_process_pin_countdown(delta)
+	elif current_state == MatchState.SUBMISSION_ATTEMPT:
+		_process_submission_watch(delta)
 
-func _think() -> void:
-	var opp: Fighter = fighter.opponent
-	var opp_pos: Vector3 = opp.global_position if opp.is_inside_tree() else opp.position
-	var my_pos: Vector3 = fighter.global_position if fighter.is_inside_tree() else fighter.position
-	var dist: float = my_pos.distance_to(opp_pos)
-	
-	# Clear pulse inputs
-	fighter.input_strike = false
-	fighter.input_grapple = false
-	fighter.input_block = false
-	fighter.input_reversal = false
-	fighter.input_pin = false
-	
-	# Check if opponent is downed -> attempt pin!
-	if opp.current_state == Fighter.State.KNOCKED_DOWN:
-		if dist <= 1.6:
-			fighter.input_dir = Vector2.ZERO
-			fighter.input_pin = true
-		else:
-			# Approach downed opponent
-			var to_opp: Vector3 = (opp_pos - my_pos).normalized()
-			fighter.input_dir = Vector2(to_opp.x, to_opp.z)
-		return
-		
-	# Check if I am pinned or in submission -> escape mash!
-	if fighter.current_state in [Fighter.State.PINNED, Fighter.State.SUBMISSION_DEFENDER]:
-		fighter.input_pin = true
-		fighter.input_strike = true
-		return
-		
-	# Tactical in-ring spacing
-	var to_opp_2d: Vector2 = Vector2(opp_pos.x - my_pos.x, opp_pos.z - my_pos.z)
-	var dir_norm: Vector2 = to_opp_2d.normalized()
-	
-	# If opponent is striking and within range, test reversal or block
-	if opp.current_state == Fighter.State.STRIKING and dist <= fighter.reach_distance + 0.2:
-		var rev_chance: float = fighter.stat_reversal * 0.08
-		if randf() < rev_chance and fighter.stamina >= MatchRules.REVERSAL_STAMINA_COST:
-			fighter.input_reversal = true
-			return
-		elif randf() < 0.6:
-			fighter.input_block = true
-			return
+static func get_fighter_pos(f: Fighter) -> Vector3:
+	if not is_instance_valid(f):
+		return Vector3.ZERO
+	if f.is_inside_tree() and f.get_parent() is Node3D:
+		return f.global_position
+	return f.position
 
-	# Character specific behavior
-	if dist <= fighter.reach_distance:
-		fighter.input_dir = Vector2.ZERO
+# ==============================================================================
+# Pin Management
+# ==============================================================================
+
+func _on_fighter_pin_initiated(pinner: Fighter, pinned: Fighter) -> void:
+	if current_state != MatchState.IN_PROGRESS:
+		return
 		
-		# Rock-paper-scissors choices
-		if opp.current_state == Fighter.State.BLOCKING:
-			# Grapple breaks guard!
-			fighter.input_grapple = true
-		else:
-			var grapple_pref: float = float(fighter.stat_grappling) / float(fighter.stat_grappling + fighter.stat_power)
-			if randf() < grapple_pref and fighter.stamina >= MatchRules.GRAPPLE_STAMINA_COST:
-				fighter.input_grapple = true
-			elif fighter.stamina >= MatchRules.STRIKE_STAMINA_COST:
-				fighter.input_strike = true
-			else:
-				fighter.input_block = true
-	else:
-		# Approach opponent
-		fighter.input_dir = dir_norm
+	current_pinner = pinner
+	current_pinned = pinned
+	
+	# Priority 1: Check Rope Break immediately on pin start
+	var pin_pos: Vector3 = get_fighter_pos(pinned)
+	var pnr_pos: Vector3 = get_fighter_pos(pinner)
+	if MatchRules.is_near_ropes(pin_pos) or MatchRules.is_near_ropes(pnr_pos):
+		_call_rope_break()
+		return
+		
+	current_state = MatchState.PIN_ATTEMPT
+	pin_timer = 0.0
+	current_count = 0
+	
+	if referee:
+		referee.on_pin_started(get_fighter_pos(pinned))
+	
+	pin_started.emit(pinner, pinned)
+
+func _process_pin_countdown(delta: float) -> void:
+	if not is_instance_valid(current_pinned) or not is_instance_valid(current_pinner):
+		_abort_pin("INVALID_PARTICIPANTS")
+		return
+		
+	# Check if fighters moved near ropes during pin struggle
+	if MatchRules.is_near_ropes(get_fighter_pos(current_pinned)) or MatchRules.is_near_ropes(get_fighter_pos(current_pinner)):
+		_call_rope_break()
+		return
+		
+	pin_timer += delta
+	
+	var next_threshold: float = (current_count + 1) * MatchRules.PIN_COUNT_INTERVAL
+	if (pin_timer + 0.0005) >= next_threshold:
+		current_count += 1
+		pin_count_ticked.emit(current_count)
+		if referee:
+			referee.on_pin_count(current_count)
+		if AudioManager.instance:
+			AudioManager.instance.play_referee_slap()
+			AudioManager.instance.play_count_tone(current_count)
+			
+		if current_count >= 3:
+			# Final-tick priority check: rope break or kickout strictly preempts 3-count pinfall
+			if MatchRules.is_near_ropes(get_fighter_pos(current_pinned)) or MatchRules.is_near_ropes(get_fighter_pos(current_pinner)):
+				_call_rope_break()
+				return
+			if is_instance_valid(current_pinned) and current_pinned.pin_escape_progress >= 100.0:
+				current_pinned._execute_kick_out()
+				return
+			_end_match(current_pinner, "PINFALL (3-COUNT)")
+
+func _on_kick_out_succeeded(fighter: Fighter) -> void:
+	if current_state == MatchState.PIN_ATTEMPT and fighter == current_pinned:
+		pin_broken.emit("KICKOUT")
+		if referee:
+			referee.on_pin_broken()
+		if AudioManager.instance:
+			AudioManager.instance.play_crowd_gasp()
+			
+		current_pinner = null
+		current_pinned = null
+		current_state = MatchState.IN_PROGRESS
+
+func _abort_pin(reason: String) -> void:
+	pin_broken.emit(reason)
+	if referee:
+		referee.on_pin_broken()
+	current_pinner = null
+	current_pinned = null
+	current_state = MatchState.IN_PROGRESS
+
+# ==============================================================================
+# Submission Management
+# ==============================================================================
+
+func _on_fighter_submission_initiated(attacker: Fighter, defender: Fighter) -> void:
+	if current_state != MatchState.IN_PROGRESS:
+		return
+		
+	current_pinner = attacker
+	current_pinned = defender
+	
+	# Check rope break
+	if MatchRules.is_near_ropes(get_fighter_pos(defender)) or MatchRules.is_near_ropes(get_fighter_pos(attacker)):
+		_call_rope_break()
+		return
+		
+	current_state = MatchState.SUBMISSION_ATTEMPT
+	if referee:
+		referee.on_pin_started(get_fighter_pos(defender))
+		
+	submission_started.emit(attacker, defender)
+
+func _process_submission_watch(_delta: float) -> void:
+	if not is_instance_valid(current_pinned) or not is_instance_valid(current_pinner):
+		_abort_pin("INVALID_PARTICIPANTS")
+		return
+		
+	if MatchRules.is_near_ropes(get_fighter_pos(current_pinned)) or MatchRules.is_near_ropes(get_fighter_pos(current_pinner)):
+		_call_rope_break()
+		return
+
+func _on_submission_escaped(_fighter: Fighter) -> void:
+	if current_state == MatchState.SUBMISSION_ATTEMPT:
+		submission_escaped.emit()
+		if referee:
+			referee.on_pin_broken()
+		current_pinner = null
+		current_pinned = null
+		current_state = MatchState.IN_PROGRESS
+
+func _on_tap_out_submitted(loser: Fighter) -> void:
+	var winner: Fighter = fighter_2 if loser == fighter_1 else fighter_1
+	_end_match(winner, "SUBMISSION (TAP OUT)")
+
+# ==============================================================================
+# General Match Control
+# ==============================================================================
+
+func _call_rope_break() -> void:
+	rope_break_called.emit()
+	if referee:
+		referee.on_rope_break()
+	if AudioManager.instance:
+		AudioManager.instance.play_rope_break_alert()
+		
+	if is_instance_valid(current_pinner):
+		current_pinner.break_pin_rope_break()
+		current_pinner.break_submission_rope_break()
+	if is_instance_valid(current_pinned):
+		current_pinned.break_pin_rope_break()
+		current_pinned.break_submission_rope_break()
+		
+	current_pinner = null
+	current_pinned = null
+	current_state = MatchState.IN_PROGRESS
+
+func _end_match(winner: Fighter, method: String) -> void:
+	if current_state == MatchState.MATCH_OVER:
+		return
+	current_state = MatchState.MATCH_OVER
+	var loser: Fighter = fighter_2 if winner == fighter_1 else fighter_1
+	
+	winner.set_victory()
+	loser.set_defeated()
+	
+	if referee:
+		referee.on_match_won(winner.global_position)
+	if AudioManager.instance:
+		AudioManager.instance.play_ring_bell()
+		AudioManager.instance.play_crowd_cheer()
+		AudioManager.instance.play_victory_fanfare()
+		
+	match_ended.emit(winner, method)
+
+func restart_match() -> void:
+	get_tree().reload_current_scene()
 
 `
 
-### File: scripts\ai\cpu_controller.gd.uid
-`text
-uid://b4la5h6pruqw0
+---
 
-`
+## File: scripts/core/audio_manager.gd
 
-### File: scripts\core\audio_manager.gd
 `gdscript
 class_name AudioManager
 extends Node
@@ -2554,13 +1396,10 @@ func _synthesize_count_tone(count: int) -> AudioStreamWAV:
 
 `
 
-### File: scripts\core\audio_manager.gd.uid
-`text
-uid://cuaw8284hamkk
+---
 
-`
+## File: scripts/core/main_scene.gd
 
-### File: scripts\core\main_scene.gd
 `gdscript
 class_name MainScene
 extends Node3D
@@ -2598,601 +1437,10 @@ func _unhandled_input(event: InputEvent) -> void:
 
 `
 
-### File: scripts\core\main_scene.gd.uid
-`text
-uid://dbr2xtmej3d1
+---
 
-`
+## File: scripts/fighter/fighter.gd
 
-### File: scripts\core\match_config.gd
-`gdscript
-class_name MatchConfig
-extends RefCounted
-
-## Global match configuration tracking selected fighters and CPU state.
-## Persists match selections between Character Select and the Ring Arena.
-
-static var p1_character_id: String = "tophiachu"
-static var p2_character_id: String = "cyraxx"
-static var p2_is_cpu: bool = true
-
-static func set_match(p1_id: String, p2_id: String, cpu_p2: bool = true) -> void:
-	p1_character_id = p1_id
-	p2_character_id = p2_id
-	p2_is_cpu = cpu_p2
-
-static func reset_defaults() -> void:
-	p1_character_id = "tophiachu"
-	p2_character_id = "cyraxx"
-	p2_is_cpu = true
-
-`
-
-### File: scripts\core\match_config.gd.uid
-`text
-uid://dyx1dxr53bn8f
-
-`
-
-### File: scripts\core\match_manager.gd
-`gdscript
-class_name MatchManager
-extends Node
-
-## Authoritative match state coordinator.
-## Manages match progression, pin counting, submissions, rope breaks, and victory conditions.
-
-signal match_started()
-signal pin_started(pinner: Fighter, pinned: Fighter)
-signal pin_count_ticked(count: int)
-signal pin_broken(reason: String)
-signal submission_started(attacker: Fighter, defender: Fighter)
-signal submission_escaped()
-signal rope_break_called()
-signal match_ended(winner: Fighter, method: String)
-
-enum MatchState {
-	INTRO,
-	IN_PROGRESS,
-	PIN_ATTEMPT,
-	SUBMISSION_ATTEMPT,
-	MATCH_OVER
-}
-
-@export var fighter_1: Fighter
-@export var fighter_2: Fighter
-@export var referee: Referee
-@export var hud: Node
-
-var current_state: MatchState = MatchState.IN_PROGRESS
-var current_pinner: Fighter = null
-var current_pinned: Fighter = null
-var pin_timer: float = 0.0
-var current_count: int = 0
-
-func _ready() -> void:
-	_setup_match()
-
-func _setup_match() -> void:
-	if not is_instance_valid(fighter_1) or not is_instance_valid(fighter_2):
-		return
-	
-	fighter_1.opponent = fighter_2
-	fighter_2.opponent = fighter_1
-	
-	if referee:
-		referee.setup_targets(fighter_1, fighter_2)
-		
-	# Connect fighter pin signals
-	if not fighter_1.pin_initiated.is_connected(_on_fighter_pin_initiated):
-		fighter_1.pin_initiated.connect(_on_fighter_pin_initiated)
-	if not fighter_2.pin_initiated.is_connected(_on_fighter_pin_initiated):
-		fighter_2.pin_initiated.connect(_on_fighter_pin_initiated)
-		
-	if not fighter_1.kick_out_succeeded.is_connected(_on_kick_out_succeeded):
-		fighter_1.kick_out_succeeded.connect(_on_kick_out_succeeded)
-	if not fighter_2.kick_out_succeeded.is_connected(_on_kick_out_succeeded):
-		fighter_2.kick_out_succeeded.connect(_on_kick_out_succeeded)
-
-	# Connect fighter submission signals
-	if not fighter_1.submission_initiated.is_connected(_on_fighter_submission_initiated):
-		fighter_1.submission_initiated.connect(_on_fighter_submission_initiated)
-	if not fighter_2.submission_initiated.is_connected(_on_fighter_submission_initiated):
-		fighter_2.submission_initiated.connect(_on_fighter_submission_initiated)
-		
-	if not fighter_1.submission_escaped.is_connected(_on_submission_escaped):
-		fighter_1.submission_escaped.connect(_on_submission_escaped)
-	if not fighter_2.submission_escaped.is_connected(_on_submission_escaped):
-		fighter_2.submission_escaped.connect(_on_submission_escaped)
-		
-	if not fighter_1.tap_out_submitted.is_connected(_on_tap_out_submitted):
-		fighter_1.tap_out_submitted.connect(_on_tap_out_submitted)
-	if not fighter_2.tap_out_submitted.is_connected(_on_tap_out_submitted):
-		fighter_2.tap_out_submitted.connect(_on_tap_out_submitted)
-
-	if AudioManager.instance:
-		AudioManager.instance.play_ring_bell()
-
-	match_started.emit()
-
-func _physics_process(delta: float) -> void:
-	if Input.is_action_just_pressed("match_restart"):
-		restart_match()
-		return
-		
-	if current_state == MatchState.PIN_ATTEMPT:
-		_process_pin_countdown(delta)
-	elif current_state == MatchState.SUBMISSION_ATTEMPT:
-		_process_submission_watch(delta)
-
-static func get_fighter_pos(f: Fighter) -> Vector3:
-	if not is_instance_valid(f):
-		return Vector3.ZERO
-	if f.is_inside_tree() and f.get_parent() is Node3D:
-		return f.global_position
-	return f.position
-
-# ==============================================================================
-# Pin Management
-# ==============================================================================
-
-func _on_fighter_pin_initiated(pinner: Fighter, pinned: Fighter) -> void:
-	if current_state != MatchState.IN_PROGRESS:
-		return
-		
-	current_pinner = pinner
-	current_pinned = pinned
-	
-	# Priority 1: Check Rope Break immediately on pin start
-	var pin_pos: Vector3 = get_fighter_pos(pinned)
-	var pnr_pos: Vector3 = get_fighter_pos(pinner)
-	if MatchRules.is_near_ropes(pin_pos) or MatchRules.is_near_ropes(pnr_pos):
-		_call_rope_break()
-		return
-		
-	current_state = MatchState.PIN_ATTEMPT
-	pin_timer = 0.0
-	current_count = 0
-	
-	if referee:
-		referee.on_pin_started(get_fighter_pos(pinned))
-	
-	pin_started.emit(pinner, pinned)
-
-func _process_pin_countdown(delta: float) -> void:
-	if not is_instance_valid(current_pinned) or not is_instance_valid(current_pinner):
-		_abort_pin("INVALID_PARTICIPANTS")
-		return
-		
-	# Check if fighters moved near ropes during pin struggle
-	if MatchRules.is_near_ropes(get_fighter_pos(current_pinned)) or MatchRules.is_near_ropes(get_fighter_pos(current_pinner)):
-		_call_rope_break()
-		return
-		
-	pin_timer += delta
-	
-	var next_threshold: float = (current_count + 1) * MatchRules.PIN_COUNT_INTERVAL
-	if pin_timer >= next_threshold:
-		current_count += 1
-		pin_count_ticked.emit(current_count)
-		if referee:
-			referee.on_pin_count(current_count)
-		if AudioManager.instance:
-			AudioManager.instance.play_referee_slap()
-			AudioManager.instance.play_count_tone(current_count)
-			
-		if current_count >= 3:
-			_end_match(current_pinner, "PINFALL (3-COUNT)")
-
-func _on_kick_out_succeeded(fighter: Fighter) -> void:
-	if current_state == MatchState.PIN_ATTEMPT and fighter == current_pinned:
-		pin_broken.emit("KICKOUT")
-		if referee:
-			referee.on_pin_broken()
-		if AudioManager.instance:
-			AudioManager.instance.play_crowd_gasp()
-			
-		current_pinner = null
-		current_pinned = null
-		current_state = MatchState.IN_PROGRESS
-
-func _abort_pin(reason: String) -> void:
-	pin_broken.emit(reason)
-	if referee:
-		referee.on_pin_broken()
-	current_pinner = null
-	current_pinned = null
-	current_state = MatchState.IN_PROGRESS
-
-# ==============================================================================
-# Submission Management
-# ==============================================================================
-
-func _on_fighter_submission_initiated(attacker: Fighter, defender: Fighter) -> void:
-	if current_state != MatchState.IN_PROGRESS:
-		return
-		
-	current_pinner = attacker
-	current_pinned = defender
-	
-	# Check rope break
-	if MatchRules.is_near_ropes(get_fighter_pos(defender)) or MatchRules.is_near_ropes(get_fighter_pos(attacker)):
-		_call_rope_break()
-		return
-		
-	current_state = MatchState.SUBMISSION_ATTEMPT
-	if referee:
-		referee.on_pin_started(get_fighter_pos(defender))
-		
-	submission_started.emit(attacker, defender)
-
-func _process_submission_watch(_delta: float) -> void:
-	if not is_instance_valid(current_pinned) or not is_instance_valid(current_pinner):
-		_abort_pin("INVALID_PARTICIPANTS")
-		return
-		
-	if MatchRules.is_near_ropes(get_fighter_pos(current_pinned)) or MatchRules.is_near_ropes(get_fighter_pos(current_pinner)):
-		_call_rope_break()
-		return
-
-func _on_submission_escaped(_fighter: Fighter) -> void:
-	if current_state == MatchState.SUBMISSION_ATTEMPT:
-		submission_escaped.emit()
-		if referee:
-			referee.on_pin_broken()
-		current_pinner = null
-		current_pinned = null
-		current_state = MatchState.IN_PROGRESS
-
-func _on_tap_out_submitted(loser: Fighter) -> void:
-	var winner: Fighter = fighter_2 if loser == fighter_1 else fighter_1
-	_end_match(winner, "SUBMISSION (TAP OUT)")
-
-# ==============================================================================
-# General Match Control
-# ==============================================================================
-
-func _call_rope_break() -> void:
-	rope_break_called.emit()
-	if referee:
-		referee.on_rope_break()
-	if AudioManager.instance:
-		AudioManager.instance.play_rope_break_alert()
-		
-	if is_instance_valid(current_pinner):
-		current_pinner.break_pin_rope_break()
-		current_pinner.break_submission_rope_break()
-	if is_instance_valid(current_pinned):
-		current_pinned.break_pin_rope_break()
-		current_pinned.break_submission_rope_break()
-		
-	current_pinner = null
-	current_pinned = null
-	current_state = MatchState.IN_PROGRESS
-
-func _end_match(winner: Fighter, method: String) -> void:
-	current_state = MatchState.MATCH_OVER
-	var loser: Fighter = fighter_2 if winner == fighter_1 else fighter_1
-	
-	winner.set_victory()
-	loser.set_defeated()
-	
-	if referee:
-		referee.on_match_won(winner.global_position)
-	if AudioManager.instance:
-		AudioManager.instance.play_ring_bell()
-		AudioManager.instance.play_crowd_cheer()
-		AudioManager.instance.play_victory_fanfare()
-		
-	match_ended.emit(winner, method)
-
-func restart_match() -> void:
-	get_tree().reload_current_scene()
-
-`
-
-### File: scripts\core\match_manager.gd.uid
-`text
-uid://c46eb7ui44yfk
-
-`
-
-### File: scripts\core\match_rules.gd
-`gdscript
-class_name MatchRules
-extends RefCounted
-
-## Authoritative match configuration constants and geometric thresholds
-
-const RING_MAT_RADIUS: float = 4.0 # Distance from center (0,0) to ropes in meters
-const ROPE_BREAK_DISTANCE: float = 0.85 # Distance from rope threshold to trigger rope break
-const PIN_COUNT_INTERVAL: float = 1.1 # Seconds per referee count
-const PIN_ESCAPE_BASE_RATE: float = 30.0 # Percent escape per second base (hold-to-resist)
-const PIN_ESCAPE_MASH_BASE: float = 16.0 # Base progress gained per active mash pulse
-const PIN_ESCAPE_DECAY_RATE: float = 8.0 # Passive escape progress decay per second when unresisted
-const PIN_ESCAPE_FINISHER_PENALTY: float = 0.55 # Multiplier on escape rate following a finisher impact
-const MAX_HYPE: float = 100.0
-const HYPE_GAIN_ON_HIT: float = 12.0
-const HYPE_GAIN_ON_COUNTER: float = 20.0
-const STAMINA_REGEN_RATE: float = 12.0 # Units per second when not attacking or sprinting
-const STRIKE_STAMINA_COST: float = 14.0
-const GRAPPLE_STAMINA_COST: float = 22.0
-const BLOCK_STAMINA_DRAIN: float = 15.0 # Per second held
-const REVERSAL_STAMINA_COST: float = 18.0
-const FINISHER_HYPE_COST: float = 100.0
-
-static func is_near_ropes(position_3d: Vector3) -> bool:
-	var x: float = abs(position_3d.x)
-	var z: float = abs(position_3d.z)
-	var max_coord: float = max(x, z)
-	return max_coord >= (RING_MAT_RADIUS - ROPE_BREAK_DISTANCE)
-
-`
-
-### File: scripts\core\match_rules.gd.uid
-`text
-uid://cvekox0v1s3o2
-
-`
-
-### File: scripts\core\roster_data.gd
-`gdscript
-class_name RosterData
-extends RefCounted
-
-## Fictional stats and profiles for LOLCOW WRESTLING: OFFLINE MAYHEM.
-## All attributes and abilities are fictional game-design choices.
-
-const CHARACTERS: Dictionary = {
-	"tophiachu": {
-		"id": "tophiachu",
-		"name": "Tophiachu",
-		"title": "Live & Unfiltered",
-		"archetype": "Heavyweight Counter-Brawler",
-		"stats": {
-			"power": 8,
-			"mobility": 3,
-			"grappling": 7,
-			"stamina": 5,
-			"durability": 9,
-			"reversal": 4,
-			"showmanship": 6
-		},
-		"moves": {
-			"strike": "Comment-Section Clothesline",
-			"grapple": "Block-Button Backbreaker",
-			"corner": "Going-Live Corner Splash",
-			"finisher": "Live-Stream Shutdown",
-			"trait": "Last Word"
-		},
-		"visual": {
-			"primary_color": Color(0.45, 0.22, 0.58), # Purple
-			"secondary_color": Color(0.12, 0.12, 0.14), # Dark Charcoal
-			"height": 1.70,
-			"body_scale": Vector3(1.35, 0.95, 1.30),
-			"reach": 1.25
-		}
-	},
-	"novaonline": {
-		"id": "novaonline",
-		"name": "NovaOnline",
-		"title": "Main-Event Energy",
-		"archetype": "Momentum Heavyweight",
-		"stats": {
-			"power": 9,
-			"mobility": 4,
-			"grappling": 6,
-			"stamina": 4,
-			"durability": 9,
-			"reversal": 3,
-			"showmanship": 7
-		},
-		"moves": {
-			"strike": "Buffering Bodycheck",
-			"ground": "Main-Character Elbow",
-			"corner": "Offline Avalanche",
-			"finisher": "Going Offline",
-			"trait": "Momentum Feed"
-		},
-		"visual": {
-			"primary_color": Color(0.85, 0.15, 0.15), # Red
-			"secondary_color": Color(0.9, 0.8, 0.2), # Gold
-			"height": 1.85,
-			"body_scale": Vector3(1.25, 1.05, 1.15),
-			"reach": 1.35
-		}
-	},
-	"cyraxx": {
-		"id": "cyraxx",
-		"name": "Cyraxx",
-		"title": "Feedback Frenzy",
-		"archetype": "Lightweight Burst Striker",
-		"stats": {
-			"power": 4,
-			"mobility": 9,
-			"grappling": 5,
-			"stamina": 6,
-			"durability": 3,
-			"reversal": 8,
-			"showmanship": 7
-		},
-		"moves": {
-			"strike": "Feedback Flurry",
-			"grapple": "Mic-Drop DDT",
-			"counter": "Encore Reversal",
-			"finisher": "Raxx and Ruin",
-			"trait": "Overdrive"
-		},
-		"visual": {
-			"primary_color": Color(0.15, 0.55, 0.35), # Dark Olive Green
-			"secondary_color": Color(0.2, 0.2, 0.2), # Black
-			"height": 1.55,
-			"body_scale": Vector3(0.78, 0.88, 0.78),
-			"reach": 0.95
-		}
-	},
-	"candy_rooks": {
-		"id": "candy_rooks",
-		"name": "Candy Rooks",
-		"title": "Kitchen-Sink Brawler",
-		"archetype": "Combination Grappler",
-		"stats": {
-			"power": 7,
-			"mobility": 4,
-			"grappling": 8,
-			"stamina": 6,
-			"durability": 8,
-			"reversal": 5,
-			"showmanship": 4
-		},
-		"moves": {
-			"strike": "Kitchen-Sink Combo",
-			"rush": "Ragoon Rush",
-			"grapple": "Second-Helping Side Slam",
-			"finisher": "Ribs & Kidney Beans",
-			"trait": "Recipe Combo"
-		},
-		"visual": {
-			"primary_color": Color(0.85, 0.45, 0.65), # Pink/Apron
-			"secondary_color": Color(0.95, 0.95, 0.95), # White
-			"height": 1.68,
-			"body_scale": Vector3(1.22, 0.96, 1.20),
-			"reach": 1.18
-		}
-	},
-	"andy_ditch": {
-		"id": "andy_ditch",
-		"name": "Andy Ditch",
-		"title": "Immovable Object",
-		"archetype": "Territory Anchor Grappler",
-		"stats": {
-			"power": 8,
-			"mobility": 2,
-			"grappling": 9,
-			"stamina": 5,
-			"durability": 10,
-			"reversal": 4,
-			"showmanship": 4
-		},
-		"moves": {
-			"counter": "Sit-Down Counter",
-			"grapple": "Deadweight Takedown",
-			"taunt": "Complaint Department",
-			"finisher": "Case Closed",
-			"trait": "Hold My Ground"
-		},
-		"visual": {
-			"primary_color": Color(0.25, 0.35, 0.65), # Denim Blue
-			"secondary_color": Color(0.6, 0.6, 0.6), # Grey
-			"height": 1.72,
-			"body_scale": Vector3(1.30, 0.92, 1.25),
-			"reach": 1.15
-		}
-	},
-	"jupiter_the_hybrid": {
-		"id": "jupiter_the_hybrid",
-		"name": "Jupiter the Hybrid",
-		"title": "Double Feature",
-		"archetype": "Stance-Shift Grappler",
-		"stats": {
-			"power": 6,
-			"mobility": 7,
-			"grappling": 7,
-			"stamina": 5,
-			"durability": 5,
-			"reversal": 6,
-			"showmanship": 6
-		},
-		"moves": {
-			"stance": "Hybrid Shift",
-			"strike": "Moonrise Lariat",
-			"counter": "Midnight Counter",
-			"finisher": "Eclipse Driver",
-			"trait": "Best of Both"
-		},
-		"visual": {
-			"primary_color": Color(0.2, 0.1, 0.35), # Deep Violet
-			"secondary_color": Color(0.8, 0.8, 0.9), # Silver
-			"height": 1.80,
-			"body_scale": Vector3(1.05, 1.02, 1.02),
-			"reach": 1.28
-		}
-	},
-	"anacondasin": {
-		"id": "anacondasin",
-		"name": "AnacondaSin",
-		"title": "The Counter-Coil",
-		"archetype": "Positional Submission Specialist",
-		"stats": {
-			"power": 5,
-			"mobility": 6,
-			"grappling": 9,
-			"stamina": 6,
-			"durability": 5,
-			"reversal": 7,
-			"showmanship": 4
-		},
-		"moves": {
-			"feint": "Question-Time Feint",
-			"counter": "Coil Counter",
-			"sweep": "Wraparound Sweep",
-			"finisher": "Anaconda Lock",
-			"trait": "Tightening Grip"
-		},
-		"visual": {
-			"primary_color": Color(0.15, 0.45, 0.25), # Emerald Green
-			"secondary_color": Color(0.85, 0.75, 0.3), # Gold
-			"height": 1.65,
-			"body_scale": Vector3(1.10, 0.98, 1.10),
-			"reach": 1.20
-		}
-	},
-	"daniel_larson": {
-		"id": "daniel_larson",
-		"name": "Daniel Larson",
-		"title": "Roaring Thunder",
-		"archetype": "Mobile Opportunist",
-		"stats": {
-			"power": 4,
-			"mobility": 9,
-			"grappling": 4,
-			"stamina": 8,
-			"durability": 3,
-			"reversal": 7,
-			"showmanship": 7
-		},
-		"moves": {
-			"strike": "Roaring Thunder Knee",
-			"aerial": "Stage-Dive Elbow",
-			"escape": "Tour-Bus Escape",
-			"finisher": "Final Encore",
-			"trait": "Touring Legs"
-		},
-		"visual": {
-			"primary_color": Color(0.85, 0.45, 0.1), # Bright Orange
-			"secondary_color": Color(0.2, 0.2, 0.25), # Slate
-			"height": 1.78,
-			"body_scale": Vector3(0.82, 1.02, 0.80),
-			"reach": 1.30
-		}
-	}
-}
-
-static func get_character(id: String) -> Dictionary:
-	return CHARACTERS.get(id, {})
-
-static func get_all_ids() -> Array:
-	return CHARACTERS.keys()
-
-`
-
-### File: scripts\core\roster_data.gd.uid
-`text
-uid://bfq0ya5qktxky
-
-`
-
-### File: scripts\fighter\fighter.gd
 `gdscript
 class_name Fighter
 extends CharacterBody3D
@@ -3286,6 +1534,7 @@ var initial_defender_local_pos: Vector3 = Vector3.ZERO
 var pin_escape_progress: float = 0.0
 var knockdown_duration: float = 2.5
 var recent_finisher_impact_timer: float = 0.0
+var recent_heavy_impact_timer: float = 0.0
 
 # Input buffer
 var input_dir: Vector2 = Vector2.ZERO
@@ -3349,6 +1598,8 @@ func load_character_data() -> void:
 func _physics_process(delta: float) -> void:
 	if recent_finisher_impact_timer > 0.0:
 		recent_finisher_impact_timer = max(0.0, recent_finisher_impact_timer - delta)
+	if recent_heavy_impact_timer > 0.0:
+		recent_heavy_impact_timer = max(0.0, recent_heavy_impact_timer - delta)
 		
 	if not is_cpu:
 		_gather_player_inputs()
@@ -3914,17 +2165,18 @@ func _process_pin_escape(delta: float) -> void:
 	var health_factor: float = 0.06 + 0.64 * (vit_ratio * vit_ratio) + 0.30 * stam_ratio
 	var rev_mult: float = 0.85 + 0.30 * rev_ratio
 	var finisher_mult: float = MatchRules.PIN_ESCAPE_FINISHER_PENALTY if recent_finisher_impact_timer > 0.0 else 1.0
-	var total_mult: float = health_factor * rev_mult * finisher_mult
+	var heavy_mult: float = MatchRules.PIN_ESCAPE_HEAVY_IMPACT_PENALTY if recent_heavy_impact_timer > 0.0 else 1.0
+	var total_mult: float = health_factor * rev_mult * finisher_mult * heavy_mult
 	
 	if has_mash_input:
 		var mash_gain: float = MatchRules.PIN_ESCAPE_MASH_BASE * total_mult
 		pin_escape_progress += mash_gain
-		stamina = max(0.0, stamina - 0.5)
+		stamina = max(0.0, stamina - MatchRules.PIN_ESCAPE_MASH_STAMINA_COST)
 		stamina_changed.emit(stamina, max_stamina)
 	elif has_hold_input:
 		var hold_gain: float = MatchRules.PIN_ESCAPE_BASE_RATE * total_mult * delta
 		pin_escape_progress += hold_gain
-		stamina = max(0.0, stamina - 2.0 * delta)
+		stamina = max(0.0, stamina - MatchRules.PIN_ESCAPE_HOLD_STAMINA_DRAIN * delta)
 		stamina_changed.emit(stamina, max_stamina)
 	else:
 		# Passive decay when unresisted (simulates pin weight & pinning arm pressure)
@@ -3934,6 +2186,8 @@ func _process_pin_escape(delta: float) -> void:
 		_execute_kick_out()
 
 func _execute_kick_out() -> void:
+	if current_state != State.PINNED:
+		return
 	kick_out_succeeded.emit(self)
 	if visual_root:
 		visual_root.rotation = Vector3.ZERO
@@ -3966,8 +2220,12 @@ func receive_damage(amount: float, from_fighter: Fighter, was_blocked: bool, is_
 	vitality = max(0.0, vitality - amount)
 	vitality_changed.emit(vitality, max_vitality)
 	
-	if is_finisher or amount >= 100.0:
-		recent_finisher_impact_timer = 6.0
+	# Explicit impact classification: Finisher pressure is strictly gated by move metadata
+	if is_finisher:
+		recent_finisher_impact_timer = MatchRules.FINISHER_DISORIENTATION_DURATION
+		recent_heavy_impact_timer = 0.0 # Finisher overrides heavy impact
+	elif amount >= MatchRules.HEAVY_IMPACT_DAMAGE_THRESHOLD and not was_blocked:
+		recent_heavy_impact_timer = MatchRules.HEAVY_IMPACT_DISORIENTATION_DURATION
 	
 	# Knockdown on heavy damage or low health
 	if not was_blocked and vitality <= 0.0 and current_state != State.KNOCKED_DOWN and current_state != State.PINNED:
@@ -4034,197 +2292,128 @@ func set_defeated() -> void:
 
 `
 
-### File: scripts\fighter\fighter.gd.uid
-`text
-uid://bqpvjiuv0hfwp
+---
 
-`
+## File: scripts/ai/cpu_controller.gd
 
-### File: scripts\referee\referee.gd
 `gdscript
-class_name Referee
-extends Node3D
+class_name CPUController
+extends Node
 
-## Neutral referee KingCobraJFS (1991-2025).
-## Untargetable, non-colliding official featuring a permanent visible glowing halo.
-## The match rules govern the authoritative count; the referee communicates it.
+## Tactical CPU wrestler controller.
+## Drives standard Fighter input interface with realistic reaction intervals
+## and profile-tailored tactical choices.
 
-signal count_pulse(count_number: int)
+@export var fighter: Fighter
+@export var reaction_interval: float = 0.22 # Reaction delay in seconds
+@export var escape_mash_interval: float = 0.10 # Cadence for CPU escape mashing
 
-enum RefereeState {
-	IDLE,
-	OBSERVING,
-	RUNNING_TO_PIN,
-	COUNTING_PIN,
-	SIGNAL_ROPE_BREAK,
-	VICTORY
-}
-
-@export var halo_node: Node3D
-@export var mesh_instance: Node3D
-@export var count_label_3d: Label3D
-
-var current_state: RefereeState = RefereeState.OBSERVING
-var target_fighter_1: Node3D
-var target_fighter_2: Node3D
-var current_count: int = 0
-var halo_base_scale: Vector3 = Vector3.ONE
-var halo_pulse_timer: float = 0.0
-var halo_material: StandardMaterial3D
+var timer: float = 0.0
+var escape_timer: float = 0.0
+var think_state: String = "approach"
 
 func _ready() -> void:
-	if halo_node:
-		halo_base_scale = halo_node.scale
-		# Find halo mesh material if present
-		var halo_mesh: MeshInstance3D = halo_node.get_node_or_null("HaloMesh") as MeshInstance3D
-		if halo_mesh and halo_mesh.material_override:
-			halo_material = halo_mesh.material_override as StandardMaterial3D
-	
-	if count_label_3d:
-		count_label_3d.visible = false
+	if fighter:
+		fighter.is_cpu = true
 
-func _process(delta: float) -> void:
-	_update_halo_visuals(delta)
-	
-	match current_state:
-		RefereeState.OBSERVING:
-			_observe_match(delta)
-		RefereeState.RUNNING_TO_PIN:
-			pass
-		RefereeState.COUNTING_PIN:
-			pass
-		RefereeState.SIGNAL_ROPE_BREAK:
-			pass
-		RefereeState.VICTORY:
-			pass
-
-func setup_targets(f1: Node3D, f2: Node3D) -> void:
-	target_fighter_1 = f1
-	target_fighter_2 = f2
-
-func _observe_match(delta: float) -> void:
-	if not is_instance_valid(target_fighter_1) or not is_instance_valid(target_fighter_2):
+func _physics_process(delta: float) -> void:
+	if not is_instance_valid(fighter):
 		return
-	
-	# Position referee on side of the action, keeping ~2.5m distance
-	var midpoint: Vector3 = (target_fighter_1.global_position + target_fighter_2.global_position) * 0.5
-	var perp_dir: Vector3 = (target_fighter_2.global_position - target_fighter_1.global_position).cross(Vector3.UP).normalized()
-	if perp_dir.is_zero_approx():
-		perp_dir = Vector3.FORWARD
-	
-	var desired_pos: Vector3 = midpoint + perp_dir * 2.2
-	# Clamp inside ring bounds
-	desired_pos.x = clamp(desired_pos.x, -2.8, 2.8)
-	desired_pos.z = clamp(desired_pos.z, -2.8, 2.8)
-	desired_pos.y = 0.0 # Canvas height
-	
-	global_position = global_position.lerp(desired_pos, 3.0 * delta)
-	
-	# Look towards midpoint
-	var look_target: Vector3 = Vector3(midpoint.x, global_position.y, midpoint.z)
-	if not global_position.is_equal_approx(look_target):
-		look_at(look_target, Vector3.UP)
-
-func on_pin_started(pin_position: Vector3) -> void:
-	current_state = RefereeState.COUNTING_PIN
-	current_count = 0
-	
-	# Move near the pinned fighters
-	var offset: Vector3 = Vector3(1.2, 0.0, 0.0)
-	global_position = pin_position + offset
-	global_position.x = clamp(global_position.x, -3.2, 3.2)
-	global_position.z = clamp(global_position.z, -3.2, 3.2)
-	global_position.y = 0.0
-	
-	look_at(Vector3(pin_position.x, global_position.y, pin_position.z), Vector3.UP)
-	
-	# Drop to mat pose
-	if mesh_instance:
-		mesh_instance.position.y = -0.35 # Kneeling down to canvas
-	
-	if count_label_3d:
-		count_label_3d.text = ""
-		count_label_3d.visible = true
-
-func on_pin_count(count_num: int) -> void:
-	current_count = count_num
-	halo_pulse_timer = 0.4
-	
-	if count_label_3d:
-		count_label_3d.text = str(count_num) + "!"
-		count_label_3d.modulate = Color(1.0, 0.85, 0.2)
-	
-	# Canvas slap bounce animation
-	if mesh_instance:
-		var tween: Tween = create_tween()
-		tween.tween_property(mesh_instance, "position:y", -0.45, 0.08)
-		tween.tween_property(mesh_instance, "position:y", -0.35, 0.12)
-	
-	count_pulse.emit(count_num)
-
-func on_rope_break() -> void:
-	current_state = RefereeState.SIGNAL_ROPE_BREAK
-	if count_label_3d:
-		count_label_3d.text = "ROPE BREAK!"
-		count_label_3d.modulate = Color(1.0, 0.2, 0.2)
-	
-	# Stand up and signal
-	if mesh_instance:
-		mesh_instance.position.y = 0.0
-	
-	var tween: Tween = create_tween()
-	tween.tween_interval(1.2)
-	tween.tween_callback(func():
-		if count_label_3d:
-			count_label_3d.visible = false
-		current_state = RefereeState.OBSERVING
-	)
-
-func on_pin_broken() -> void:
-	if current_state == RefereeState.COUNTING_PIN:
-		current_state = RefereeState.OBSERVING
-		if count_label_3d:
-			count_label_3d.visible = false
-		if mesh_instance:
-			mesh_instance.position.y = 0.0
-
-func on_match_won(winner_position: Vector3) -> void:
-	current_state = RefereeState.VICTORY
-	if count_label_3d:
-		count_label_3d.text = "WINNER!"
-		count_label_3d.modulate = Color(0.2, 1.0, 0.4)
-		count_label_3d.visible = true
-	if mesh_instance:
-		mesh_instance.position.y = 0.0
-	look_at(Vector3(winner_position.x, global_position.y, winner_position.z), Vector3.UP)
-
-func _update_halo_visuals(delta: float) -> void:
-	if not halo_node:
+		
+	# Active escape mashing during PINNED or SUBMISSION_DEFENDER
+	if fighter.current_state in [Fighter.State.PINNED, Fighter.State.SUBMISSION_DEFENDER]:
+		escape_timer += delta
+		var vit_ratio: float = clamp(fighter.vitality / fighter.max_vitality, 0.0, 1.0)
+		var stam_ratio: float = clamp(fighter.stamina / fighter.max_stamina, 0.0, 1.0)
+		var fatigue: float = 1.0 - (0.6 * vit_ratio + 0.4 * stam_ratio)
+		# Mashing cadence scales with reversal stat and physical fatigue (exhausted CPU struggles at ~6-7 Hz, fresh at 10 Hz)
+		var effective_interval: float = (escape_mash_interval + 0.04 * fatigue) * (1.2 - (fighter.stat_reversal * 0.04))
+		if escape_timer >= effective_interval:
+			escape_timer = 0.0
+			fighter.input_pin = true
+			fighter.input_strike = true
 		return
-	
-	# Constant gentle rotation
-	halo_node.rotate_y(1.5 * delta)
-	
-	if halo_pulse_timer > 0.0:
-		halo_pulse_timer -= delta
-		var pulse_strength: float = clamp(halo_pulse_timer / 0.4, 0.0, 1.0)
-		halo_node.scale = halo_base_scale * (1.0 + 0.45 * pulse_strength)
-		if halo_material:
-			halo_material.emission_energy_multiplier = 3.0 + 4.0 * pulse_strength
 	else:
-		halo_node.scale = halo_base_scale
-		if halo_material:
-			halo_material.emission_energy_multiplier = 2.5
+		escape_timer = 0.0
+	
+	if not is_instance_valid(fighter.opponent):
+		return
+	
+	timer += delta
+	if timer >= reaction_interval:
+		timer = 0.0
+		_think()
+
+func _think() -> void:
+	var opp: Fighter = fighter.opponent
+	var opp_pos: Vector3 = opp.global_position if opp.is_inside_tree() else opp.position
+	var my_pos: Vector3 = fighter.global_position if fighter.is_inside_tree() else fighter.position
+	var dist: float = my_pos.distance_to(opp_pos)
+	
+	# Clear pulse inputs
+	fighter.input_strike = false
+	fighter.input_grapple = false
+	fighter.input_block = false
+	fighter.input_reversal = false
+	fighter.input_pin = false
+	
+	# Check if opponent is downed -> attempt pin!
+	if opp.current_state == Fighter.State.KNOCKED_DOWN:
+		if dist <= 1.6:
+			fighter.input_dir = Vector2.ZERO
+			fighter.input_pin = true
+		else:
+			# Approach downed opponent
+			var to_opp: Vector3 = (opp_pos - my_pos).normalized()
+			fighter.input_dir = Vector2(to_opp.x, to_opp.z)
+		return
+		
+	# Check if I am pinned or in submission -> escape mash!
+	if fighter.current_state in [Fighter.State.PINNED, Fighter.State.SUBMISSION_DEFENDER]:
+		fighter.input_pin = true
+		fighter.input_strike = true
+		return
+		
+	# Tactical in-ring spacing
+	var to_opp_2d: Vector2 = Vector2(opp_pos.x - my_pos.x, opp_pos.z - my_pos.z)
+	var dir_norm: Vector2 = to_opp_2d.normalized()
+	
+	# If opponent is striking and within range, test reversal or block
+	if opp.current_state == Fighter.State.STRIKING and dist <= fighter.reach_distance + 0.2:
+		var rev_chance: float = fighter.stat_reversal * 0.08
+		if randf() < rev_chance and fighter.stamina >= MatchRules.REVERSAL_STAMINA_COST:
+			fighter.input_reversal = true
+			return
+		elif randf() < 0.6:
+			fighter.input_block = true
+			return
+
+	# Character specific behavior
+	if dist <= fighter.reach_distance:
+		fighter.input_dir = Vector2.ZERO
+		
+		# Rock-paper-scissors choices
+		if opp.current_state == Fighter.State.BLOCKING:
+			# Grapple breaks guard!
+			fighter.input_grapple = true
+		else:
+			var grapple_pref: float = float(fighter.stat_grappling) / float(fighter.stat_grappling + fighter.stat_power)
+			if randf() < grapple_pref and fighter.stamina >= MatchRules.GRAPPLE_STAMINA_COST:
+				fighter.input_grapple = true
+			elif fighter.stamina >= MatchRules.STRIKE_STAMINA_COST:
+				fighter.input_strike = true
+			else:
+				fighter.input_block = true
+	else:
+		# Approach opponent
+		fighter.input_dir = dir_norm
 
 `
 
-### File: scripts\referee\referee.gd.uid
-`text
-uid://caup5e5uvggiv
+---
 
-`
+## File: scripts/ring/broadcast_camera.gd
 
-### File: scripts\ring\broadcast_camera.gd
 `gdscript
 class_name BroadcastCamera
 extends Camera3D
@@ -4289,34 +2478,10 @@ func _physics_process(delta: float) -> void:
 
 `
 
-### File: scripts\ring\broadcast_camera.gd.uid
-`text
-uid://c7mmfqtsnl4ee
+---
 
-`
+## File: scripts/ui/character_select.gd
 
-### File: scripts\ring\ring.gd
-`gdscript
-class_name WrestlingRing
-extends Node3D
-
-## 3D Wrestling Ring with canvas, 4 turnbuckle posts, and 3-tiered ropes.
-
-@export var mat_size: float = 8.0
-@export var rope_radius: float = 3.8
-
-func _ready() -> void:
-	pass
-
-`
-
-### File: scripts\ring\ring.gd.uid
-`text
-uid://147axnxhu0v2
-
-`
-
-### File: scripts\ui\character_select.gd
 `gdscript
 class_name CharacterSelect
 extends Control
@@ -4577,13 +2742,10 @@ func _start_match() -> void:
 
 `
 
-### File: scripts\ui\character_select.gd.uid
-`text
-uid://d4b8jl8pfrjhu
+---
 
-`
+## File: scripts/ui/match_hud.gd
 
-### File: scripts\ui\match_hud.gd
 `gdscript
 class_name MatchHUD
 extends Control
@@ -4791,13 +2953,868 @@ func _on_match_ended(winner: Fighter, method: String) -> void:
 
 `
 
-### File: scripts\ui\match_hud.gd.uid
-`text
-uid://dkflk2qlqo1g2
+---
+
+## File: scenes/main.tscn
+
+`ini
+[gd_scene format=3 uid="uid://dmainscene01"]
+
+[ext_resource type="Script" path="res://scripts/core/main_scene.gd" id="1_main"]
+[ext_resource type="PackedScene" path="res://scenes/arena/ring_arena.tscn" id="2_arena"]
+[ext_resource type="PackedScene" path="res://scenes/fighter/fighter.tscn" id="3_fighter"]
+[ext_resource type="PackedScene" path="res://scenes/referee/referee.tscn" id="4_referee"]
+[ext_resource type="Script" path="res://scripts/core/match_manager.gd" id="5_match"]
+[ext_resource type="Script" path="res://scripts/ring/broadcast_camera.gd" id="6_cam"]
+[ext_resource type="Script" path="res://scripts/ai/cpu_controller.gd" id="7_cpu"]
+[ext_resource type="PackedScene" path="res://scenes/ui/match_hud.tscn" id="8_hud"]
+[ext_resource type="Script" path="res://scripts/core/audio_manager.gd" id="9_audio"]
+
+[sub_resource type="Environment" id="Environment_arena"]
+background_mode = 1
+background_color = Color(0.04, 0.04, 0.05, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.25, 0.25, 0.3, 1)
+tonemap_mode = 2
+glow_enabled = true
+glow_intensity = 0.8
+glow_bloom = 0.25
+
+[node name="Main" type="Node3D" node_paths=PackedStringArray("fighter_1", "fighter_2", "cpu_controller_p2", "match_manager")]
+script = ExtResource("1_main")
+fighter_1 = NodePath("Tophiachu")
+fighter_2 = NodePath("Cyraxx")
+cpu_controller_p2 = NodePath("CPUController_P2")
+match_manager = NodePath("MatchManager")
+
+[node name="AudioManager" type="Node" parent="."]
+script = ExtResource("9_audio")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_arena")
+
+[node name="SpotLight_Center" type="SpotLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 9, 0)
+light_color = Color(1, 0.98, 0.9, 1)
+light_energy = 8.0
+spot_range = 16.0
+spot_angle = 45.0
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 5, 8, 5)
+light_color = Color(0.9, 0.9, 0.95, 1)
+light_energy = 1.2
+shadow_enabled = true
+
+[node name="RingArena" parent="." instance=ExtResource("2_arena")]
+
+[node name="Tophiachu" parent="." instance=ExtResource("3_fighter")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.8, 0, 0)
+character_id = "tophiachu"
+player_index = 1
+is_cpu = false
+
+[node name="Cyraxx" parent="." instance=ExtResource("3_fighter")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.8, 0, 0)
+character_id = "cyraxx"
+player_index = 2
+is_cpu = true
+
+[node name="CPUController_P2" type="Node" parent="." node_paths=PackedStringArray("fighter")]
+script = ExtResource("7_cpu")
+fighter = NodePath("../Cyraxx")
+
+[node name="Referee" parent="." instance=ExtResource("4_referee")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -2.4)
+
+[node name="MatchManager" type="Node" parent="." node_paths=PackedStringArray("fighter_1", "fighter_2", "referee", "hud")]
+script = ExtResource("5_match")
+fighter_1 = NodePath("../Tophiachu")
+fighter_2 = NodePath("../Cyraxx")
+referee = NodePath("../Referee")
+hud = NodePath("../CanvasLayer/MatchHUD")
+
+[node name="BroadcastCamera" type="Camera3D" parent="." node_paths=PackedStringArray("target_1", "target_2")]
+transform = Transform3D(1, 0, 0, 0, 0.866025, 0.5, 0, -0.5, 0.866025, 0, 4.8, 9)
+current = true
+fov = 55.0
+script = ExtResource("6_cam")
+target_1 = NodePath("../Tophiachu")
+target_2 = NodePath("../Cyraxx")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="MatchHUD" parent="CanvasLayer" node_paths=PackedStringArray("match_manager") instance=ExtResource("8_hud")]
+match_manager = NodePath("../../MatchManager")
 
 `
 
-### File: tests\test_suite.gd
+---
+
+## File: scenes/fighter/fighter.tscn
+
+`ini
+[gd_scene format=3 uid="uid://dfighter001"]
+
+[ext_resource type="Script" path="res://scripts/fighter/fighter.gd" id="1_script"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_root"]
+radius = 0.45
+height = 1.8
+
+[node name="Fighter" type="CharacterBody3D" node_paths=PackedStringArray("visual_root")]
+collision_layer = 2
+collision_mask = 3
+script = ExtResource("1_script")
+visual_root = NodePath("VisualRoot")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_root")
+
+[node name="VisualRoot" type="Node3D" parent="."]
+
+`
+
+---
+
+## File: scenes/referee/referee.tscn
+
+`ini
+[gd_scene format=3 uid="uid://b23k1v4j7m9n"]
+
+[ext_resource type="Script" path="res://scripts/referee/referee.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://assets/models/referee_cobra.glb" id="2_model"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_halo"]
+albedo_color = Color(1, 0.85, 0.2, 1)
+metallic = 0.2
+roughness = 0.1
+emission_enabled = true
+emission = Color(1, 0.85, 0.2, 1)
+emission_energy_multiplier = 3.0
+
+[sub_resource type="TorusMesh" id="TorusMesh_halo"]
+material = SubResource("StandardMaterial3D_halo")
+inner_radius = 0.3
+outer_radius = 0.38
+rings = 24
+ring_segments = 16
+
+[node name="Referee" type="Node3D" node_paths=PackedStringArray("halo_node", "mesh_instance", "count_label_3d")]
+script = ExtResource("1_script")
+halo_node = NodePath("HaloAnchor")
+mesh_instance = NodePath("ModelAnchor")
+count_label_3d = NodePath("CountLabel3D")
+
+[node name="ModelAnchor" type="Node3D" parent="."]
+
+[node name="Model" parent="ModelAnchor" instance=ExtResource("2_model")]
+
+[node name="HaloAnchor" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.3, 0)
+
+[node name="HaloMesh" type="MeshInstance3D" parent="HaloAnchor"]
+mesh = SubResource("TorusMesh_halo")
+surface_material_override/0 = SubResource("StandardMaterial3D_halo")
+
+[node name="CountLabel3D" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.7, 0)
+billboard = 1
+font_size = 64
+outline_size = 16
+text = "1!"
+
+`
+
+---
+
+## File: scenes/arena/ring_arena.tscn
+
+`ini
+[gd_scene format=3 uid="uid://dpw54n6g87v8"]
+
+[ext_resource type="PackedScene" path="res://assets/models/ring_arena.glb" id="1_arena"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_mat"]
+size = Vector3(8, 0.4, 8)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_rope_ns"]
+size = Vector3(8, 2, 0.2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_rope_ew"]
+size = Vector3(0.2, 2, 8)
+
+[node name="RingArena" type="Node3D"]
+
+[node name="Model" parent="." instance=ExtResource("1_arena")]
+
+[node name="RingFloorCollision" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.2, 0)
+collision_layer = 1
+collision_mask = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RingFloorCollision"]
+shape = SubResource("BoxShape3D_mat")
+
+[node name="RopeNorth" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 3.85)
+collision_layer = 1
+collision_mask = 2
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RopeNorth"]
+shape = SubResource("BoxShape3D_rope_ns")
+
+[node name="RopeSouth" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -3.85)
+collision_layer = 1
+collision_mask = 2
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RopeSouth"]
+shape = SubResource("BoxShape3D_rope_ns")
+
+[node name="RopeEast" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.85, 1, 0)
+collision_layer = 1
+collision_mask = 2
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RopeEast"]
+shape = SubResource("BoxShape3D_rope_ew")
+
+[node name="RopeWest" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.85, 1, 0)
+collision_layer = 1
+collision_mask = 2
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RopeWest"]
+shape = SubResource("BoxShape3D_rope_ew")
+
+`
+
+---
+
+## File: scenes/ui/character_select.tscn
+
+`ini
+[gd_scene format=3 uid="uid://dcharselect01"]
+
+[ext_resource type="Script" path="res://scripts/ui/character_select.gd" id="1_script"]
+[ext_resource type="Script" path="res://scripts/core/audio_manager.gd" id="2_audio"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
+bg_color = Color(0.06, 0.06, 0.08, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card_p1"]
+bg_color = Color(0.08, 0.12, 0.16, 0.9)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.2, 0.7, 0.9, 0.8)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card_p2"]
+bg_color = Color(0.16, 0.08, 0.08, 0.9)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.9, 0.3, 0.3, 0.8)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_grid"]
+bg_color = Color(0.1, 0.1, 0.12, 0.85)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="CharacterSelect" type="Control" node_paths=PackedStringArray("grid_container", "p1_name_label", "p1_title_label", "p1_archetype_label", "p1_stats_container", "p1_finisher_label", "p1_trait_label", "p2_name_label", "p2_title_label", "p2_archetype_label", "p2_stats_container", "p2_finisher_label", "p2_trait_label", "cpu_toggle_button", "start_match_button")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+grid_container = NodePath("CenterPanel/GridContainer")
+p1_name_label = NodePath("P1_Card/VBox/Name")
+p1_title_label = NodePath("P1_Card/VBox/Title")
+p1_archetype_label = NodePath("P1_Card/VBox/Archetype")
+p1_stats_container = NodePath("P1_Card/VBox/Stats")
+p1_finisher_label = NodePath("P1_Card/VBox/Finisher")
+p1_trait_label = NodePath("P1_Card/VBox/Trait")
+p2_name_label = NodePath("P2_Card/VBox/Name")
+p2_title_label = NodePath("P2_Card/VBox/Title")
+p2_archetype_label = NodePath("P2_Card/VBox/Archetype")
+p2_stats_container = NodePath("P2_Card/VBox/Stats")
+p2_finisher_label = NodePath("P2_Card/VBox/Finisher")
+p2_trait_label = NodePath("P2_Card/VBox/Trait")
+cpu_toggle_button = NodePath("CenterPanel/VBoxActions/CPUToggleBtn")
+start_match_button = NodePath("CenterPanel/VBoxActions/StartMatchBtn")
+
+[node name="AudioManager" type="Node" parent="."]
+script = ExtResource("2_audio")
+
+[node name="Background" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_bg")
+
+[node name="Header" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 25.0
+offset_bottom = 105.0
+grow_horizontal = 2
+theme_override_constants/separation = 4
+
+[node name="Title" type="Label" parent="Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.25, 1)
+theme_override_font_sizes/font_size = 36
+text = "LOLCOW WRESTLING: OFFLINE MAYHEM"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.75, 1)
+theme_override_font_sizes/font_size = 18
+text = "CHOOSE YOUR FIGHTER"
+horizontal_alignment = 1
+
+[node name="P1_Card" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_left = 40.0
+offset_top = 130.0
+offset_right = 380.0
+offset_bottom = -70.0
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card_p1")
+
+[node name="VBox" type="VBoxContainer" parent="P1_Card"]
+layout_mode = 2
+offset_left = 15.0
+offset_top = 15.0
+offset_right = 325.0
+offset_bottom = 865.0
+theme_override_constants/separation = 10
+
+[node name="Tag" type="Label" parent="P1_Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.8, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = "PLAYER 1"
+
+[node name="Name" type="Label" parent="P1_Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 26
+text = "TOPHIACHU"
+
+[node name="Title" type="Label" parent="P1_Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.5, 1)
+theme_override_font_sizes/font_size = 14
+text = "\"Live & Unfiltered\""
+
+[node name="Archetype" type="Label" parent="P1_Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.85, 0.65, 1)
+theme_override_font_sizes/font_size = 15
+text = "Heavyweight Counter-Brawler"
+
+[node name="HSeparator1" type="HSeparator" parent="P1_Card/VBox"]
+layout_mode = 2
+
+[node name="Stats" type="VBoxContainer" parent="P1_Card/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="HSeparator2" type="HSeparator" parent="P1_Card/VBox"]
+layout_mode = 2
+
+[node name="Finisher" type="Label" parent="P1_Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.6, 0.3, 1)
+theme_override_font_sizes/font_size = 15
+text = "FINISHER: Live-Stream Shutdown"
+autowrap_mode = 2
+
+[node name="Trait" type="Label" parent="P1_Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.9, 0.5, 1)
+theme_override_font_sizes/font_size = 14
+text = "TRAIT: Last Word"
+autowrap_mode = 2
+
+[node name="Prompt" type="Label" parent="P1_Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.7, 0.8, 1)
+theme_override_font_sizes/font_size = 13
+text = "\n[W/A/S/D] Navigate P1"
+
+[node name="P2_Card" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -380.0
+offset_top = 130.0
+offset_right = -40.0
+offset_bottom = -70.0
+grow_horizontal = 0
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card_p2")
+
+[node name="VBox" type="VBoxContainer" parent="P2_Card"]
+layout_mode = 2
+offset_left = 15.0
+offset_top = 15.0
+offset_right = 325.0
+offset_bottom = 865.0
+theme_override_constants/separation = 10
+
+[node name="Tag" type="Label" parent="P2_Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.3, 0.3, 1)
+theme_override_font_sizes/font_size = 20
+text = "PLAYER 2"
+
+[node name="Name" type="Label" parent="P2_Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 26
+text = "CYRAXX"
+
+[node name="Title" type="Label" parent="P2_Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.5, 1)
+theme_override_font_sizes/font_size = 14
+text = "\"Feedback Frenzy\""
+
+[node name="Archetype" type="Label" parent="P2_Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.85, 0.65, 1)
+theme_override_font_sizes/font_size = 15
+text = "Lightweight Burst Striker"
+
+[node name="HSeparator1" type="HSeparator" parent="P2_Card/VBox"]
+layout_mode = 2
+
+[node name="Stats" type="VBoxContainer" parent="P2_Card/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="HSeparator2" type="HSeparator" parent="P2_Card/VBox"]
+layout_mode = 2
+
+[node name="Finisher" type="Label" parent="P2_Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.6, 0.3, 1)
+theme_override_font_sizes/font_size = 15
+text = "FINISHER: Raxx and Ruin"
+autowrap_mode = 2
+
+[node name="Trait" type="Label" parent="P2_Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.9, 0.5, 1)
+theme_override_font_sizes/font_size = 14
+text = "TRAIT: Overdrive"
+autowrap_mode = 2
+
+[node name="Prompt" type="Label" parent="P2_Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.5, 0.5, 1)
+theme_override_font_sizes/font_size = 13
+text = "\n[Arrows] Navigate P2"
+
+[node name="CenterPanel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -540.0
+offset_top = -410.0
+offset_right = 540.0
+offset_bottom = 470.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_grid")
+
+[node name="GridContainer" type="GridContainer" parent="CenterPanel"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -380.0
+offset_top = -180.0
+offset_right = 380.0
+offset_bottom = 60.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/h_separation = 20
+theme_override_constants/v_separation = 20
+columns = 4
+
+[node name="VBoxActions" type="VBoxContainer" parent="CenterPanel"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -220.0
+offset_top = -340.0
+offset_right = 220.0
+offset_bottom = -200.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/separation = 16
+
+[node name="CPUToggleBtn" type="Button" parent="CenterPanel/VBoxActions"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "P2 MODE: [CPU]"
+
+[node name="StartMatchBtn" type="Button" parent="CenterPanel/VBoxActions"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.2, 1)
+theme_override_font_sizes/font_size = 22
+text = "FIGHT! [SPACE / ENTER]"
+
+[node name="Footer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -65.0
+offset_bottom = -15.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/separation = 4
+
+[node name="Instructions" type="Label" parent="Footer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.75, 1)
+theme_override_font_sizes/font_size = 15
+text = "[W/A/S/D] P1 Select  |  [Arrows] P2 Select  |  [C] Toggle P2 CPU  |  [SPACE / ENTER] Start Match"
+horizontal_alignment = 1
+
+[node name="RefereeMemorial" type="Label" parent="Footer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.3, 0.9)
+theme_override_font_sizes/font_size = 14
+text = "Official Referee: KingCobraJFS (1991–2025) presiding over all bouts with pulsing golden halo."
+horizontal_alignment = 1
+
+`
+
+---
+
+## File: scenes/ui/match_hud.tscn
+
+`ini
+[gd_scene format=3 uid="uid://dmhud001"]
+
+[ext_resource type="Script" path="res://scripts/ui/match_hud.gd" id="1_script"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_p1_hp"]
+bg_color = Color(0.85, 0.15, 0.2, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_p1_sta"]
+bg_color = Color(0.2, 0.75, 0.35, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hype"]
+bg_color = Color(0.85, 0.65, 0.1, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
+bg_color = Color(0.1, 0.1, 0.12, 0.8)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.05, 0.05, 0.07, 0.88)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.9, 0.75, 0.2, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="MatchHUD" type="Control" node_paths=PackedStringArray("p1_name_label", "p1_title_label", "p1_vitality_bar", "p1_stamina_bar", "p1_hype_bar", "p1_state_label", "p2_name_label", "p2_title_label", "p2_vitality_bar", "p2_stamina_bar", "p2_hype_bar", "p2_state_label", "center_announcement", "pin_escape_container", "pin_escape_bar", "victory_panel", "victory_label")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+p1_name_label = NodePath("P1_Container/Name")
+p1_title_label = NodePath("P1_Container/Title")
+p1_vitality_bar = NodePath("P1_Container/VitalityBar")
+p1_stamina_bar = NodePath("P1_Container/StaminaBar")
+p1_hype_bar = NodePath("P1_Container/HypeBar")
+p1_state_label = NodePath("P1_Container/State")
+p2_name_label = NodePath("P2_Container/Name")
+p2_title_label = NodePath("P2_Container/Title")
+p2_vitality_bar = NodePath("P2_Container/VitalityBar")
+p2_stamina_bar = NodePath("P2_Container/StaminaBar")
+p2_hype_bar = NodePath("P2_Container/HypeBar")
+p2_state_label = NodePath("P2_Container/State")
+center_announcement = NodePath("CenterAnnouncement")
+pin_escape_container = NodePath("PinEscapeContainer")
+pin_escape_bar = NodePath("PinEscapeContainer/ProgressBar")
+victory_panel = NodePath("VictoryPanel")
+victory_label = NodePath("VictoryPanel/Label")
+
+[node name="P1_Container" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_left = 40.0
+offset_top = 30.0
+offset_right = 460.0
+offset_bottom = 160.0
+
+[node name="Name" type="Label" parent="P1_Container"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+text = "TOPHIACHU"
+
+[node name="Title" type="Label" parent="P1_Container"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_font_sizes/font_size = 14
+text = "Live & Unfiltered"
+
+[node name="VitalityBar" type="ProgressBar" parent="P1_Container"]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_p1_hp")
+value = 100.0
+show_percentage = false
+
+[node name="StaminaBar" type="ProgressBar" parent="P1_Container"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_p1_sta")
+value = 100.0
+show_percentage = false
+
+[node name="HypeBar" type="ProgressBar" parent="P1_Container"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_hype")
+value = 0.0
+show_percentage = false
+
+[node name="State" type="Label" parent="P1_Container"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.7, 0.2, 1)
+theme_override_font_sizes/font_size = 14
+text = "IDLE"
+
+[node name="P2_Container" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -460.0
+offset_top = 30.0
+offset_right = -40.0
+offset_bottom = 160.0
+grow_horizontal = 0
+
+[node name="Name" type="Label" parent="P2_Container"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+text = "CYRAXX"
+horizontal_alignment = 2
+
+[node name="Title" type="Label" parent="P2_Container"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_font_sizes/font_size = 14
+text = "Feedback Frenzy"
+horizontal_alignment = 2
+
+[node name="VitalityBar" type="ProgressBar" parent="P2_Container"]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_p1_hp")
+value = 100.0
+fill_mode = 1
+show_percentage = false
+
+[node name="StaminaBar" type="ProgressBar" parent="P2_Container"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_p1_sta")
+value = 100.0
+fill_mode = 1
+show_percentage = false
+
+[node name="HypeBar" type="ProgressBar" parent="P2_Container"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_hype")
+value = 0.0
+fill_mode = 1
+show_percentage = false
+
+[node name="State" type="Label" parent="P2_Container"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.7, 0.2, 1)
+theme_override_font_sizes/font_size = 14
+text = "IDLE"
+horizontal_alignment = 2
+
+[node name="CenterAnnouncement" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -120.0
+offset_right = 300.0
+offset_bottom = -40.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.2, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 12
+theme_override_font_sizes/font_size = 48
+text = "COUNT: 1!"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PinEscapeContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = 20.0
+offset_right = 250.0
+offset_bottom = 90.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="PinEscapeContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 20
+text = "TAP [SPACE] / [NUM0] TO KICK OUT!"
+horizontal_alignment = 1
+
+[node name="ProgressBar" type="ProgressBar" parent="PinEscapeContainer"]
+custom_minimum_size = Vector2(0, 22)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_p1_sta")
+value = 0.0
+show_percentage = true
+
+[node name="ControlsReminder" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -45.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.85, 0.85, 0.9, 0.9)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 14
+text = "P1: WASD=Move | J=Strike | K=Grapple | L=Block | U=Reversal | SPACE=Pin  ||  P2: Arrows=Move | Num1=Strike | Num2=Grapple | Num3=Block | Num4=Reversal | Num0=Pin  ||  [R] Restart"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="VictoryPanel" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -350.0
+offset_top = -140.0
+offset_right = 350.0
+offset_bottom = 140.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Label" type="Label" parent="VictoryPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.3, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 10
+theme_override_font_sizes/font_size = 36
+text = "TOPHIACHU WINS!
+[PINFALL 3-COUNT]
+
+Press [R] to Restart Match"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+`
+
+---
+
+## File: tests/test_suite.gd
+
 `gdscript
 extends SceneTree
 
@@ -4830,6 +3847,7 @@ func _init() -> void:
 	test_pass_a_throw_height_and_ownership()
 	test_pass_a_slot_inversions_and_facing_vectors()
 	test_pass_a_resource_aware_pinfall_balance()
+	test_explicit_impact_classification()
 	
 	print("==================================================")
 	print("TEST RESULTS: %d Passed, %d Failed, %d Total" % [passed_tests, failed_tests, total_tests])
@@ -5770,10 +4788,567 @@ func test_pass_a_resource_aware_pinfall_balance() -> void:
 	p1_rope.free()
 	p2_rope.free()
 
+func test_explicit_impact_classification() -> void:
+	var f: Fighter = Fighter.new()
+	f.character_id = "cyraxx"
+	f.load_character_data()
+	
+	# 1. Ordinary heavy attack (amount = 177.0, is_finisher = false)
+	f.receive_damage(177.0, null, false, false)
+	assert_true(f.recent_finisher_impact_timer == 0.0, "Impact Classification: Ordinary heavy throw does not set finisher disorientation")
+	assert_true(f.recent_heavy_impact_timer == MatchRules.HEAVY_IMPACT_DISORIENTATION_DURATION, "Impact Classification: Ordinary heavy throw sets 1.5s heavy impact timer")
+	
+	# 2. Genuine finisher attack (amount = 177.0, is_finisher = true)
+	f.receive_damage(177.0, null, false, true)
+	assert_true(f.recent_finisher_impact_timer == MatchRules.FINISHER_DISORIENTATION_DURATION, "Impact Classification: Genuine finisher sets 4.5s finisher disorientation")
+	assert_true(f.recent_heavy_impact_timer == 0.0, "Impact Classification: Genuine finisher overrides heavy impact disorientation")
+	
+	f.free()
+
+
 `
 
-### File: tests\test_suite.gd.uid
-`text
-uid://c64otbq5rkpy7
+---
+
+## File: tests/test_pin_balance_scene.gd
+
+`gdscript
+﻿extends SceneTree
+
+## Dedicated Scene Integration Test Suite for Pin-Balance Acceptance
+## Executes actual PackedScenes (Fighter, Referee, MatchManager, CPUController)
+## within real engine physics frames (await physics_frame).
+
+var total_tests: int = 0
+var passed_tests: int = 0
+var failed_tests: int = 0
+
+var fighter_scene: PackedScene = preload("res://scenes/fighter/fighter.tscn")
+var referee_scene: PackedScene = preload("res://scenes/referee/referee.tscn")
+
+func _init() -> void:
+	print("==================================================")
+	print("RUNNING PIN-BALANCE SCENE INTEGRATION SUITE (GODOT 4.7.2)")
+	print("==================================================")
+	_run_suite()
+
+func assert_true(condition: bool, test_name: String) -> void:
+	total_tests += 1
+	if condition:
+		passed_tests += 1
+		print("[PASS] " + test_name)
+	else:
+		failed_tests += 1
+		printerr("[FAIL] " + test_name)
+
+func _run_suite() -> void:
+	await physics_frame
+	await physics_frame
+	
+	print("\n--- TEST GROUP 1: EMPIRICAL ORDINARY THROW -> PIN (FRESH CYRAXX) ---")
+	await test_ordinary_throw_to_pin_cpu()
+	await test_ordinary_throw_to_pin_mash()
+	await test_ordinary_throw_to_pin_hold_entry()
+	await test_ordinary_throw_to_pin_hold_preheld()
+	
+	print("\n--- TEST GROUP 2: GENUINE FINISHER -> PIN (WEAKENED CYRAXX) ---")
+	await test_finisher_throw_to_pin_cpu_weakened()
+	await test_finisher_throw_to_pin_mash_weakened()
+	await test_finisher_throw_to_pin_hold_entry_weakened()
+	await test_finisher_throw_to_pin_hold_preheld_weakened()
+	
+	print("\n--- TEST GROUP 3: FINAL-TICK (TICK 198 / 3.30s) PRIORITY RESOLUTION ---")
+	await test_final_tick_kickout_priority(false, false) # P1 pinner, P2 pinned, Normal order
+	await test_final_tick_kickout_priority(true, false)  # P2 pinner, P1 pinned, Normal order
+	await test_final_tick_kickout_priority(false, true)  # P1 pinner, P2 pinned, Inverted tree order
+	await test_final_tick_kickout_priority(true, true)   # P2 pinner, P1 pinned, Inverted tree order
+	await test_final_tick_rope_break_priority(false, false)
+	await test_final_tick_rope_break_priority(true, false)
+	await test_final_tick_rope_break_priority(false, true)
+	await test_final_tick_rope_break_priority(true, true)
+	await test_duplicate_match_end_guard()
+	
+	print("\n==================================================")
+	print("SCENE INTEGRATION RESULTS: %d Passed, %d Failed, %d Total" % [passed_tests, failed_tests, total_tests])
+	print("==================================================")
+	
+	quit(1 if failed_tests > 0 else 0)
+
+# ==============================================================================
+# Helper Setup
+# ==============================================================================
+
+func _setup_test_scene(p1_char: String = "tophiachu", p2_char: String = "cyraxx", invert_tree: bool = false) -> Dictionary:
+	var container: Node3D = Node3D.new()
+	container.name = "TestSceneContainer"
+	root.add_child(container)
+	
+	var mm: MatchManager = MatchManager.new()
+	var p1: Fighter = fighter_scene.instantiate() as Fighter
+	var p2: Fighter = fighter_scene.instantiate() as Fighter
+	var ref: Referee = referee_scene.instantiate() as Referee
+	var cpu: CPUController = CPUController.new()
+	
+	p1.character_id = p1_char
+	p1.player_index = 1
+	p1.is_cpu = false
+	p1.position = Vector3(-0.6, 0, 0)
+	
+	p2.character_id = p2_char
+	p2.player_index = 2
+	p2.is_cpu = false
+	p2.position = Vector3(0.6, 0, 0)
+	
+	ref.position = Vector3(0, 0, -2.0)
+	
+	mm.fighter_1 = p1
+	mm.fighter_2 = p2
+	mm.referee = ref
+	
+	if invert_tree:
+		container.add_child(mm)
+		container.add_child(p2)
+		container.add_child(p1)
+		container.add_child(ref)
+		container.add_child(cpu)
+	else:
+		container.add_child(p1)
+		container.add_child(p2)
+		container.add_child(ref)
+		container.add_child(cpu)
+		container.add_child(mm)
+		
+	p1.opponent = p2
+	p2.opponent = p1
+	cpu.fighter = p2
+	
+	mm._setup_match()
+	
+	return {
+		"container": container,
+		"mm": mm,
+		"p1": p1,
+		"p2": p2,
+		"ref": ref,
+		"cpu": cpu
+	}
+
+func _cleanup_scene(ctx: Dictionary) -> void:
+	Input.action_release("p1_pin")
+	Input.action_release("p2_pin")
+	if ctx.has("container") and is_instance_valid(ctx["container"]):
+		ctx["container"].queue_free()
+	await physics_frame
+	await physics_frame
+
+# ==============================================================================
+# Group 1: Ordinary Tophiachu Throw -> Center Pin on Fresh Cyraxx
+# ==============================================================================
+
+func test_ordinary_throw_to_pin_cpu() -> void:
+	var ctx: Dictionary = _setup_test_scene()
+	var p1: Fighter = ctx["p1"]
+	var p2: Fighter = ctx["p2"]
+	var mm: MatchManager = ctx["mm"]
+	
+	await physics_frame
+	p1._start_synchronized_throw(p2)
+	assert_true(p1.current_state == Fighter.State.GRAPPLING_ATTACKER, "Ordinary Throw: Tophiachu enters GRAPPLING_ATTACKER")
+	assert_true(p2.current_state == Fighter.State.GRAPPLING_DEFENDER, "Ordinary Throw: Cyraxx enters GRAPPLING_DEFENDER")
+	
+	for i in range(70):
+		await physics_frame
+		
+	assert_true(p1.current_state == Fighter.State.IDLE, "Ordinary Throw: Tophiachu returns to IDLE after throw")
+	assert_true(p2.current_state == Fighter.State.KNOCKED_DOWN, "Ordinary Throw: Cyraxx knocked down on canvas")
+	
+	assert_true(p2.vitality < 850.0 and p2.vitality >= 660.0, "Ordinary Throw: Cyraxx HP reduced by ~177 damage (Observed HP: %.1f/850)" % p2.vitality)
+	assert_true(p2.recent_finisher_impact_timer == 0.0, "Ordinary Throw: Move metadata ensures finisher disorientation is strictly 0.0")
+	assert_true(p2.recent_heavy_impact_timer > 0.0, "Ordinary Throw: Ordinary heavy impact timer active for 1.5s")
+	
+	p2.is_cpu = true
+	var pin_outcome: Array = ["NONE"]
+	var recorded_count: Array = [0]
+	mm.pin_broken.connect(func(r): pin_outcome[0] = r)
+	mm.pin_count_ticked.connect(func(c): recorded_count[0] = c)
+	
+	p1._start_pin(p2)
+	assert_true(mm.current_state == MatchManager.MatchState.PIN_ATTEMPT, "Ordinary Throw -> Pin: Match state is PIN_ATTEMPT")
+	
+	var frame_count: int = 0
+	while mm.current_state == MatchManager.MatchState.PIN_ATTEMPT and frame_count < 240:
+		await physics_frame
+		frame_count += 1
+		
+	assert_true(pin_outcome[0] == "KICKOUT", "Ordinary Throw -> Pin [Mode 1 CPU]: Fresh Cyraxx kicks out via CPU commands")
+	assert_true(recorded_count[0] <= 1, "Ordinary Throw -> Pin [Mode 1 CPU]: Kickout occurs before Count 2 (Count reached: %d, time: %.2fs)" % [recorded_count[0], frame_count / 60.0])
+	
+	await _cleanup_scene(ctx)
+
+func test_ordinary_throw_to_pin_mash() -> void:
+	var ctx: Dictionary = _setup_test_scene()
+	var p1: Fighter = ctx["p1"]
+	var p2: Fighter = ctx["p2"]
+	var mm: MatchManager = ctx["mm"]
+	
+	await physics_frame
+	p1._start_synchronized_throw(p2)
+	for i in range(70):
+		await physics_frame
+		
+	p2.is_cpu = false
+	var pin_outcome: Array = ["NONE"]
+	var recorded_count: Array = [0]
+	mm.pin_broken.connect(func(r): pin_outcome[0] = r)
+	mm.pin_count_ticked.connect(func(c): recorded_count[0] = c)
+	
+	p1._start_pin(p2)
+	
+	# Simulate human 10 Hz mashing via Godot input action system
+	var frame_count: int = 0
+	while mm.current_state == MatchManager.MatchState.PIN_ATTEMPT and frame_count < 240:
+		if frame_count % 6 == 0:
+			Input.action_press("p2_pin")
+		else:
+			Input.action_release("p2_pin")
+		await physics_frame
+		frame_count += 1
+	Input.action_release("p2_pin")
+		
+	assert_true(pin_outcome[0] == "KICKOUT", "Ordinary Throw -> Pin [Mode 2 Mash]: Fresh Cyraxx kicks out via 10 Hz mashing")
+	assert_true(recorded_count[0] <= 1, "Ordinary Throw -> Pin [Mode 2 Mash]: Kickout occurs before Count 2 (Count reached: %d, time: %.2fs)" % [recorded_count[0], frame_count / 60.0])
+	
+	await _cleanup_scene(ctx)
+
+func test_ordinary_throw_to_pin_hold_entry() -> void:
+	var ctx: Dictionary = _setup_test_scene()
+	var p1: Fighter = ctx["p1"]
+	var p2: Fighter = ctx["p2"]
+	var mm: MatchManager = ctx["mm"]
+	
+	await physics_frame
+	p1._start_synchronized_throw(p2)
+	for i in range(70):
+		await physics_frame
+		
+	p2.is_cpu = false
+	var pin_outcome: Array = ["NONE"]
+	var recorded_count: Array = [0]
+	mm.pin_broken.connect(func(r): pin_outcome[0] = r)
+	mm.pin_count_ticked.connect(func(c): recorded_count[0] = c)
+	
+	p1._start_pin(p2)
+	
+	# Hold-to-resist pressed right on pin entry
+	Input.action_press("p2_pin")
+	var frame_count: int = 0
+	while mm.current_state == MatchManager.MatchState.PIN_ATTEMPT and frame_count < 240:
+		await physics_frame
+		frame_count += 1
+	Input.action_release("p2_pin")
+		
+	assert_true(pin_outcome[0] == "KICKOUT", "Ordinary Throw -> Pin [Mode 3 Hold On Entry]: Fresh Cyraxx kicks out via hold-to-resist")
+	assert_true(recorded_count[0] <= 1, "Ordinary Throw -> Pin [Mode 3 Hold On Entry]: Kickout occurs before Count 2 (Count reached: %d, time: %.2fs)" % [recorded_count[0], frame_count / 60.0])
+	
+	await _cleanup_scene(ctx)
+
+func test_ordinary_throw_to_pin_hold_preheld() -> void:
+	var ctx: Dictionary = _setup_test_scene()
+	var p1: Fighter = ctx["p1"]
+	var p2: Fighter = ctx["p2"]
+	var mm: MatchManager = ctx["mm"]
+	
+	await physics_frame
+	p1._start_synchronized_throw(p2)
+	for i in range(70):
+		await physics_frame
+		
+	p2.is_cpu = false
+	var pin_outcome: Array = ["NONE"]
+	var recorded_count: Array = [0]
+	mm.pin_broken.connect(func(r): pin_outcome[0] = r)
+	mm.pin_count_ticked.connect(func(c): recorded_count[0] = c)
+	
+	# Button already held BEFORE pin begins
+	Input.action_press("p2_pin")
+	await physics_frame
+	
+	p1._start_pin(p2)
+	
+	var frame_count: int = 0
+	while mm.current_state == MatchManager.MatchState.PIN_ATTEMPT and frame_count < 240:
+		await physics_frame
+		frame_count += 1
+	Input.action_release("p2_pin")
+		
+	assert_true(pin_outcome[0] == "KICKOUT", "Ordinary Throw -> Pin [Mode 4 Pre-Held]: Fresh Cyraxx kicks out via pre-held hold-to-resist")
+	assert_true(recorded_count[0] <= 1, "Ordinary Throw -> Pin [Mode 4 Pre-Held]: Kickout occurs before Count 2 (Count reached: %d, time: %.2fs)" % [recorded_count[0], frame_count / 60.0])
+	
+	await _cleanup_scene(ctx)
+
+# ==============================================================================
+# Group 2: Genuine Finisher -> Center Pin on Weakened Defender
+# ==============================================================================
+
+func test_finisher_throw_to_pin_cpu_weakened() -> void:
+	var ctx: Dictionary = _setup_test_scene()
+	var p1: Fighter = ctx["p1"]
+	var p2: Fighter = ctx["p2"]
+	var mm: MatchManager = ctx["mm"]
+	
+	await physics_frame
+	p2.vitality = 150.0
+	p2.stamina = 12.0
+	p1.hype = 100.0
+	
+	p1._attempt_grapple(true)
+	assert_true(p1.is_finisher_attack, "Genuine Finisher: is_finisher_attack flag is true")
+	
+	for i in range(70):
+		await physics_frame
+		
+	assert_true(p2.recent_finisher_impact_timer > 0.0, "Genuine Finisher: Cyraxx has active 4.5s finisher disorientation (%.2fs)" % p2.recent_finisher_impact_timer)
+	
+	p2.is_cpu = true
+	var match_outcome: Array = ["NONE"]
+	mm.match_ended.connect(func(_w, m): match_outcome[0] = m)
+	
+	p1._start_pin(p2)
+	
+	var frame_count: int = 0
+	while mm.current_state == MatchManager.MatchState.PIN_ATTEMPT and frame_count < 240:
+		await physics_frame
+		frame_count += 1
+		
+	assert_true(match_outcome[0] == "PINFALL (3-COUNT)", "Finisher -> Pin [Mode 1 CPU]: Weakened Cyraxx loses by 3-count pinfall")
+	await _cleanup_scene(ctx)
+
+func test_finisher_throw_to_pin_mash_weakened() -> void:
+	var ctx: Dictionary = _setup_test_scene()
+	var p1: Fighter = ctx["p1"]
+	var p2: Fighter = ctx["p2"]
+	var mm: MatchManager = ctx["mm"]
+	
+	await physics_frame
+	p2.vitality = 150.0
+	p2.stamina = 12.0
+	p1.hype = 100.0
+	p1._attempt_grapple(true)
+	
+	for i in range(70):
+		await physics_frame
+		
+	p2.is_cpu = false
+	var match_outcome: Array = ["NONE"]
+	mm.match_ended.connect(func(_w, m): match_outcome[0] = m)
+	
+	p1._start_pin(p2)
+	
+	var frame_count: int = 0
+	while mm.current_state == MatchManager.MatchState.PIN_ATTEMPT and frame_count < 240:
+		if frame_count % 6 == 0:
+			Input.action_press("p2_pin")
+		else:
+			Input.action_release("p2_pin")
+		await physics_frame
+		frame_count += 1
+	Input.action_release("p2_pin")
+		
+	assert_true(match_outcome[0] == "PINFALL (3-COUNT)", "Finisher -> Pin [Mode 2 Mash]: Weakened Cyraxx loses by 3-count pinfall despite 10 Hz mashing")
+	await _cleanup_scene(ctx)
+
+func test_finisher_throw_to_pin_hold_entry_weakened() -> void:
+	var ctx: Dictionary = _setup_test_scene()
+	var p1: Fighter = ctx["p1"]
+	var p2: Fighter = ctx["p2"]
+	var mm: MatchManager = ctx["mm"]
+	
+	await physics_frame
+	p2.vitality = 150.0
+	p2.stamina = 12.0
+	p1.hype = 100.0
+	p1._attempt_grapple(true)
+	
+	for i in range(70):
+		await physics_frame
+		
+	p2.is_cpu = false
+	var match_outcome: Array = ["NONE"]
+	mm.match_ended.connect(func(_w, m): match_outcome[0] = m)
+	
+	p1._start_pin(p2)
+	
+	Input.action_press("p2_pin")
+	var frame_count: int = 0
+	while mm.current_state == MatchManager.MatchState.PIN_ATTEMPT and frame_count < 240:
+		await physics_frame
+		frame_count += 1
+	Input.action_release("p2_pin")
+		
+	assert_true(match_outcome[0] == "PINFALL (3-COUNT)", "Finisher -> Pin [Mode 3 Hold Entry]: Weakened Cyraxx loses by 3-count pinfall")
+	await _cleanup_scene(ctx)
+
+func test_finisher_throw_to_pin_hold_preheld_weakened() -> void:
+	var ctx: Dictionary = _setup_test_scene()
+	var p1: Fighter = ctx["p1"]
+	var p2: Fighter = ctx["p2"]
+	var mm: MatchManager = ctx["mm"]
+	
+	await physics_frame
+	p2.vitality = 150.0
+	p2.stamina = 12.0
+	p1.hype = 100.0
+	p1._attempt_grapple(true)
+	
+	for i in range(70):
+		await physics_frame
+		
+	p2.is_cpu = false
+	Input.action_press("p2_pin")
+	await physics_frame
+	
+	var match_outcome: Array = ["NONE"]
+	mm.match_ended.connect(func(_w, m): match_outcome[0] = m)
+	
+	p1._start_pin(p2)
+	
+	var frame_count: int = 0
+	while mm.current_state == MatchManager.MatchState.PIN_ATTEMPT and frame_count < 240:
+		await physics_frame
+		frame_count += 1
+	Input.action_release("p2_pin")
+		
+	assert_true(match_outcome[0] == "PINFALL (3-COUNT)", "Finisher -> Pin [Mode 4 Pre-Held]: Weakened Cyraxx loses by 3-count pinfall")
+	await _cleanup_scene(ctx)
+
+# ==============================================================================
+# Group 3: Final-Tick (Tick 198 / 3.30s) Priority Fixtures
+# ==============================================================================
+
+func test_final_tick_kickout_priority(invert_slots: bool, invert_tree: bool) -> void:
+	var ctx: Dictionary = _setup_test_scene("tophiachu", "cyraxx", invert_tree)
+	var p1: Fighter = ctx["p1"]
+	var p2: Fighter = ctx["p2"]
+	var mm: MatchManager = ctx["mm"]
+	
+	var pinner: Fighter = p2 if invert_slots else p1
+	var pinned: Fighter = p1 if invert_slots else p2
+	var pinned_action: String = "p1_pin" if invert_slots else "p2_pin"
+	
+	await physics_frame
+	
+	pinned.vitality = 300.0
+	pinned.stamina = 20.0
+	pinned.is_cpu = false
+	
+	pinner._start_pin(pinned)
+	
+	var broken_reason: Array = ["NONE"]
+	var match_ended_called: Array = [false]
+	mm.pin_broken.connect(func(r): broken_reason[0] = r)
+	mm.match_ended.connect(func(_w, _m): match_ended_called[0] = true)
+	
+	# Advance precisely to tick 197 (Count is 2)
+	for frame in range(197):
+		await physics_frame
+		
+	assert_true(mm.current_count == 2, "Final-Tick Kickout [%s/%s]: Count is 2 before tick 198" % [
+		"SlotInv" if invert_slots else "SlotNorm",
+		"TreeInv" if invert_tree else "TreeNorm"
+	])
+	
+	# On tick 198, defender reaches kick-out threshold 100.0 with active input
+	pinned.pin_escape_progress = 100.0
+	Input.action_press(pinned_action)
+	
+	# Tick 198 (3.30s)
+	await physics_frame
+	Input.action_release(pinned_action)
+	
+	assert_true(broken_reason[0] == "KICKOUT", "Final-Tick Kickout [%s/%s]: Escape takes priority over 3-count" % [
+		"SlotInv" if invert_slots else "SlotNorm",
+		"TreeInv" if invert_tree else "TreeNorm"
+	])
+	assert_true(not match_ended_called[0], "Final-Tick Kickout [%s/%s]: match_ended is NOT emitted" % [
+		"SlotInv" if invert_slots else "SlotNorm",
+		"TreeInv" if invert_tree else "TreeNorm"
+	])
+	assert_true(mm.current_state == MatchManager.MatchState.IN_PROGRESS, "Final-Tick Kickout [%s/%s]: Match returns to IN_PROGRESS" % [
+		"SlotInv" if invert_slots else "SlotNorm",
+		"TreeInv" if invert_tree else "TreeNorm"
+	])
+	
+	await _cleanup_scene(ctx)
+
+func test_final_tick_rope_break_priority(invert_slots: bool, invert_tree: bool) -> void:
+	var ctx: Dictionary = _setup_test_scene("tophiachu", "cyraxx", invert_tree)
+	var p1: Fighter = ctx["p1"]
+	var p2: Fighter = ctx["p2"]
+	var mm: MatchManager = ctx["mm"]
+	
+	var pinner: Fighter = p2 if invert_slots else p1
+	var pinned: Fighter = p1 if invert_slots else p2
+	
+	await physics_frame
+	pinned.vitality = 0.0
+	pinned.stamina = 0.0
+	
+	pinner._start_pin(pinned)
+	
+	var rope_break_called: Array = [false]
+	var match_ended_called: Array = [false]
+	mm.rope_break_called.connect(func(): rope_break_called[0] = true)
+	mm.match_ended.connect(func(_w, _m): match_ended_called[0] = true)
+	
+	# Advance precisely to tick 197
+	for frame in range(197):
+		await physics_frame
+		
+	assert_true(mm.current_count == 2, "Final-Tick RopeBreak [%s/%s]: Count is 2 before tick 198" % [
+		"SlotInv" if invert_slots else "SlotNorm",
+		"TreeInv" if invert_tree else "TreeNorm"
+	])
+	
+	# On tick 198, pinned fighter touches rope threshold
+	pinned.position = Vector3(3.25, 0, 0)
+	
+	# Tick 198 (3.30s)
+	await physics_frame
+	
+	assert_true(rope_break_called[0], "Final-Tick RopeBreak [%s/%s]: Rope break takes priority over 3-count" % [
+		"SlotInv" if invert_slots else "SlotNorm",
+		"TreeInv" if invert_tree else "TreeNorm"
+	])
+	assert_true(not match_ended_called[0], "Final-Tick RopeBreak [%s/%s]: match_ended is NOT emitted" % [
+		"SlotInv" if invert_slots else "SlotNorm",
+		"TreeInv" if invert_tree else "TreeNorm"
+	])
+	assert_true(mm.current_state == MatchManager.MatchState.IN_PROGRESS, "Final-Tick RopeBreak [%s/%s]: Match returns to IN_PROGRESS" % [
+		"SlotInv" if invert_slots else "SlotNorm",
+		"TreeInv" if invert_tree else "TreeNorm"
+	])
+	
+	await _cleanup_scene(ctx)
+
+func test_duplicate_match_end_guard() -> void:
+	var ctx: Dictionary = _setup_test_scene()
+	var p1: Fighter = ctx["p1"]
+	var p2: Fighter = ctx["p2"]
+	var mm: MatchManager = ctx["mm"]
+	
+	await physics_frame
+	var call_count: Array = [0]
+	mm.match_ended.connect(func(_w, _m): call_count[0] += 1)
+	
+	mm._end_match(p1, "PINFALL (3-COUNT)")
+	mm._end_match(p2, "PINFALL (3-COUNT)")
+	
+	assert_true(call_count[0] == 1, "Duplicate Guard: match_ended signal emitted strictly once")
+	assert_true(mm.current_state == MatchManager.MatchState.MATCH_OVER, "Duplicate Guard: MatchState remains MATCH_OVER")
+	
+	await _cleanup_scene(ctx)
 
 `
+
+---
+

@@ -20,16 +20,19 @@
 
 ## Resolved in Pass A & Prior Milestones
 
-1. **CPU Pinfall Guarantee Defect (Resolved in Pass A Pinfall Balance)**:
-   - Replaced flat-rate escape formula with a resource-aware model factoring in quadratic vitality, stamina, reversal stats, and finisher impact disorientation.
-   - CPU and human players now legitimately kick out when fresh (< Count 2) and legitimately lose by 3-count pinfall when exhausted or hit with finishers.
-2. **CPU Pin & Submission Escape Command Disconnection (Resolved in Pass A)**:
+1. **Pin-Balance Acceptance & Empirical Sequence Validation (Resolved in Pass A Pinfall Balance)**:
+   - Replaced flat-rate escape formula with an authoritative resource-aware model factoring in quadratic vitality, remaining stamina, reversal stats, and explicit move-metadata impact disorientation.
+   - Eliminated the bug where ordinary heavy throws ($\ge 100$ damage) inflicted finisher disorientation; ordinary heavy throws (177 dmg) now trigger a mild 1.5s heavy impact timer (0.85 mult) allowing healthy defenders to kick out swiftly, while genuine finishers inflict a 4.5s disorientation (0.55 mult).
+   - Balanced hold-to-resist as an accessibility alternative at 85.0 base/sec with proportional 8.0/s stamina drain (~85% of 10 Hz mashing speed).
+   - Resolved tick 198 (3.30s) floating point boundary precision (`+ 0.0005`) and made kickout ($\ge 100.0$) and rope break strictly preempt the 3-count pinfall across all slot inversions and tree processing orders.
+   - Empirically validated across 56 real engine physics tests (`tests/test_pin_balance_scene.gd`) that fresh Cyraxx kicks out at Count 1 (~1.5s–1.6s) across all 4 modes (CPU, 10 Hz mash, hold-on-entry, pre-held), and weakened Cyraxx loses by 3-count pinfall across all 4 modes.
+2. **CPU Pin & Submission Escape Command Disconnection (Resolved in Pass A Baseline)**:
    - Unified all escape checks to consume the `Fighter` command interface (`input_pin`, `input_hold_pin`, `input_strike`, `input_grapple`, `input_block`) rather than polling global hardware keys during combat physics.
 3. **Conflicting Throw Height Ownership (Resolved in Pass A Baseline)**:
    - Removed canvas grounding conflicts in central ring throws so overhead powerslams reach full 1.55m vertical peak before canvas impact.
-4. **Forward-Axis Facing Vector Standardization (Resolved in Pass A)**:
+4. **Forward-Axis Facing Vector Standardization (Resolved in Pass A Baseline)**:
    - Standardized all locomotion, stationary facing, and synchronized throw vectors to Godot's `-basis.z` forward convention (`atan2(-dx, -dz)`).
-5. **Canonical Finisher Names Alignment (Resolved in Pass A)**:
+5. **Canonical Finisher Names Alignment (Resolved in Pass A Baseline)**:
    - Synchronized `README.md` to canonical names in `scripts/core/roster_data.gd`.
 6. **Desktop Launcher Script Trailing Quote Bug (Resolved in M3 Polish)**:
    - Fixed `%~dp0` trailing backslash CRT escaping issue in `START_GAME.bat`.

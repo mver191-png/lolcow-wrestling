@@ -90,6 +90,7 @@ var initial_defender_local_pos: Vector3 = Vector3.ZERO
 var pin_escape_progress: float = 0.0
 var knockdown_duration: float = 2.5
 var recent_finisher_impact_timer: float = 0.0
+var recent_heavy_impact_timer: float = 0.0
 
 # Input buffer
 var input_dir: Vector2 = Vector2.ZERO
@@ -153,6 +154,8 @@ func load_character_data() -> void:
 func _physics_process(delta: float) -> void:
 	if recent_finisher_impact_timer > 0.0:
 		recent_finisher_impact_timer = max(0.0, recent_finisher_impact_timer - delta)
+	if recent_heavy_impact_timer > 0.0:
+		recent_heavy_impact_timer = max(0.0, recent_heavy_impact_timer - delta)
 		
 	if not is_cpu:
 		_gather_player_inputs()
@@ -718,17 +721,18 @@ func _process_pin_escape(delta: float) -> void:
 	var health_factor: float = 0.06 + 0.64 * (vit_ratio * vit_ratio) + 0.30 * stam_ratio
 	var rev_mult: float = 0.85 + 0.30 * rev_ratio
 	var finisher_mult: float = MatchRules.PIN_ESCAPE_FINISHER_PENALTY if recent_finisher_impact_timer > 0.0 else 1.0
-	var total_mult: float = health_factor * rev_mult * finisher_mult
+	var heavy_mult: float = MatchRules.PIN_ESCAPE_HEAVY_IMPACT_PENALTY if recent_heavy_impact_timer > 0.0 else 1.0
+	var total_mult: float = health_factor * rev_mult * finisher_mult * heavy_mult
 	
 	if has_mash_input:
 		var mash_gain: float = MatchRules.PIN_ESCAPE_MASH_BASE * total_mult
 		pin_escape_progress += mash_gain
-		stamina = max(0.0, stamina - 0.5)
+		stamina = max(0.0, stamina - MatchRules.PIN_ESCAPE_MASH_STAMINA_COST)
 		stamina_changed.emit(stamina, max_stamina)
 	elif has_hold_input:
 		var hold_gain: float = MatchRules.PIN_ESCAPE_BASE_RATE * total_mult * delta
 		pin_escape_progress += hold_gain
-		stamina = max(0.0, stamina - 2.0 * delta)
+		stamina = max(0.0, stamina - MatchRules.PIN_ESCAPE_HOLD_STAMINA_DRAIN * delta)
 		stamina_changed.emit(stamina, max_stamina)
 	else:
 		# Passive decay when unresisted (simulates pin weight & pinning arm pressure)
@@ -738,6 +742,8 @@ func _process_pin_escape(delta: float) -> void:
 		_execute_kick_out()
 
 func _execute_kick_out() -> void:
+	if current_state != State.PINNED:
+		return
 	kick_out_succeeded.emit(self)
 	if visual_root:
 		visual_root.rotation = Vector3.ZERO
@@ -770,8 +776,12 @@ func receive_damage(amount: float, from_fighter: Fighter, was_blocked: bool, is_
 	vitality = max(0.0, vitality - amount)
 	vitality_changed.emit(vitality, max_vitality)
 	
-	if is_finisher or amount >= 100.0:
-		recent_finisher_impact_timer = 6.0
+	# Explicit impact classification: Finisher pressure is strictly gated by move metadata
+	if is_finisher:
+		recent_finisher_impact_timer = MatchRules.FINISHER_DISORIENTATION_DURATION
+		recent_heavy_impact_timer = 0.0 # Finisher overrides heavy impact
+	elif amount >= MatchRules.HEAVY_IMPACT_DAMAGE_THRESHOLD and not was_blocked:
+		recent_heavy_impact_timer = MatchRules.HEAVY_IMPACT_DISORIENTATION_DURATION
 	
 	# Knockdown on heavy damage or low health
 	if not was_blocked and vitality <= 0.0 and current_state != State.KNOCKED_DOWN and current_state != State.PINNED:

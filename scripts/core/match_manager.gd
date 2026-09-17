@@ -134,7 +134,7 @@ func _process_pin_countdown(delta: float) -> void:
 	pin_timer += delta
 	
 	var next_threshold: float = (current_count + 1) * MatchRules.PIN_COUNT_INTERVAL
-	if pin_timer >= next_threshold:
+	if (pin_timer + 0.0005) >= next_threshold:
 		current_count += 1
 		pin_count_ticked.emit(current_count)
 		if referee:
@@ -144,6 +144,13 @@ func _process_pin_countdown(delta: float) -> void:
 			AudioManager.instance.play_count_tone(current_count)
 			
 		if current_count >= 3:
+			# Final-tick priority check: rope break or kickout strictly preempts 3-count pinfall
+			if MatchRules.is_near_ropes(get_fighter_pos(current_pinned)) or MatchRules.is_near_ropes(get_fighter_pos(current_pinner)):
+				_call_rope_break()
+				return
+			if is_instance_valid(current_pinned) and current_pinned.pin_escape_progress >= 100.0:
+				current_pinned._execute_kick_out()
+				return
 			_end_match(current_pinner, "PINFALL (3-COUNT)")
 
 func _on_kick_out_succeeded(fighter: Fighter) -> void:
@@ -233,6 +240,8 @@ func _call_rope_break() -> void:
 	current_state = MatchState.IN_PROGRESS
 
 func _end_match(winner: Fighter, method: String) -> void:
+	if current_state == MatchState.MATCH_OVER:
+		return
 	current_state = MatchState.MATCH_OVER
 	var loser: Fighter = fighter_2 if winner == fighter_1 else fighter_1
 	

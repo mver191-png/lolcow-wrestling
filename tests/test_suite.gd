@@ -29,6 +29,7 @@ func _init() -> void:
 	test_pass_a_throw_height_and_ownership()
 	test_pass_a_slot_inversions_and_facing_vectors()
 	test_pass_a_resource_aware_pinfall_balance()
+	test_explicit_impact_classification()
 	
 	print("==================================================")
 	print("TEST RESULTS: %d Passed, %d Failed, %d Total" % [passed_tests, failed_tests, total_tests])
@@ -968,3 +969,21 @@ func test_pass_a_resource_aware_pinfall_balance() -> void:
 	mm_rope.free()
 	p1_rope.free()
 	p2_rope.free()
+
+func test_explicit_impact_classification() -> void:
+	var f: Fighter = Fighter.new()
+	f.character_id = "cyraxx"
+	f.load_character_data()
+	
+	# 1. Ordinary heavy attack (amount = 177.0, is_finisher = false)
+	f.receive_damage(177.0, null, false, false)
+	assert_true(f.recent_finisher_impact_timer == 0.0, "Impact Classification: Ordinary heavy throw does not set finisher disorientation")
+	assert_true(f.recent_heavy_impact_timer == MatchRules.HEAVY_IMPACT_DISORIENTATION_DURATION, "Impact Classification: Ordinary heavy throw sets 1.5s heavy impact timer")
+	
+	# 2. Genuine finisher attack (amount = 177.0, is_finisher = true)
+	f.receive_damage(177.0, null, false, true)
+	assert_true(f.recent_finisher_impact_timer == MatchRules.FINISHER_DISORIENTATION_DURATION, "Impact Classification: Genuine finisher sets 4.5s finisher disorientation")
+	assert_true(f.recent_heavy_impact_timer == 0.0, "Impact Classification: Genuine finisher overrides heavy impact disorientation")
+	
+	f.free()
+

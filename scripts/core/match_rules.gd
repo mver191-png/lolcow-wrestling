@@ -6,10 +6,16 @@ extends RefCounted
 const RING_MAT_RADIUS: float = 4.0 # Distance from center (0,0) to ropes in meters
 const ROPE_BREAK_DISTANCE: float = 0.85 # Distance from rope threshold to trigger rope break
 const PIN_COUNT_INTERVAL: float = 1.1 # Seconds per referee count
-const PIN_ESCAPE_BASE_RATE: float = 30.0 # Percent escape per second base (hold-to-resist)
-const PIN_ESCAPE_MASH_BASE: float = 16.0 # Base progress gained per active mash pulse
+const PIN_ESCAPE_BASE_RATE: float = 85.0 # Percent escape per second base (hold-to-resist accessibility)
+const PIN_ESCAPE_MASH_BASE: float = 10.0 # Base progress gained per active mash pulse (at 10 Hz = 100.0/s)
 const PIN_ESCAPE_DECAY_RATE: float = 8.0 # Passive escape progress decay per second when unresisted
-const PIN_ESCAPE_FINISHER_PENALTY: float = 0.55 # Multiplier on escape rate following a finisher impact
+const PIN_ESCAPE_HOLD_STAMINA_DRAIN: float = 8.0 # Stamina units drained per second while holding to resist
+const PIN_ESCAPE_MASH_STAMINA_COST: float = 0.8 # Stamina units drained per active mash pulse (at 10 Hz = 8.0/s)
+const PIN_ESCAPE_FINISHER_PENALTY: float = 0.55 # Multiplier on escape rate following a genuine finisher impact
+const PIN_ESCAPE_HEAVY_IMPACT_PENALTY: float = 0.85 # Multiplier on escape rate following an ordinary heavy throw/slam
+const FINISHER_DISORIENTATION_DURATION: float = 4.5 # Seconds of finisher impact disorientation
+const HEAVY_IMPACT_DISORIENTATION_DURATION: float = 1.5 # Seconds of ordinary heavy impact disorientation
+const HEAVY_IMPACT_DAMAGE_THRESHOLD: float = 80.0 # Damage threshold for ordinary heavy impact
 const MAX_HYPE: float = 100.0
 const HYPE_GAIN_ON_HIT: float = 12.0
 const HYPE_GAIN_ON_COUNTER: float = 20.0
