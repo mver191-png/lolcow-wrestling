@@ -30,6 +30,12 @@ const STRIKE_CONE_MIN_DOT: float = 0.50 # 120-degree forward contact cone (cos(6
 const GRAPPLE_STARTUP_DURATION: float = 0.18 # Seconds of vulnerability before grapple lock executes
 const GRAPPLE_WHIFF_DURATION: float = 0.25 # Seconds of recovery on missed/whiffed grapple
 
+enum SubmissionPriority {
+	ESCAPE_BREAKS, # Buzzer-beater breakout waives off tap-out
+	TAPOUT_WINS     # Incapacitation takes precedence
+}
+static var SUBMISSION_SIMULTANEOUS_PRIORITY: int = SubmissionPriority.ESCAPE_BREAKS
+
 static func is_near_ropes(position_3d: Vector3) -> bool:
 	var x: float = abs(position_3d.x)
 	var z: float = abs(position_3d.z)

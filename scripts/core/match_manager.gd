@@ -200,22 +200,112 @@ func _process_submission_watch(_delta: float) -> void:
 		_abort_pin("INVALID_PARTICIPANTS")
 		return
 		
+	# 1. Authoritative Rope Break (Highest Priority)
 	if MatchRules.is_near_ropes(get_fighter_pos(current_pinned)) or MatchRules.is_near_ropes(get_fighter_pos(current_pinner)):
 		_call_rope_break()
 		return
+		
+	var attacker: Fighter = current_pinner
+	var defender: Fighter = current_pinned
+	
+	var has_escaped: bool = (defender.pin_escape_progress >= 100.0)
+	var has_tapped: bool = (defender.vitality <= 0.0)
+	
+	if has_escaped and has_tapped:
+		# Simultaneous Frame: Evaluate authoritative priority policy
+		if MatchRules.SUBMISSION_SIMULTANEOUS_PRIORITY == MatchRules.SubmissionPriority.ESCAPE_BREAKS:
+			_resolve_submission_escape(attacker, defender)
+		else:
+			_resolve_submission_tap_out(attacker, defender)
+	elif has_escaped:
+		_resolve_submission_escape(attacker, defender)
+	elif has_tapped:
+		_resolve_submission_tap_out(attacker, defender)
 
-func _on_submission_escaped(_fighter: Fighter) -> void:
-	if current_state == MatchState.SUBMISSION_ATTEMPT:
-		submission_escaped.emit()
-		if referee:
-			referee.on_pin_broken()
-		current_pinner = null
-		current_pinned = null
-		current_state = MatchState.IN_PROGRESS
+func _on_submission_escaped(fighter: Fighter = null) -> void:
+	if current_state != MatchState.SUBMISSION_ATTEMPT:
+		return
+	var defender: Fighter = current_pinned if is_instance_valid(current_pinned) else fighter
+	var attacker: Fighter = current_pinner if is_instance_valid(current_pinner) else (defender.opponent if is_instance_valid(defender) else null)
+	
+	if not is_instance_valid(defender) or not is_instance_valid(attacker):
+		return
+		
+	# Check for simultaneous tap-out on same frame
+	if defender.vitality <= 0.0 and MatchRules.SUBMISSION_SIMULTANEOUS_PRIORITY == MatchRules.SubmissionPriority.TAPOUT_WINS:
+		_resolve_submission_tap_out(attacker, defender)
+		return
+		
+	_resolve_submission_escape(attacker, defender)
 
 func _on_tap_out_submitted(loser: Fighter) -> void:
-	var winner: Fighter = fighter_2 if loser == fighter_1 else fighter_1
-	_end_match(winner, "SUBMISSION (TAP OUT)")
+	if current_state != MatchState.SUBMISSION_ATTEMPT:
+		return
+	var defender: Fighter = loser
+	var attacker: Fighter = current_pinner if is_instance_valid(current_pinner) else (defender.opponent if is_instance_valid(defender) else null)
+	
+	if not is_instance_valid(defender) or not is_instance_valid(attacker):
+		return
+		
+	# Check for simultaneous escape on same frame
+	if defender.pin_escape_progress >= 100.0 and MatchRules.SUBMISSION_SIMULTANEOUS_PRIORITY == MatchRules.SubmissionPriority.ESCAPE_BREAKS:
+		_resolve_submission_escape(attacker, defender)
+		return
+		
+	_resolve_submission_tap_out(attacker, defender)
+
+func _resolve_submission_escape(attacker: Fighter, defender: Fighter) -> void:
+	if current_state != MatchState.SUBMISSION_ATTEMPT:
+		return
+	current_state = MatchState.IN_PROGRESS
+	
+	# Symmetrical cleanup of hold pointers
+	attacker.synchronized_partner = null
+	defender.synchronized_partner = null
+	
+	# If defender reached 0 HP but broke free via buzzer-beater escape, grant 1.0 HP clutch survival
+	if defender.vitality <= 0.0:
+		defender.vitality = 1.0
+		defender.vitality_changed.emit(defender.vitality, defender.max_vitality)
+		
+	attacker._set_state(Fighter.State.IDLE)
+	defender._set_state(Fighter.State.GETTING_UP)
+	
+	if defender.visual_root:
+		defender.visual_root.rotation = Vector3.ZERO
+		defender.visual_root.position = Vector3.ZERO
+	if attacker.visual_root:
+		attacker.visual_root.position = Vector3.ZERO
+		
+	# Symmetrical pushback
+	var push_back: Vector3 = attacker.global_transform.basis.z.normalized() if attacker.is_inside_tree() else attacker.transform.basis.z.normalized()
+	if attacker.is_inside_tree():
+		attacker.global_position += push_back * 1.2
+	else:
+		attacker.position += push_back * 1.2
+		
+	current_pinner = null
+	current_pinned = null
+	
+	if referee:
+		referee.on_pin_broken()
+	if AudioManager.instance:
+		AudioManager.instance.play_crowd_gasp()
+		
+	submission_escaped.emit()
+
+func _resolve_submission_tap_out(attacker: Fighter, defender: Fighter) -> void:
+	if current_state != MatchState.SUBMISSION_ATTEMPT:
+		return
+		
+	# Symmetrical cleanup of hold pointers
+	attacker.synchronized_partner = null
+	defender.synchronized_partner = null
+	
+	current_pinner = null
+	current_pinned = null
+	
+	_end_match(attacker, "SUBMISSION (TAP OUT)")
 
 # ==============================================================================
 # General Match Control
@@ -229,9 +319,11 @@ func _call_rope_break() -> void:
 		AudioManager.instance.play_rope_break_alert()
 		
 	if is_instance_valid(current_pinner):
+		current_pinner.synchronized_partner = null
 		current_pinner.break_pin_rope_break()
 		current_pinner.break_submission_rope_break()
 	if is_instance_valid(current_pinned):
+		current_pinned.synchronized_partner = null
 		current_pinned.break_pin_rope_break()
 		current_pinned.break_submission_rope_break()
 		

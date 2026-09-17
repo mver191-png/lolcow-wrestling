@@ -153,11 +153,9 @@ anti_aliasing/quality/msaa_3d=2
 
 `
 
----
-
 ## File: README.md
 
-`md
+`markdown
 # LOLCOW WRESTLING: OFFLINE MAYHEM
 
 > A stylized 3D arcade wrestling game built in Godot 4.7.2 Forward+ with Blender 5.0 DCC procedural assets, targeting 1080p @ 60 FPS on Windows standalone.
@@ -282,18 +280,16 @@ godot_console --headless -s tests/test_suite.gd
 
 `
 
----
-
 ## File: STATE.md
 
-`md
+`markdown
 # Project State: LOLCOW WRESTLING: OFFLINE MAYHEM
 
-## Milestone Status: M0-M1 Functional -> Pass A Repairs (Directional Contact & Grapple Startup Complete)
+## Milestone Status: M0-M1 Functional -> Pass A Repairs (Simultaneous Submission Outcome Ordering Complete)
 - **Engine**: Godot 4.7.2 (stable official, Windows x64) - Installed & Verified.
 - **3D DCC Pipeline**: Blender 5.0.1 (headless Python automation) - Verified.
 - **Target**: 1080p @ 60 FPS, Windows standalone.
-- **Authoritative Combat Loop & Integration**: Verified with 361 automated headless tests (305 focused unit tests + 56 full scene physics integration tests, 0 failures, 0 warnings).
+- **Authoritative Combat Loop & Integration**: Verified with 396 automated headless tests (340 focused unit tests + 56 full scene physics integration tests, 0 failures, 0 warnings).
 - **M2/M3 Status**: Functional baseline established. Skeletal animation rigging, authored unique animation clips, and manual visual inspections remain **NOT RUN / PENDING** per code review requirements.
 
 ### Pass A Codebase Repairs & Verifications:
@@ -335,10 +331,17 @@ godot_console --headless -s tests/test_suite.gd
    - Verified strike interruption: incoming unblocked strikes during `GRAPPLE_STARTUP` immediately interrupt attacker back to `IDLE`, clear target references, and prevent throw execution.
    - Verified reversal counters: defender inputting `REVERSAL_STANCE` during startup successfully counters the attacker upon startup completion, inflicting counter damage, knockdown, and awarding hype.
    - Upgraded `CPUController` to actively detect opponent `GRAPPLE_STARTUP` within range and retaliate with strike interruptions or reversal counters based on stats.
+10. **Simultaneous Submission Outcome Ordering & Centralized Hold Cleanup (Verified in Pass A Priority 4)**:
+    - Established an explicit, authoritative simultaneous priority policy in `MatchManager` (`MatchRules.SUBMISSION_SIMULTANEOUS_PRIORITY = MatchRules.SubmissionPriority.ESCAPE_BREAKS`).
+    - Decoupled terminal submission resolution from individual fighter physics frames into `MatchManager` resolvers: `_resolve_submission_escape(attacker, defender)` and `_resolve_submission_tap_out(attacker, defender)`.
+    - When $vitality \le 0.0$ and $pin\_escape\_progress \ge 100.0$ coincide on the exact same frame:
+      - Default policy (`ESCAPE_BREAKS`): Escape waives off tap-out (mirroring pinfall kickout priority), defender is granted 1.0 HP clutch survival, attacker returns to `IDLE`, defender enters `GETTING_UP`, and match returns to `IN_PROGRESS` without declaring defeat.
+      - Alternate policy (`TAPOUT_WINS`): Attacker is declared winner with `"SUBMISSION (TAP OUT)"` and match transitions to `MATCH_OVER`.
+    - Implemented centralized, symmetrical hold cleanup: `synchronized_partner = null` is cleared simultaneously on both attacker and defender across all breakout, rope break, and tap-out pathways, eliminating any dangling pointers or multi-frame race conditions.
+    - Verified across all 4 permutations of slot orders (P1/P2 vs P2/P1) and tree processing orders (Attacker-first vs Defender-first) with 100% deterministic results.
 
-### Active Open Items from Code Review (In Priority Order):
-1. **Submission Simultaneous Outcome Resolution (Pass A Priority 4 - Open)**: Formalize authoritative priority in `MatchManager` when tap-out and escape coincide on the same physics tick.
-2. **Manual Visual Inspection & Skeletal Rigging**: Visual checks and authored animations remain **NOT RUN**.
+### Active Open Items from Code Review:
+1. **Manual Visual Inspection & Skeletal Rigging**: Visual checks and authored animations remain **NOT RUN** per code review specification.
 
 ## Verification Summary
 - **M0 Foundation**:
@@ -375,76 +378,89 @@ godot_console --headless -s tests/test_suite.gd
 
 `
 
----
-
 ## File: KNOWN_ISSUES.md
 
-`md
+`markdown
 ## Active Open Issues & Defects Under Repair
 
-1. **Simultaneous Submission Outcome Ordering (High Priority - Open)**:
-   - While partner references are now cleared on both sides during escapes, a frame in which vitality depletes to 0 simultaneously with escape progress reaching 100 depends on node processing order (attacker update vs defender update).
-   - *Required Fix*: Establish an explicit authoritative priority policy in `MatchManager` for simultaneous tap-out vs escape frames.
-
-2. **Skeletal Animation Pipeline & Unique Moveset Data (Open)**:
+1. **Skeletal Animation Pipeline & Unique Moveset Data (Open)**:
    - 3D character models are composed of procedural primitive geometries without bones or skeletal clips. Throws and strikes utilize parameterized programmatic tweening rather than distinct motion-captured or keyframed animation clips.
 
 ---
 
 ## Resolved in Pass A & Prior Milestones
 
-1. **Directional Attack Contact & Grapple Startup (Resolved in Pass A Priority 3)**:
+1. **Simultaneous Submission Outcome Ordering & Centralized Hold Cleanup (Resolved in Pass A Priority 4)**:
+   - Established explicit simultaneous priority policy in `MatchManager` (`MatchRules.SUBMISSION_SIMULTANEOUS_PRIORITY = MatchRules.SubmissionPriority.ESCAPE_BREAKS`).
+   - Decoupled terminal submission resolution from individual fighter update frames into `MatchManager` resolvers: `_resolve_submission_escape()` and `_resolve_submission_tap_out()`.
+   - Guaranteed identical, deterministic outcomes across all 4 permutations of slot orders (P1/P2 vs P2/P1) and tree processing orders (Attacker-first vs Defender-first).
+   - Enforced centralized, symmetrical hold cleanup: `synchronized_partner = null` cleared on both sides during all breakout, rope break, and tap-out transitions with zero dangling references.
+2. **Directional Attack Contact & Grapple Startup (Resolved in Pass A Priority 3)**:
    - Added forward directional dot-product gating (`STRIKE_CONE_MIN_DOT = 0.50`, 120-degree cone) to `_handle_strike_active_window()`, preventing strikes from connecting with targets on flanks or behind the attacker.
    - Enforced measurable `GRAPPLE_STARTUP` window (`GRAPPLE_STARTUP_DURATION = 0.18s`, whiff recovery 0.25s) in `_attempt_grapple()` and `_process_grapple_startup()`.
    - Verified that unblocked incoming strikes interrupt attacker out of `GRAPPLE_STARTUP` and clear target reference, preventing throw execution.
    - Verified that defender reversal stance during startup successfully counters the attacker.
    - Upgraded `CPUController` to retaliate against opponent `GRAPPLE_STARTUP` via strike interruption or reversal counter.
-2. **Boundary Safety During Throws (Resolved in Pass A Priority 2)**:
+3. **Boundary Safety During Throws (Resolved in Pass A Priority 2)**:
    - Added `_validate_and_adjust_throw_boundaries()` before locking synchronized throws. Evaluates predicted slam target $\vec{P}_{\text{slam}} = \vec{P}_{\text{atk}} + \vec{F} \times d_{\text{slam}}$ and shifts both attacker and defender inward toward center ring so landing coordinates and hold coordinates remain $\le 3.50\text{m}$ (inside the $3.65\text{m}$ ring limit).
    - Added secondary clamping in `_process_synchronized_attacker()` for `hold_pos` and `slam_pos`.
    - Verified across 32 edge, corner, slot, and tree permutations (128 assertions) with zero out-of-bounds trajectory and zero ground release snap-back.
-2. **Pin-Balance Acceptance & Empirical Sequence Validation (Resolved in Pass A Pinfall Balance)**:
+4. **Pin-Balance Acceptance & Empirical Sequence Validation (Resolved in Pass A Pinfall Balance)**:
    - Replaced flat-rate escape formula with an authoritative resource-aware model factoring in quadratic vitality, remaining stamina, reversal stats, and explicit move-metadata impact disorientation.
    - Eliminated the bug where ordinary heavy throws ($\ge 100$ damage) inflicted finisher disorientation; ordinary heavy throws (177 dmg) now trigger a mild 1.5s heavy impact timer (0.85 mult) allowing healthy defenders to kick out swiftly, while genuine finishers inflict a 4.5s disorientation (0.55 mult).
    - Balanced hold-to-resist as an accessibility alternative at 85.0 base/sec with proportional 8.0/s stamina drain (~85% of 10 Hz mashing speed).
    - Resolved tick 198 (3.30s) floating point boundary precision (`+ 0.0005`) and made kickout ($\ge 100.0$) and rope break strictly preempt the 3-count pinfall across all slot inversions and tree processing orders.
    - Empirically validated across 56 real engine physics tests (`tests/test_pin_balance_scene.gd`) that fresh Cyraxx kicks out at Count 1 (~1.5s–1.6s) across all 4 modes (CPU, 10 Hz mash, hold-on-entry, pre-held), and weakened Cyraxx loses by 3-count pinfall across all 4 modes.
-2. **CPU Pin & Submission Escape Command Disconnection (Resolved in Pass A Baseline)**:
+5. **CPU Pin & Submission Escape Command Disconnection (Resolved in Pass A Baseline)**:
    - Unified all escape checks to consume the `Fighter` command interface (`input_pin`, `input_hold_pin`, `input_strike`, `input_grapple`, `input_block`) rather than polling global hardware keys during combat physics.
-3. **Conflicting Throw Height Ownership (Resolved in Pass A Baseline)**:
+6. **Conflicting Throw Height Ownership (Resolved in Pass A Baseline)**:
    - Removed canvas grounding conflicts in central ring throws so overhead powerslams reach full 1.55m vertical peak before canvas impact.
-4. **Forward-Axis Facing Vector Standardization (Resolved in Pass A Baseline)**:
+7. **Forward-Axis Facing Vector Standardization (Resolved in Pass A Baseline)**:
    - Standardized all locomotion, stationary facing, and synchronized throw vectors to Godot's `-basis.z` forward convention (`atan2(-dx, -dz)`).
-5. **Canonical Finisher Names Alignment (Resolved in Pass A Baseline)**:
+8. **Canonical Finisher Names Alignment (Resolved in Pass A Baseline)**:
    - Synchronized `README.md` to canonical names in `scripts/core/roster_data.gd`.
-6. **Desktop Launcher Script Trailing Quote Bug (Resolved in M3 Polish)**:
+9. **Desktop Launcher Script Trailing Quote Bug (Resolved in M3 Polish)**:
    - Fixed `%~dp0` trailing backslash CRT escaping issue in `START_GAME.bat`.
 
 
 `
 
----
-
 ## File: NEXT_TASK.md
 
-`md
-# Next Implementation Task: Pass A Priority 4 (Simultaneous Submission Outcome Ordering)
+`markdown
+# Next Implementation Tasks: Pass B (64-Matchup Scene Validation & Skeletal Animation Pipeline)
 
-## Immediate Next Task
-**Priority 4: Simultaneous Submission Outcome Ordering**:
-1. Implement authoritative simultaneous outcome resolution policy in `MatchManager` when submission vitality depletion (tap-out condition) and escape progress (break condition) reach their thresholds on the exact same physics frame.
-2. Ensure centralized hold cleanup:
-   - Clear synchronized partner pointers symmetrically on both attacker and defender.
-   - Prevent conflicting multi-frame state transitions or dangling references.
-3. Validate across both player slot orders (P1 Attacker / P2 Defender vs P2 Attacker / P1 Defender) and scene tree iteration orders (Attacker before Defender vs Defender before Attacker).
-
-## Subsequent Backlog (In Strict Priority Order)
-- **Priority 5**: Scene integration and visual verification across all 64 matchups.
-- **Priority 6**: Skeletal animation rigging and authored animation pipeline.
-
-`
+## Pass A Status: 100% Complete & Verified
+All critical combat repairs mandated by source code review have been implemented, verified, and confirmed passing across 396 automated tests (340 unit/mechanics tests + 56 full scene physics integration tests with 0 failures, 0 warnings, 0 ObjectDB leaks):
+1. **Pin-Balance Acceptance**: 4-mode empirical validation (CPU, 10 Hz Mash, Hold-on-Entry, Pre-Held), explicit move metadata impact classification (ordinary heavy impact vs genuine finisher disorientation), and tick 198 (3.30s) kickout/rope break preemptive priority over 3-count.
+2. **Boundary-Safe Paired Throws**: Pre-throw spatial trajectory validation and inward pair adjustment ($d_{\text{slam}} \le 3.50\text{m}$) preventing defender out-of-bounds clipping through ring ropes ($|x| > 3.65\text{m}$).
+3. **Directional Contact & Grapple Startup**: Forward contact cone ($\cos(60^\circ) = 0.50$, $120^\circ$ cone) in strike windows, measurable `GRAPPLE_STARTUP` window ($0.18\text{s}$ duration, $0.25\text{s}$ whiff recovery), strike interruption, reversal counter, and tactical CPU reaction.
+4. **Simultaneous Submission Outcome Ordering & Centralized Hold Cleanup**: Authoritative simultaneous priority policy (`ESCAPE_BREAKS` vs `TAPOUT_WINS`) in `MatchManager`, 1.0 HP clutch survival on buzzer-beater breakouts, and symmetrical pointer clearing (`synchronized_partner = null`) across all breakout, rope break, and tap-out pathways.
 
 ---
+
+## Pass B Roadmap & Priorities
+
+### Priority 1: Scene Integration & Visual Verification Across All 64 Matchups
+- Run headless automated matchup validation across all 8 x 8 = 64 fighter combinations.
+- Verify scene loading, mesh attachment, stat scaling, signature move execution, and win/loss resolution for every roster pairing.
+- Note: Headless execution remains standard; visual inspections and manual playtests remain designated according to code review protocol.
+
+### Priority 2: Skeletal Animation Rigging & Authored Animation Pipeline
+- Establish glTF/GLB skeletal armature pipeline in Blender for all 8 fighter archetypes.
+- Replace procedural geometric tweening with authored skeletal animation clips:
+  - Idles, walk cycles, guard stance, strike animations (punches, kicks, backfists).
+  - Synchronized throw animations (powerslams, suplexes, trips, takedowns).
+  - Ground states (knockdown, ground struggle, pinfall hold, getting up).
+  - Submission holds (armbars, chokes, Boston crabs, figure-fours).
+- Implement Godot `AnimationTree` state machines for smooth blending and root motion support.
+
+### Priority 3: Tournament & Spectator Modes (Post-Combat Acceptance)
+- Tournament bracket generator (single-elimination 8-fighter tournament).
+- Spectator / CPU vs CPU exhibition mode with broadcast camera director transitions.
+- Victory screens, championship trophy presentation, and match statistics recap.
+
+`
 
 ## File: scripts/core/match_rules.gd
 
@@ -481,6 +497,12 @@ const STRIKE_CONE_MIN_DOT: float = 0.50 # 120-degree forward contact cone (cos(6
 const GRAPPLE_STARTUP_DURATION: float = 0.18 # Seconds of vulnerability before grapple lock executes
 const GRAPPLE_WHIFF_DURATION: float = 0.25 # Seconds of recovery on missed/whiffed grapple
 
+enum SubmissionPriority {
+	ESCAPE_BREAKS, # Buzzer-beater breakout waives off tap-out
+	TAPOUT_WINS     # Incapacitation takes precedence
+}
+static var SUBMISSION_SIMULTANEOUS_PRIORITY: int = SubmissionPriority.ESCAPE_BREAKS
+
 static func is_near_ropes(position_3d: Vector3) -> bool:
 	var x: float = abs(position_3d.x)
 	var z: float = abs(position_3d.z)
@@ -488,8 +510,6 @@ static func is_near_ropes(position_3d: Vector3) -> bool:
 	return max_coord >= (RING_MAT_RADIUS - ROPE_BREAK_DISTANCE)
 
 `
-
----
 
 ## File: scripts/core/roster_data.gd
 
@@ -743,8 +763,6 @@ static func get_all_ids() -> Array:
 
 `
 
----
-
 ## File: scripts/core/match_config.gd
 
 `gdscript
@@ -769,8 +787,6 @@ static func reset_defaults() -> void:
 	p2_is_cpu = true
 
 `
-
----
 
 ## File: scripts/core/match_manager.gd
 
@@ -977,22 +993,112 @@ func _process_submission_watch(_delta: float) -> void:
 		_abort_pin("INVALID_PARTICIPANTS")
 		return
 		
+	# 1. Authoritative Rope Break (Highest Priority)
 	if MatchRules.is_near_ropes(get_fighter_pos(current_pinned)) or MatchRules.is_near_ropes(get_fighter_pos(current_pinner)):
 		_call_rope_break()
 		return
+		
+	var attacker: Fighter = current_pinner
+	var defender: Fighter = current_pinned
+	
+	var has_escaped: bool = (defender.pin_escape_progress >= 100.0)
+	var has_tapped: bool = (defender.vitality <= 0.0)
+	
+	if has_escaped and has_tapped:
+		# Simultaneous Frame: Evaluate authoritative priority policy
+		if MatchRules.SUBMISSION_SIMULTANEOUS_PRIORITY == MatchRules.SubmissionPriority.ESCAPE_BREAKS:
+			_resolve_submission_escape(attacker, defender)
+		else:
+			_resolve_submission_tap_out(attacker, defender)
+	elif has_escaped:
+		_resolve_submission_escape(attacker, defender)
+	elif has_tapped:
+		_resolve_submission_tap_out(attacker, defender)
 
-func _on_submission_escaped(_fighter: Fighter) -> void:
-	if current_state == MatchState.SUBMISSION_ATTEMPT:
-		submission_escaped.emit()
-		if referee:
-			referee.on_pin_broken()
-		current_pinner = null
-		current_pinned = null
-		current_state = MatchState.IN_PROGRESS
+func _on_submission_escaped(fighter: Fighter = null) -> void:
+	if current_state != MatchState.SUBMISSION_ATTEMPT:
+		return
+	var defender: Fighter = current_pinned if is_instance_valid(current_pinned) else fighter
+	var attacker: Fighter = current_pinner if is_instance_valid(current_pinner) else (defender.opponent if is_instance_valid(defender) else null)
+	
+	if not is_instance_valid(defender) or not is_instance_valid(attacker):
+		return
+		
+	# Check for simultaneous tap-out on same frame
+	if defender.vitality <= 0.0 and MatchRules.SUBMISSION_SIMULTANEOUS_PRIORITY == MatchRules.SubmissionPriority.TAPOUT_WINS:
+		_resolve_submission_tap_out(attacker, defender)
+		return
+		
+	_resolve_submission_escape(attacker, defender)
 
 func _on_tap_out_submitted(loser: Fighter) -> void:
-	var winner: Fighter = fighter_2 if loser == fighter_1 else fighter_1
-	_end_match(winner, "SUBMISSION (TAP OUT)")
+	if current_state != MatchState.SUBMISSION_ATTEMPT:
+		return
+	var defender: Fighter = loser
+	var attacker: Fighter = current_pinner if is_instance_valid(current_pinner) else (defender.opponent if is_instance_valid(defender) else null)
+	
+	if not is_instance_valid(defender) or not is_instance_valid(attacker):
+		return
+		
+	# Check for simultaneous escape on same frame
+	if defender.pin_escape_progress >= 100.0 and MatchRules.SUBMISSION_SIMULTANEOUS_PRIORITY == MatchRules.SubmissionPriority.ESCAPE_BREAKS:
+		_resolve_submission_escape(attacker, defender)
+		return
+		
+	_resolve_submission_tap_out(attacker, defender)
+
+func _resolve_submission_escape(attacker: Fighter, defender: Fighter) -> void:
+	if current_state != MatchState.SUBMISSION_ATTEMPT:
+		return
+	current_state = MatchState.IN_PROGRESS
+	
+	# Symmetrical cleanup of hold pointers
+	attacker.synchronized_partner = null
+	defender.synchronized_partner = null
+	
+	# If defender reached 0 HP but broke free via buzzer-beater escape, grant 1.0 HP clutch survival
+	if defender.vitality <= 0.0:
+		defender.vitality = 1.0
+		defender.vitality_changed.emit(defender.vitality, defender.max_vitality)
+		
+	attacker._set_state(Fighter.State.IDLE)
+	defender._set_state(Fighter.State.GETTING_UP)
+	
+	if defender.visual_root:
+		defender.visual_root.rotation = Vector3.ZERO
+		defender.visual_root.position = Vector3.ZERO
+	if attacker.visual_root:
+		attacker.visual_root.position = Vector3.ZERO
+		
+	# Symmetrical pushback
+	var push_back: Vector3 = attacker.global_transform.basis.z.normalized() if attacker.is_inside_tree() else attacker.transform.basis.z.normalized()
+	if attacker.is_inside_tree():
+		attacker.global_position += push_back * 1.2
+	else:
+		attacker.position += push_back * 1.2
+		
+	current_pinner = null
+	current_pinned = null
+	
+	if referee:
+		referee.on_pin_broken()
+	if AudioManager.instance:
+		AudioManager.instance.play_crowd_gasp()
+		
+	submission_escaped.emit()
+
+func _resolve_submission_tap_out(attacker: Fighter, defender: Fighter) -> void:
+	if current_state != MatchState.SUBMISSION_ATTEMPT:
+		return
+		
+	# Symmetrical cleanup of hold pointers
+	attacker.synchronized_partner = null
+	defender.synchronized_partner = null
+	
+	current_pinner = null
+	current_pinned = null
+	
+	_end_match(attacker, "SUBMISSION (TAP OUT)")
 
 # ==============================================================================
 # General Match Control
@@ -1006,9 +1112,11 @@ func _call_rope_break() -> void:
 		AudioManager.instance.play_rope_break_alert()
 		
 	if is_instance_valid(current_pinner):
+		current_pinner.synchronized_partner = null
 		current_pinner.break_pin_rope_break()
 		current_pinner.break_submission_rope_break()
 	if is_instance_valid(current_pinned):
+		current_pinned.synchronized_partner = null
 		current_pinned.break_pin_rope_break()
 		current_pinned.break_submission_rope_break()
 		
@@ -1038,8 +1146,6 @@ func restart_match() -> void:
 	get_tree().reload_current_scene()
 
 `
-
----
 
 ## File: scripts/core/audio_manager.gd
 
@@ -1411,8 +1517,6 @@ func _synthesize_count_tone(count: int) -> AudioStreamWAV:
 
 `
 
----
-
 ## File: scripts/core/main_scene.gd
 
 `gdscript
@@ -1451,8 +1555,6 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_tree().change_scene_to_file("res://scenes/ui/character_select.tscn")
 
 `
-
----
 
 ## File: scripts/fighter/fighter.gd
 
@@ -2439,8 +2541,6 @@ func set_defeated() -> void:
 
 `
 
----
-
 ## File: scripts/ai/cpu_controller.gd
 
 `gdscript
@@ -2567,8 +2667,6 @@ func _think() -> void:
 
 `
 
----
-
 ## File: scripts/ring/broadcast_camera.gd
 
 `gdscript
@@ -2634,8 +2732,6 @@ func _physics_process(delta: float) -> void:
 	look_at(look_target, Vector3.UP)
 
 `
-
----
 
 ## File: scripts/ui/character_select.gd
 
@@ -2899,8 +2995,6 @@ func _start_match() -> void:
 
 `
 
----
-
 ## File: scripts/ui/match_hud.gd
 
 `gdscript
@@ -3110,11 +3204,9 @@ func _on_match_ended(winner: Fighter, method: String) -> void:
 
 `
 
----
-
 ## File: scenes/main.tscn
 
-`ini
+`tscn
 [gd_scene format=3 uid="uid://dmainscene01"]
 
 [ext_resource type="Script" path="res://scripts/core/main_scene.gd" id="1_main"]
@@ -3206,11 +3298,9 @@ match_manager = NodePath("../../MatchManager")
 
 `
 
----
-
 ## File: scenes/fighter/fighter.tscn
 
-`ini
+`tscn
 [gd_scene format=3 uid="uid://dfighter001"]
 
 [ext_resource type="Script" path="res://scripts/fighter/fighter.gd" id="1_script"]
@@ -3233,11 +3323,9 @@ shape = SubResource("CapsuleShape3D_root")
 
 `
 
----
-
 ## File: scenes/referee/referee.tscn
 
-`ini
+`tscn
 [gd_scene format=3 uid="uid://b23k1v4j7m9n"]
 
 [ext_resource type="Script" path="res://scripts/referee/referee.gd" id="1_script"]
@@ -3284,11 +3372,9 @@ text = "1!"
 
 `
 
----
-
 ## File: scenes/arena/ring_arena.tscn
 
-`ini
+`tscn
 [gd_scene format=3 uid="uid://dpw54n6g87v8"]
 
 [ext_resource type="PackedScene" path="res://assets/models/ring_arena.glb" id="1_arena"]
@@ -3348,11 +3434,9 @@ shape = SubResource("BoxShape3D_rope_ew")
 
 `
 
----
-
 ## File: scenes/ui/character_select.tscn
 
-`ini
+`tscn
 [gd_scene format=3 uid="uid://dcharselect01"]
 
 [ext_resource type="Script" path="res://scripts/ui/character_select.gd" id="1_script"]
@@ -3688,11 +3772,9 @@ horizontal_alignment = 1
 
 `
 
----
-
 ## File: scenes/ui/match_hud.tscn
 
-`ini
+`tscn
 [gd_scene format=3 uid="uid://dmhud001"]
 
 [ext_resource type="Script" path="res://scripts/ui/match_hud.gd" id="1_script"]
@@ -3968,8 +4050,6 @@ vertical_alignment = 1
 
 `
 
----
-
 ## File: tests/test_suite.gd
 
 `gdscript
@@ -4008,6 +4088,7 @@ func _init() -> void:
 	test_pass_a_boundary_safe_paired_throws()
 	test_pass_a_strike_directional_cone()
 	test_pass_a_grapple_startup_and_interruption()
+	test_pass_a_simultaneous_submission_ordering()
 	
 	print("==================================================")
 	print("TEST RESULTS: %d Passed, %d Failed, %d Total" % [passed_tests, failed_tests, total_tests])
@@ -5202,11 +5283,122 @@ func test_pass_a_grapple_startup_and_interruption() -> void:
 	atk3.free()
 	def3.free()
 
+func test_pass_a_simultaneous_submission_ordering() -> void:
+	# Test simultaneous submission resolution across slot inversions and tree processing orders
+	for invert_slots in [false, true]:
+		for invert_tree in [false, true]:
+			var tag: String = "[Slot%s/Tree%s]" % ["Inv" if invert_slots else "Norm", "Inv" if invert_tree else "Norm"]
+			
+			var manager: MatchManager = MatchManager.new()
+			var p1: Fighter = Fighter.new()
+			var p2: Fighter = Fighter.new()
+			p1.character_id = "tophiachu"
+			p2.character_id = "cyraxx"
+			p1.player_index = 1
+			p2.player_index = 2
+			p1.load_character_data()
+			p2.load_character_data()
+			
+			# Scene tree insertion order
+			if invert_tree:
+				root.add_child(p2)
+				root.add_child(p1)
+			else:
+				root.add_child(p1)
+				root.add_child(p2)
+			root.add_child(manager)
+			
+			manager.fighter_1 = p1
+			manager.fighter_2 = p2
+			manager._setup_match()
+			
+			var atk: Fighter = p2 if invert_slots else p1
+			var def: Fighter = p1 if invert_slots else p2
+			
+			def.current_state = Fighter.State.KNOCKED_DOWN
+			atk.position = Vector3(0, 0, 0)
+			def.position = Vector3(0, 0, 0.5)
+			
+			atk._attempt_submission(false)
+			assert_true(manager.current_state == MatchManager.MatchState.SUBMISSION_ATTEMPT, "Simultaneous Submission: In SUBMISSION_ATTEMPT (%s)" % tag)
+			
+			# Connect match_ended monitor
+			var match_ended_called: Array = [false]
+			manager.match_ended.connect(func(_w, _m): match_ended_called[0] = true)
+			
+			# Induce simultaneous conditions: vitality 0 AND escape progress 100 on exact same frame
+			def.vitality = 0.0
+			def.pin_escape_progress = 100.0
+			
+			# Process frame according to tree order
+			if invert_tree:
+				p2._physics_process(1.0 / 60.0)
+				p1._physics_process(1.0 / 60.0)
+			else:
+				p1._physics_process(1.0 / 60.0)
+				p2._physics_process(1.0 / 60.0)
+			manager._physics_process(1.0 / 60.0)
+			
+			# Under ESCAPE_BREAKS policy: escape waives off tap-out, match continues
+			assert_true(not match_ended_called[0], "Simultaneous Submission: match_ended NOT emitted on simultaneous escape (%s)" % tag)
+			assert_true(manager.current_state == MatchManager.MatchState.IN_PROGRESS, "Simultaneous Submission: Match returns to IN_PROGRESS (%s)" % tag)
+			assert_true(atk.current_state == Fighter.State.IDLE, "Simultaneous Submission: Attacker returns to IDLE (%s)" % tag)
+			assert_true(def.current_state == Fighter.State.GETTING_UP, "Simultaneous Submission: Defender enters GETTING_UP (%s)" % tag)
+			assert_true(def.vitality == 1.0, "Simultaneous Submission: Defender granted 1.0 HP clutch survival (%s)" % tag)
+			assert_true(atk.synchronized_partner == null, "Simultaneous Submission: Attacker synchronized_partner null (%s)" % tag)
+			assert_true(def.synchronized_partner == null, "Simultaneous Submission: Defender synchronized_partner null (%s)" % tag)
+			
+			manager.free()
+			p1.free()
+			p2.free()
+
+	# Test alternate policy: TAPOUT_WINS
+	MatchRules.SUBMISSION_SIMULTANEOUS_PRIORITY = MatchRules.SubmissionPriority.TAPOUT_WINS
+	var man_tap: MatchManager = MatchManager.new()
+	var f1: Fighter = Fighter.new()
+	var f2: Fighter = Fighter.new()
+	f1.character_id = "tophiachu"
+	f2.character_id = "cyraxx"
+	f1.player_index = 1
+	f2.player_index = 2
+	f1.load_character_data()
+	f2.load_character_data()
+	root.add_child(f1)
+	root.add_child(f2)
+	root.add_child(man_tap)
+	man_tap.fighter_1 = f1
+	man_tap.fighter_2 = f2
+	man_tap._setup_match()
+	
+	f2.current_state = Fighter.State.KNOCKED_DOWN
+	f1.position = Vector3(0, 0, 0)
+	f2.position = Vector3(0, 0, 0.5)
+	f1._attempt_submission(false)
+	
+	var tapout_winner: Array = [null]
+	man_tap.match_ended.connect(func(w, _m): tapout_winner[0] = w)
+	
+	f2.vitality = 0.0
+	f2.pin_escape_progress = 100.0
+	
+	f1._physics_process(1.0 / 60.0)
+	f2._physics_process(1.0 / 60.0)
+	man_tap._physics_process(1.0 / 60.0)
+	
+	assert_true(tapout_winner[0] == f1, "Simultaneous Submission [TAPOUT_WINS]: Attacker declared winner on simultaneous frame")
+	assert_true(man_tap.current_state == MatchManager.MatchState.MATCH_OVER, "Simultaneous Submission [TAPOUT_WINS]: Match state is MATCH_OVER")
+	assert_true(f1.synchronized_partner == null and f2.synchronized_partner == null, "Simultaneous Submission [TAPOUT_WINS]: Hold pointers cleared symmetrically")
+	
+	man_tap.free()
+	f1.free()
+	f2.free()
+	
+	# Restore default policy
+	MatchRules.SUBMISSION_SIMULTANEOUS_PRIORITY = MatchRules.SubmissionPriority.ESCAPE_BREAKS
+
 
 
 `
-
----
 
 ## File: tests/test_pin_balance_scene.gd
 
@@ -5747,6 +5939,4 @@ func test_duplicate_match_end_guard() -> void:
 	await _cleanup_scene(ctx)
 
 `
-
----
 

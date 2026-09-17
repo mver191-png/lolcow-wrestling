@@ -33,6 +33,7 @@ func _init() -> void:
 	test_pass_a_boundary_safe_paired_throws()
 	test_pass_a_strike_directional_cone()
 	test_pass_a_grapple_startup_and_interruption()
+	test_pass_a_simultaneous_submission_ordering()
 	
 	print("==================================================")
 	print("TEST RESULTS: %d Passed, %d Failed, %d Total" % [passed_tests, failed_tests, total_tests])
@@ -1226,5 +1227,118 @@ func test_pass_a_grapple_startup_and_interruption() -> void:
 	
 	atk3.free()
 	def3.free()
+
+func test_pass_a_simultaneous_submission_ordering() -> void:
+	# Test simultaneous submission resolution across slot inversions and tree processing orders
+	for invert_slots in [false, true]:
+		for invert_tree in [false, true]:
+			var tag: String = "[Slot%s/Tree%s]" % ["Inv" if invert_slots else "Norm", "Inv" if invert_tree else "Norm"]
+			
+			var manager: MatchManager = MatchManager.new()
+			var p1: Fighter = Fighter.new()
+			var p2: Fighter = Fighter.new()
+			p1.character_id = "tophiachu"
+			p2.character_id = "cyraxx"
+			p1.player_index = 1
+			p2.player_index = 2
+			p1.load_character_data()
+			p2.load_character_data()
+			
+			# Scene tree insertion order
+			if invert_tree:
+				root.add_child(p2)
+				root.add_child(p1)
+			else:
+				root.add_child(p1)
+				root.add_child(p2)
+			root.add_child(manager)
+			
+			manager.fighter_1 = p1
+			manager.fighter_2 = p2
+			manager._setup_match()
+			
+			var atk: Fighter = p2 if invert_slots else p1
+			var def: Fighter = p1 if invert_slots else p2
+			
+			def.current_state = Fighter.State.KNOCKED_DOWN
+			atk.position = Vector3(0, 0, 0)
+			def.position = Vector3(0, 0, 0.5)
+			
+			atk._attempt_submission(false)
+			assert_true(manager.current_state == MatchManager.MatchState.SUBMISSION_ATTEMPT, "Simultaneous Submission: In SUBMISSION_ATTEMPT (%s)" % tag)
+			
+			# Connect match_ended monitor
+			var match_ended_called: Array = [false]
+			manager.match_ended.connect(func(_w, _m): match_ended_called[0] = true)
+			
+			# Induce simultaneous conditions: vitality 0 AND escape progress 100 on exact same frame
+			def.vitality = 0.0
+			def.pin_escape_progress = 100.0
+			
+			# Process frame according to tree order
+			if invert_tree:
+				p2._physics_process(1.0 / 60.0)
+				p1._physics_process(1.0 / 60.0)
+			else:
+				p1._physics_process(1.0 / 60.0)
+				p2._physics_process(1.0 / 60.0)
+			manager._physics_process(1.0 / 60.0)
+			
+			# Under ESCAPE_BREAKS policy: escape waives off tap-out, match continues
+			assert_true(not match_ended_called[0], "Simultaneous Submission: match_ended NOT emitted on simultaneous escape (%s)" % tag)
+			assert_true(manager.current_state == MatchManager.MatchState.IN_PROGRESS, "Simultaneous Submission: Match returns to IN_PROGRESS (%s)" % tag)
+			assert_true(atk.current_state == Fighter.State.IDLE, "Simultaneous Submission: Attacker returns to IDLE (%s)" % tag)
+			assert_true(def.current_state == Fighter.State.GETTING_UP, "Simultaneous Submission: Defender enters GETTING_UP (%s)" % tag)
+			assert_true(def.vitality == 1.0, "Simultaneous Submission: Defender granted 1.0 HP clutch survival (%s)" % tag)
+			assert_true(atk.synchronized_partner == null, "Simultaneous Submission: Attacker synchronized_partner null (%s)" % tag)
+			assert_true(def.synchronized_partner == null, "Simultaneous Submission: Defender synchronized_partner null (%s)" % tag)
+			
+			manager.free()
+			p1.free()
+			p2.free()
+
+	# Test alternate policy: TAPOUT_WINS
+	MatchRules.SUBMISSION_SIMULTANEOUS_PRIORITY = MatchRules.SubmissionPriority.TAPOUT_WINS
+	var man_tap: MatchManager = MatchManager.new()
+	var f1: Fighter = Fighter.new()
+	var f2: Fighter = Fighter.new()
+	f1.character_id = "tophiachu"
+	f2.character_id = "cyraxx"
+	f1.player_index = 1
+	f2.player_index = 2
+	f1.load_character_data()
+	f2.load_character_data()
+	root.add_child(f1)
+	root.add_child(f2)
+	root.add_child(man_tap)
+	man_tap.fighter_1 = f1
+	man_tap.fighter_2 = f2
+	man_tap._setup_match()
+	
+	f2.current_state = Fighter.State.KNOCKED_DOWN
+	f1.position = Vector3(0, 0, 0)
+	f2.position = Vector3(0, 0, 0.5)
+	f1._attempt_submission(false)
+	
+	var tapout_winner: Array = [null]
+	man_tap.match_ended.connect(func(w, _m): tapout_winner[0] = w)
+	
+	f2.vitality = 0.0
+	f2.pin_escape_progress = 100.0
+	
+	f1._physics_process(1.0 / 60.0)
+	f2._physics_process(1.0 / 60.0)
+	man_tap._physics_process(1.0 / 60.0)
+	
+	assert_true(tapout_winner[0] == f1, "Simultaneous Submission [TAPOUT_WINS]: Attacker declared winner on simultaneous frame")
+	assert_true(man_tap.current_state == MatchManager.MatchState.MATCH_OVER, "Simultaneous Submission [TAPOUT_WINS]: Match state is MATCH_OVER")
+	assert_true(f1.synchronized_partner == null and f2.synchronized_partner == null, "Simultaneous Submission [TAPOUT_WINS]: Hold pointers cleared symmetrically")
+	
+	man_tap.free()
+	f1.free()
+	f2.free()
+	
+	# Restore default policy
+	MatchRules.SUBMISSION_SIMULTANEOUS_PRIORITY = MatchRules.SubmissionPriority.ESCAPE_BREAKS
 
 

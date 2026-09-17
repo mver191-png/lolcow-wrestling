@@ -1,10 +1,10 @@
 # Project State: LOLCOW WRESTLING: OFFLINE MAYHEM
 
-## Milestone Status: M0-M1 Functional -> Pass A Repairs (Directional Contact & Grapple Startup Complete)
+## Milestone Status: M0-M1 Functional -> Pass A Repairs (Simultaneous Submission Outcome Ordering Complete)
 - **Engine**: Godot 4.7.2 (stable official, Windows x64) - Installed & Verified.
 - **3D DCC Pipeline**: Blender 5.0.1 (headless Python automation) - Verified.
 - **Target**: 1080p @ 60 FPS, Windows standalone.
-- **Authoritative Combat Loop & Integration**: Verified with 361 automated headless tests (305 focused unit tests + 56 full scene physics integration tests, 0 failures, 0 warnings).
+- **Authoritative Combat Loop & Integration**: Verified with 396 automated headless tests (340 focused unit tests + 56 full scene physics integration tests, 0 failures, 0 warnings).
 - **M2/M3 Status**: Functional baseline established. Skeletal animation rigging, authored unique animation clips, and manual visual inspections remain **NOT RUN / PENDING** per code review requirements.
 
 ### Pass A Codebase Repairs & Verifications:
@@ -46,10 +46,17 @@
    - Verified strike interruption: incoming unblocked strikes during `GRAPPLE_STARTUP` immediately interrupt attacker back to `IDLE`, clear target references, and prevent throw execution.
    - Verified reversal counters: defender inputting `REVERSAL_STANCE` during startup successfully counters the attacker upon startup completion, inflicting counter damage, knockdown, and awarding hype.
    - Upgraded `CPUController` to actively detect opponent `GRAPPLE_STARTUP` within range and retaliate with strike interruptions or reversal counters based on stats.
+10. **Simultaneous Submission Outcome Ordering & Centralized Hold Cleanup (Verified in Pass A Priority 4)**:
+    - Established an explicit, authoritative simultaneous priority policy in `MatchManager` (`MatchRules.SUBMISSION_SIMULTANEOUS_PRIORITY = MatchRules.SubmissionPriority.ESCAPE_BREAKS`).
+    - Decoupled terminal submission resolution from individual fighter physics frames into `MatchManager` resolvers: `_resolve_submission_escape(attacker, defender)` and `_resolve_submission_tap_out(attacker, defender)`.
+    - When $vitality \le 0.0$ and $pin\_escape\_progress \ge 100.0$ coincide on the exact same frame:
+      - Default policy (`ESCAPE_BREAKS`): Escape waives off tap-out (mirroring pinfall kickout priority), defender is granted 1.0 HP clutch survival, attacker returns to `IDLE`, defender enters `GETTING_UP`, and match returns to `IN_PROGRESS` without declaring defeat.
+      - Alternate policy (`TAPOUT_WINS`): Attacker is declared winner with `"SUBMISSION (TAP OUT)"` and match transitions to `MATCH_OVER`.
+    - Implemented centralized, symmetrical hold cleanup: `synchronized_partner = null` is cleared simultaneously on both attacker and defender across all breakout, rope break, and tap-out pathways, eliminating any dangling pointers or multi-frame race conditions.
+    - Verified across all 4 permutations of slot orders (P1/P2 vs P2/P1) and tree processing orders (Attacker-first vs Defender-first) with 100% deterministic results.
 
-### Active Open Items from Code Review (In Priority Order):
-1. **Submission Simultaneous Outcome Resolution (Pass A Priority 4 - Open)**: Formalize authoritative priority in `MatchManager` when tap-out and escape coincide on the same physics tick.
-2. **Manual Visual Inspection & Skeletal Rigging**: Visual checks and authored animations remain **NOT RUN**.
+### Active Open Items from Code Review:
+1. **Manual Visual Inspection & Skeletal Rigging**: Visual checks and authored animations remain **NOT RUN** per code review specification.
 
 ## Verification Summary
 - **M0 Foundation**:
