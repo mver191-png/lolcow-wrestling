@@ -12,38 +12,144 @@ jobs:
   validate:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    outputs:
+      materialized: ${{ steps.stage.outputs.materialized }}
     env:
       GODOT_VERSION: 4.7.2
+      GODOT_SILENCE_ROOT_WARNING: 1
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Install engine and capture dependencies
+      - name: Apply checksum-verified source handoff
+        id: stage
+        env:
+          EVENT: ${{ github.event_name }}
+          REF: ${{ github.ref }}
         run: |
           set -euo pipefail
-          mkdir -p .tools evidence
+          mkdir -p evidence
+          if test "$EVENT" = push && test "$REF" = refs/heads/astra/character-animation-overhaul && test -f .review/apply.py; then
+            python3 .review/apply.py | tee evidence/materialization.log
+            echo 'materialized=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'materialized=false' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Build original roster assets and verify exports
+        run: |
+          set -euo pipefail
+          python3 tools/build_roster.py 2>&1 | tee evidence/asset-build.log
+          python3 tests/test_roster_assets.py 2>&1 | tee evidence/assets-tests.log
+      - name: Install the project engine
+        run: |
+          set -euo pipefail
+          mkdir -p .tools
           curl --fail --location --retry 3 "https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip" -o .tools/godot.zip
           unzip -q .tools/godot.zip -d .tools
           mv .tools/Godot_v${GODOT_VERSION}-stable_linux.x86_64 .tools/godot
           chmod +x .tools/godot
           .tools/godot --version | tee evidence/engine-version.txt
-      - name: Import project
-        run: .tools/godot --headless --editor --path . --import 2>&1 | tee evidence/import.log
-      - name: Unit and integration checks
+      - name: Import and validate gameplay and presentation
         run: |
           set -euo pipefail
+          .tools/godot --headless --editor --path . --import 2>&1 | tee evidence/import.log
           .tools/godot --headless --path . -s tests/test_suite.gd 2>&1 | tee evidence/unit.log
-          .tools/godot --headless --path . -s tests/test_pin_balance_scene.gd 2>&1 | tee evidence/integration.log
-      - name: Package inspected source and portable review engine
+          .tools/godot --headless --fixed-fps 60 --path . -s tests/test_pin_balance_scene.gd 2>&1 | tee evidence/integration.log
+          .tools/godot --headless --path . -s tests/test_visual_presentation.gd 2>&1 | tee evidence/presentation.log
+          .tools/godot --headless --fixed-fps 60 --path . -s tests/test_overhaul.gd 2>&1 | tee evidence/overhaul.log
+          if grep -E 'SCRIPT ERROR:|Parse Error:|\[FAIL\]' evidence/{import,unit,integration,presentation,overhaul}.log; then
+            echo 'Engine reported a script or assertion failure.' >&2
+            exit 1
+          fi
+      - name: Package validated source, generated assets and logs
         if: always()
         run: |
-          mkdir -p review-package
-          cp -r scripts scenes tests assets blender project.godot review-package/
-          cp -r evidence review-package/
-          if test -x .tools/godot; then cp .tools/godot review-package/godot-linux; fi
+          python3 - <<'PY'
+          import hashlib, json, shutil
+          from pathlib import Path
+          root = Path.cwd()
+          out = root / 'review-package'
+          out.mkdir(exist_ok=True)
+          names = ['.gitignore', 'project.godot', 'README.md', 'REVIEW.md', 'STATE.md', 'KNOWN_ISSUES.md', 'NEXT_TASK.md', 'START_GAME.bat', 'CODEBASE_FOR_GPT_PRO.md', 'DECISIONS.md', 'GEMINI_GRAPHICS_ANIMATION_MASTER_PROMPT.md']
+          files = [root / name for name in names]
+          for folder in ['scripts', 'scenes', 'tests', 'tools', 'blender', 'docs', 'assets/models', 'evidence']:
+              files.extend(p for p in (root / folder).rglob('*') if p.is_file())
+          manifest = {}
+          for p in files:
+              if not p.is_file() or '__pycache__' in p.parts or p.suffix in ['.pyc', '.import'] or p.name.endswith('_woven.png'):
+                  continue
+              name = p.relative_to(root).as_posix()
+              target = out / name
+              target.parent.mkdir(parents=True, exist_ok=True)
+              shutil.copy2(p, target)
+              manifest[name] = hashlib.sha256(target.read_bytes()).hexdigest()
+          (out / 'source-manifest.json').write_text(json.dumps(manifest, indent=2))
+          print('Packaged', len(manifest), 'verified files')
+          PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: game-review-${{ github.sha }}
+          name: validated-overhaul-${{ github.sha }}
           path: review-package/
+          include-hidden-files: true
           retention-days: 7
+  publish_review_branch:
+    needs: validate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/astra/character-animation-overhaul' && needs.validate.outputs.materialized == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: astra/character-animation-overhaul
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: validated-overhaul-${{ github.sha }}
+          path: .validated
+      - name: Publish only the validated review branch
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          test -f .review/apply.py
+          python3 - <<'PY'
+          import hashlib, json, shutil
+          from pathlib import Path
+          root = Path.cwd()
+          source = root / '.validated'
+          manifest = json.loads((source / 'source-manifest.json').read_text())
+          allowed_roots = {'scripts', 'scenes', 'tests', 'tools', 'blender', 'docs', 'assets'}
+          allowed_files = {'.gitignore', 'project.godot', 'README.md', 'REVIEW.md', 'STATE.md', 'KNOWN_ISSUES.md', 'NEXT_TASK.md', 'START_GAME.bat', 'CODEBASE_FOR_GPT_PRO.md', 'DECISIONS.md', 'GEMINI_GRAPHICS_ANIMATION_MASTER_PROMPT.md'}
+          pending = []
+          for name, digest in manifest.items():
+              p = Path(name)
+              if p.is_absolute() or '..' in p.parts:
+                  raise SystemExit('Unsafe artifact path')
+              if p.parts[0] == 'evidence':
+                  continue
+              if p.parts[0] not in allowed_roots and name not in allowed_files:
+                  raise SystemExit('Unexpected artifact path: ' + name)
+              src, dst = source / p, root / p
+              if not src.resolve().is_relative_to(source) or not dst.resolve().is_relative_to(root):
+                  raise SystemExit('Artifact path escaped checkout')
+              if hashlib.sha256(src.read_bytes()).hexdigest() != digest:
+                  raise SystemExit('Artifact checksum mismatch: ' + name)
+              pending.append((src, dst))
+          for src, dst in pending:
+              dst.parent.mkdir(parents=True, exist_ok=True)
+              shutil.copy2(src, dst)
+          print('Publishing', len(pending), 'validated source and asset files')
+          PY
+          git rm -r .review
+          git add scripts scenes tests tools blender docs assets/models .gitignore project.godot README.md REVIEW.md STATE.md KNOWN_ISSUES.md NEXT_TASK.md START_GAME.bat CODEBASE_FOR_GPT_PRO.md
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'feat: rebuild the roster, synchronized presentation and wrestling venue'
+          git fetch origin astra/character-animation-overhaul
+          test "$(git rev-parse origin/astra/character-animation-overhaul)" = "$EXPECTED_SHA"
+          git push origin HEAD:astra/character-animation-overhaul
