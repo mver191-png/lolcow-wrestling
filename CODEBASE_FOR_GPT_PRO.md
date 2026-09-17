@@ -1,8 +1,265 @@
 # LOLCOW WRESTLING: OFFLINE MAYHEM - COMPLETE CODEBASE DIGEST FOR GPT PRO
 
+This document contains the complete codebase and graphics overhaul progress for source inspection.
+
+## File: STATE.md
+
+```markdown
+# Project State: LOLCOW WRESTLING: OFFLINE MAYHEM
+
+## Milestone Status: Graphics & Animation Overhaul (Phase 1: Humanoid Rig & Tophiachu Production Asset Complete)
+- **Engine**: Godot 4.7.2 (stable official, Windows x64) - Installed & Verified.
+- **3D DCC Pipeline**: Blender 5.0.1 (headless Python automation) - Verified & Operational.
+- **Target**: 1080p @ 60 FPS, Windows standalone.
+- **Authoritative Combat Loop & Integration**: Verified with 530 automated headless tests (404 unit/mechanics/presentation tests + 126 full scene physics integration tests, 0 failures, 0 warnings, 0 ObjectDB leaks).
+- **Graphics & Animation Status**: Phase 1 implemented per `GEMINI_GRAPHICS_ANIMATION_MASTER_PROMPT.md`. Tophiachu rebuilt with 22-bone humanoid armature and 16 keyframed skeletal animation clips. `FighterPresentation` component active with locomotion stride scaling and backward-compatible fallbacks for unmigrated roster. Cyraxx and KingCobraJFS referee queued next. Headless automated checks 100% PASS; interactive screen rendering remains **NOT RUN** per headless protocol.
+
+---
+
+### Graphics & Animation Overhaul Progress (Specification: GEMINI_GRAPHICS_ANIMATION_MASTER_PROMPT.md)
+
+1. **Tophiachu Production Asset (Implemented & Verified)**:
+   - Built custom Blender 5.0 generator script (`blender/build_skinned_character.py`).
+   - Humanoid armature with 22 canonical bones (`Root`, `Hips`, `Spine`, `Chest`, `Neck`, `Head`, `Clavicle.L/R`, `UpperArm.L/R`, `Forearm.L/R`, `Hand.L/R`, `Thigh.L/R`, `Shin.L/R`, `Foot.L/R`, `Toe.L/R`).
+   - Stylized heavyweight anatomy with custom proportions: wide torso, voluminous curly hair cluster, defined facial features (brow, nose, jawline), layered purple wrestling singlet with magenta accents, wrist wraps, and black wrestling boots.
+   - Smooth vertex weighting across head, torso, upper limbs, and lower limbs with zero rigid bone popping.
+   - Authored 16 keyframed animations pushed to NLA tracks: `idle` (breathing loop), `walk` (weighted heavyweight stride), `strike` (heavy right straight), `knockdown` (dramatic back collapse), `getup` (staggered recovery), `block`, `reversal`, `grapple`, `throw_attacker`, `throw_defender`, `pinning`, `pinned`, `submission_attacker`, `submission_defender`, `victory`, `defeated`.
+   - Exported to clean multi-action glTF binary (`assets/models/tophiachu.glb`).
+
+2. **FighterPresentation Architecture (`scripts/fighter/fighter_presentation.gd`)**:
+   - Dedicated presentation component decoupled from gameplay authority.
+   - Automatically detects `Skeleton3D` and `AnimationPlayer` in loaded glTF scenes.
+   - Sets `has_skeletal_rig = true` only when all core clips (`idle`, `walk`, `strike`, `knockdown`, `getup`) are present.
+   - State-driven animation playback routing with appropriate transition blends (0.12s smooth blend for locomotion/idle, 0.05s responsive cuts for strikes and knockdowns).
+   - Locomotion stride speed matching: dynamially scales `anim_player.speed_scale = clamp(actual_speed / nominal_speed, 0.4, 1.8)` preventing foot sliding.
+   - Zero gameplay retiming: animation clips follow state machine timers, never deciding match mechanics or damage windows.
+
+3. **Legacy Fallback & Backward Compatibility Guarding**:
+   - `Fighter` guards legacy manual `visual_root` rotation/offset overrides (`KNOCKED_DOWN`, `GETTING_UP`, `PINNING`, `PINNED`, `SUBMISSION_ATTACKER`, `SUBMISSION_DEFENDER`, `DEFEATED`) with `not is_rigged()`.
+   - Guarded limb-node procedural punch and grapple tweens with `not is_rigged()`.
+   - Unmigrated characters (Cyraxx, Nova, Candy, Andy, Jupiter, Anaconda, Larson) safely retain their provisional geometries and procedural fallbacks without crashes or regressions.
+
+4. **Automated Presentation Testing**:
+   - Created dedicated `tests/test_visual_presentation.gd` (28 tests) and integrated into main `tests/test_suite.gd` (404 tests total).
+   - Verifies 22 bones in `Skeleton3D`, all 16 clips in `AnimationPlayer`, linear looping on `idle`/`walk`, state routing, stride scaling, and fallback compatibility.
+
+---
+
+### Preserved Combat Repairs (Pass A)
+1. **Exclusive Terminal Outcome Ownership & Priority Scheduling**: `MatchManager` has exclusive authority; deterministic priorities (`Fighter` = 0, `MatchManager` = 10); symmetrical hold pointer clearing; immutable terminal states (`VICTORY`, `DEFEATED`).
+2. **Pin-Balance Acceptance**: 4-mode empirical validation (CPU, 10 Hz Mash, Hold-on-Entry, Pre-Held); ordinary heavy impacts (1.5s heavy timer) separate from genuine finishers (4.5s disorientation); Count 3 preempted by kickout/rope break at tick 198 (3.30s).
+3. **Boundary-Safe Paired Throws**: Pre-throw spatial trajectory validation and inward pair adjustment ($d_{\text{slam}} \le 3.50\text{m}$) preventing clipping through ring ropes ($|x| > 3.65\text{m}$).
+4. **Directional Contact & Grapple Startup**: Forward contact cone ($\cos(60^\circ) = 0.50$, $120^\circ$ cone); measurable `GRAPPLE_STARTUP` window ($0.18\text{s}$ duration, $0.25\text{s}$ whiff recovery); strike interruption, reversal counter, and tactical CPU reaction.
+5. **Simultaneous Submission Outcome Ordering & Centralized Hold Cleanup**: Authoritative simultaneous priority policy (`ESCAPE_BREAKS` vs `TAPOUT_WINS`) in `MatchManager`, 1.0 HP clutch survival on buzzer-beater breakouts, and symmetrical pointer clearing.
+
+---
+
+## Verification Summary
+- **Unit & Presentation Test Suite (`tests/test_suite.gd`)**: 404 Passed, 0 Failed, 0 Warnings.
+- **Scene Physics Integration Suite (`tests/test_pin_balance_scene.gd`)**: 126 Passed, 0 Failed.
+- **Visual Presentation Dedicated Suite (`tests/test_visual_presentation.gd`)**: 28 Passed, 0 Failed.
+- **Visual Inspection Status**: Headless automated checks PASS 100%; visual rendering and manual gameplay inspection marked **NOT RUN**.
+
+```
+
+## File: KNOWN_ISSUES.md
+
+```markdown
+## Active Open Issues & Visual Overhaul Pipeline
+
+1. **Roster Skeletal Animation Migration (In Progress)**:
+   - **Migrated (Production)**:
+     - `tophiachu`: Complete 22-bone humanoid armature, customized heavyweight mesh, defined facial features, textured materials, and 16 keyframed skeletal animation clips exported to `assets/models/tophiachu.glb`.
+   - **Pending Migration (Provisional Assets Preserved)**:
+     - `cyraxx`: Next character queued for 22-bone humanoid rig, frail cruiserweight proportions, black beanie silhouette, and rapid strike clips.
+     - `referee_cobra` (KingCobraJFS): Neutral referee queued for customized vest, iconic glasses, bowler hat, and permanent golden halo attached to head bone.
+     - Remaining 6 fighters (`novaonline`, `candy_rooks`, `andy_ditch`, `jupiter_the_hybrid`, `anacondasin`, `daniel_larson`): Preserving current provisional assets and procedural fallback tweens until their production turns.
+2. **Visual Checks & Authored Animations Status**:
+   - Automated structural checks (bone count, animation presence, looping modes, state routing, speed scale clamping, fallback safety) are verified passing 100% in headless Godot.
+   - Interactive visual rendering and manual gameplay playtests remain **NOT RUN** per headless review protocol.
+
+---
+
+## Resolved in Current Overhaul & Prior Milestones
+
+1. **Skinned Mesh & Presentation Architecture (Resolved in Graphics Phase 1)**:
+   - Created `FighterPresentation` (`scripts/fighter/fighter_presentation.gd`) to decouple visual asset management, skeletal rig detection, and animation playback from authoritative combat physics.
+   - Guarded legacy procedural limb tweens and whole-model tilt/offset overrides in `scripts/fighter/fighter.gd` with `not is_rigged()`.
+   - Enabled locomotion stride synchronization (`anim_player.speed_scale` dynamic scaling).
+   - Authored Blender 5.0.1 generator pipeline (`blender/build_skinned_character.py`) exporting 22-bone armature and 16 NLA-backed action clips.
+2. **Exclusive Terminal Outcome Ownership & Deterministic Scheduling (Resolved in Pass A Terminal Ownership)**:
+   - Fixed competing ownership between `Fighter` and `MatchManager`: `MatchManager` has exclusive authority over terminal match outcome declarations (`_process_submission_watch()`, `_process_pin_countdown()`, `_resolve_pin_kick_out()`, `_resolve_submission_escape()`, `_resolve_submission_tap_out()`).
+   - Assigned deterministic engine priorities: `Fighter.process_physics_priority = 0` and `MatchManager.process_physics_priority = 10`, ensuring fighters fully update resistance inputs, damage, and progress before `MatchManager` evaluates rules.
+   - Symmetrically cleared `synchronized_partner = null` on both participants when entering terminal outcomes.
+   - Guarded terminal states `VICTORY` and `DEFEATED` in `_set_state()` against being overwritten by gameplay callbacks (`GETTING_UP`, `IDLE`).
+   - Guarded fighter callbacks (`_execute_submission_escape()`, `on_tap_out()`, `_execute_kick_out()`, `on_kick_out_received()`) against overwriting manager decisions.
+   - Fully tested across slot inversions and tree processing orders with real scene physics frames (126 scene tests, 404 unit tests, 0 failures).
+3. **Simultaneous Submission Outcome Ordering & Centralized Hold Cleanup (Resolved in Pass A Priority 4)**:
+   - Established explicit simultaneous priority policy in `MatchManager` (`MatchRules.SUBMISSION_SIMULTANEOUS_PRIORITY = MatchRules.SubmissionPriority.ESCAPE_BREAKS`).
+   - Decoupled terminal submission resolution from individual fighter update frames into `MatchManager` resolvers: `_resolve_submission_escape()` and `_resolve_submission_tap_out()`.
+   - Guaranteed identical, deterministic outcomes across all 4 permutations of slot orders (P1/P2 vs P2/P1) and tree processing orders (Attacker-first vs Defender-first).
+   - Enforced centralized, symmetrical hold cleanup: `synchronized_partner = null` cleared on both sides during all breakout, rope break, and tap-out transitions with zero dangling references.
+4. **Directional Attack Contact & Grapple Startup (Resolved in Pass A Priority 3)**:
+   - Added forward directional dot-product gating (`STRIKE_CONE_MIN_DOT = 0.50`, 120-degree cone) to `_handle_strike_active_window()`, preventing strikes from connecting with targets on flanks or behind the attacker.
+   - Enforced measurable `GRAPPLE_STARTUP` window (`GRAPPLE_STARTUP_DURATION = 0.18s`, whiff recovery 0.25s) in `_attempt_grapple()` and `_process_grapple_startup()`.
+   - Verified that unblocked incoming strikes interrupt attacker out of `GRAPPLE_STARTUP` and clear target reference, preventing throw execution.
+   - Verified that defender reversal stance during startup successfully counters the attacker.
+   - Upgraded `CPUController` to retaliate against opponent `GRAPPLE_STARTUP` via strike interruption or reversal counter.
+5. **Boundary Safety During Throws (Resolved in Pass A Priority 2)**:
+   - Added `_validate_and_adjust_throw_boundaries()` before locking synchronized throws. Evaluates predicted slam target $\vec{P}_{\text{slam}} = \vec{P}_{\text{atk}} + \vec{F} \times d_{\text{slam}}$ and shifts both attacker and defender inward toward center ring so landing coordinates and hold coordinates remain $\le 3.50\text{m}$ (inside the $3.65\text{m}$ ring limit).
+   - Added secondary clamping in `_process_synchronized_attacker()` for `hold_pos` and `slam_pos`.
+   - Verified across 32 edge, corner, slot, and tree permutations (128 assertions) with zero out-of-bounds trajectory and zero ground release snap-back.
+6. **Pin-Balance Acceptance & Empirical Sequence Validation (Resolved in Pass A Pinfall Balance)**:
+   - Replaced flat-rate escape formula with an authoritative resource-aware model factoring in quadratic vitality, remaining stamina, reversal stats, and explicit move-metadata impact disorientation.
+   - Eliminated the bug where ordinary heavy throws ($\ge 100$ damage) inflicted finisher disorientation; ordinary heavy throws (177 dmg) now trigger a mild 1.5s heavy impact timer (0.85 mult) allowing healthy defenders to kick out swiftly, while genuine finishers inflict a 4.5s disorientation (0.55 mult).
+   - Balanced hold-to-resist as an accessibility alternative at 85.0 base/sec with proportional 8.0/s stamina drain (~85% of 10 Hz mashing speed).
+   - Resolved tick 198 (3.30s) floating point boundary precision (`+ 0.0005`) and made kickout ($\ge 100.0$) and rope break strictly preempt the 3-count pinfall across all slot inversions and tree processing orders.
+   - Empirically validated across 56 real engine physics tests (`tests/test_pin_balance_scene.gd`) that fresh Cyraxx kicks out at Count 1 (~1.5s–1.6s) across all 4 modes (CPU, 10 Hz mash, hold-on-entry, pre-held), and weakened Cyraxx loses by 3-count pinfall across all 4 modes.
+7. **CPU Pin & Submission Escape Command Disconnection (Resolved in Pass A Baseline)**:
+   - Unified all escape checks to consume the `Fighter` command interface (`input_pin`, `input_hold_pin`, `input_strike`, `input_grapple`, `input_block`) rather than polling global hardware keys during combat physics.
+8. **Conflicting Throw Height Ownership (Resolved in Pass A Baseline)**:
+   - Removed canvas grounding conflicts in central ring throws so overhead powerslams reach full 1.55m vertical peak before canvas impact.
+9. **Forward-Axis Facing Vector Standardization (Resolved in Pass A Baseline)**:
+   - Standardized all locomotion, stationary facing, and synchronized throw vectors to Godot's `-basis.z` forward convention (`atan2(-dx, -dz)`).
+10. **Canonical Finisher Names Alignment (Resolved in Pass A Baseline)**:
+    - Synchronized `README.md` to canonical names in `scripts/core/roster_data.gd`.
+11. **Desktop Launcher Script Trailing Quote Bug (Resolved in M3 Polish)**:
+    - Fixed `%~dp0` trailing backslash CRT escaping issue in `START_GAME.bat`.
+
+```
+
+## File: NEXT_TASK.md
+
+```markdown
+# Next Implementation Tasks: Visual & Animation Overhaul (Phase 2 & 3)
+
+## Current Status: Phase 1 Complete (Tophiachu Production Asset & Presentation Architecture)
+Tophiachu has been overhauled with a production-grade 22-bone humanoid armature, customized anatomical mesh, and 16 keyframed skeletal animation clips exported to `assets/models/tophiachu.glb`. `FighterPresentation` coordinates model loading, skeletal detection, locomotion stride synchronization, and backward-compatible fallbacks for unmigrated fighters. All 530 automated tests (404 unit/presentation tests + 126 scene physics tests) pass 100%.
+
+---
+
+## Next Immediate Milestones: Phase 2 & Phase 3
+
+### Phase 2: Cyraxx Production Asset & Rapid Striker Animation Set
+1. **Model & Skeleton Generation**:
+   - Extend `blender/build_skinned_character.py` (or create `build_skinned_cyraxx.py`) to build Cyraxx with the identical 22-bone humanoid armature hierarchy.
+   - Proportions: Frail, lightweight cruiserweight frame, sunken cheeks, defined nasal bridge, black beanie silhouette, olive tank top, dark joggers, and wrestling boots.
+   - Distinct PBR material assignments for skin, clothing, beanie, and footwear.
+2. **Author Unique Animation Set (16 clips)**:
+   - Dynamic, twitchy cruiserweight idle loop.
+   - Rapid-tempo walking cycle.
+   - Rapid double-jab / flurry strike clip.
+   - Unique synchronized throw attacker/defender clips.
+   - Getting up, knockdown, submission struggle, victory/defeat.
+3. **Integration & Automated Verification**:
+   - Export to `assets/models/cyraxx.glb`.
+   - Update `tests/test_visual_presentation.gd` and `tests/test_suite.gd` to verify Cyraxx has `has_skeletal_rig == true` and 16 valid clips.
+   - Run Tophiachu vs Cyraxx full match in `test_pin_balance_scene.gd` with both fighters rigged.
+
+### Phase 3: KingCobraJFS Neutral Referee Rig & Permanent Memorial Halo
+1. **Armature & Visual Model**:
+   - Humanoid armature for KingCobraJFS with custom referee polo/vest, iconic glasses, and bowler hat.
+   - Permanent, glowing golden memorial halo (1991–2025) securely parented to the `Head` bone with pulsing emissive shader/material.
+2. **Referee Animation Set**:
+   - Upright officiating idle with observational head glances.
+   - Fast, decisive floor drop for pin counts (dropping to chest, hitting the mat for counts 1, 2, 3).
+   - Standing wave-off animation for kick-outs and rope breaks.
+   - Authoritative pointing gesture to designate match winner.
+3. **Integration & Verification**:
+   - Export to `assets/models/referee_cobra.glb`.
+   - Verify referee remains neutral, untargetable, with halo visible throughout all match phases.
+
+### Phase 4: Remaining 6 Fighters in Roster Pipeline
+- `novaonline`: Athletic heavyweight frame, fiery red/gold attire, powerful striking stance.
+- `candy_rooks`: Broad kitchen-sink powerhouse brute, pink apron aesthetic, wrist wraps.
+- `andy_ditch`: Sturdy territory anchor, padded denim blue wrestling singlet.
+- `jupiter_the_hybrid`: Slender celestial martial artist, violet/silver attire.
+- `anacondasin`: Flexible submission technician, serpentine emerald/gold tights.
+- `daniel_larson`: Erratic, lanky scrapper, bright orange jacket silhouette.
+
+```
+
+## File: GEMINI_GRAPHICS_ANIMATION_MASTER_PROMPT.md
+
+```markdown
+﻿# GEMINI GRAPHICS & ANIMATION MASTER PROMPT
+Visual-Production Specification for LOLCOW WRESTLING: OFFLINE MAYHEM
+
+## PRIMARY GOAL
+Make the improvement obvious in normal full-body gameplay with bloom, particles, and camera shake disabled. Replace primitive mannequins with recognizable, properly skinned, textured wrestlers; replace whole-model rotations and offsets with articulated motion.
+
+Keep the visual style consistent: stylized-realistic arcade wrestling in a small, professionally presented indoor venue. No blocky toy anatomy, featureless heads, identical bodybuilder meshes, rubber limbs, or photographic faces pasted onto spheres.
+
+## PRESERVE THE PROJECT
+Keep all eight wrestlers, their canonical IDs, stats, move names, controls, selection flow, and working combat repairs. KingCobraJFS remains the neutral, untargetable referee with a permanent halo.
+
+Inspect installed Godot/Blender versions and existing repository instructions. Protect user changes. Do not change engines, reset the repository, or rewrite the game from scratch.
+
+Preserve authoritative damage, pin/submission outcomes, input processing, and movement ownership. Animation and VFX must not decide who wins. Do not introduce a second gameplay controller.
+
+## FIRST PRODUCTION PRIORITY: CHARACTERS AND MOTION
+Start with Tophiachu, then Cyraxx, then the referee. Finish that contrasting heavyweight/lightweight pair before spreading unfinished art across the full roster. Preserve the remaining six as explicitly provisional but playable characters during migration.
+
+Create real character meshes with intentional anatomical surfaces, proper facial structure, articulated hands, clothing thickness and folds, hair, UVs, and material separation. Use approved references for likeness. Do not invent verified anatomy or medical caricatures.
+
+Author a consistent humanoid rig with separate floor root and pelvis, spine, neck/head, clavicles, arms/hands, legs/feet/toes, and appropriate finger controls. Adapt proportions and weights per physique rather than merely scaling one mesh. Validate shoulders, elbows, hips, knees, and clothing in extreme poses.
+
+Keep editable source assets and a reproducible per-character export. Export skinned assets and baked animation tracks, then verify them in Godot. A skeleton existing in a file is not proof of correct motion. Use appropriately licensed base assets when useful; do not rip models or animations from commercial games or purchase assets without approval.
+
+## REPLACE THE OLD ANIMATION SHORTCUTS
+Build a dedicated presentation component driven by gameplay state. For migrated characters, remove or explicitly disable the legacy visual_root rotation/height overrides, limb-node punch tweens, and whole-model get-up lerps. Do not let them compete with skeletal poses.
+
+Use authored clips with AnimationPlayer and a tested AnimationTree or equivalent blend graph. Keep mutable playback state per fighter, including mirror matches. Preserve one world-movement owner. Begin with locomotion matched to actual velocity; never apply animation root motion and controller displacement twice.
+
+Author a usable match library: idle, travel/turn/stop, guard, strike, hit reactions, reversal, grapple entry, paired throw, knockdown, supported get-up, pin/struggle/kick-out, submission/escape/tap-out, finisher, entrance, and victory/defeat presentation.
+
+Give Tophiachu planted weight shifts, torso involvement, and committed follow-through. Give Cyraxx compact attacks, quicker direction changes, and distinct leverage-based wrestling. Neither should skate or snap between unrelated poses.
+
+A get-up must show support through elbow/hand, knee/foot, and rising hips. Rotating a horizontal model upright is not a finished get-up. A pin must show an actual cover; a submission must show a connected hold.
+
+## PAIRED ANIMATION IS THE MAIN QUALITY GATE
+Author attacker and defender together in shared space. Drive both from one action ID and authoritative timeline. Define grip acquisition, loading, lift/leverage, impact, release, and recovery phases.
+
+Maintain hands on intended grip targets with bounded correction; do not stretch arms or teleport bodies to force contact. Keep planted feet stable. Match the visible landing, sound, and cosmetic response to the authoritative impact. Do not duplicate damage or effects.
+
+Test heavyweight-to-lightweight, lightweight-to-heavyweight, both mirror matches, and edge/corner setups. A lightweight takedown needs its own leverage poses, not an overhead slam with a lower height.
+
+Keep current balance initially. If a readable clip requires different move timing, make one explicit metadata change and test it; do not silently retime the combat or arbitrarily speed up the animation.
+
+## REFEREE
+Replace model bounces and pin-position teleporting with articulated observing, repositioning, kneeling, hand-to-canvas counting, rope-break, submission-check, get-up, and winner-acknowledgment animations.
+
+The official count remains authoritative. Prepare the gesture so the hand contacts the canvas at the official count; referee travel must never delay or bias the result.
+
+Use one halo attached above the animated head, visible with bloom off. Keep its gold emission restrained and its count pulse subtle. Do not wash out the face or duplicate halos from old scene/model assets.
+
+## ARENA AND CAMERA
+Finish one ring and venue: canvas texture/seams, padded turnbuckles, connected ropes, apron folds, steps, platform, barriers, seating, entrance curtain/ramp, visible truss lights, speakers, and timekeeper area. Keep gameplay canvas coordinates consistent.
+
+Add varied, modest-cost crowd characters with staggered reactions. Avoid identical synchronized loops and full-detail rigs for every seat.
+
+Light faces and feet clearly. Use distinct skin, fabric, metal, hair, and canvas materials. Evaluate baked indirect light plus dynamic character lighting/shadows. Add restrained atmosphere only after the assets look good under neutral light. No fog wall or excessive bloom.
+
+Improve the broadcast camera to frame complete interactions, including lifted and downed fighters. Do not hide feet, hands, or reversal windows. Reserve cinematic angles for safe moments. Retain reduced-shake and stable-camera options. Menu polish is secondary to the match itself.
+
+## DELIVERY ORDER AND PROOF
+First session: inspect briefly, capture a genuine baseline when tools permit, establish the presentation seam, then finish a skinned, textured Tophiachu with idle, locomotion/stop, characteristic strike, knockdown, and supported get-up IN THE REAL MATCH SCENE. Continue to Cyraxx only after that pipeline works. Advance from existing finished work rather than rebuilding it.
+
+Next gate: a complete two-wrestler match with connected grapples, ground interactions, animated referee, finished arena, and result. Only then migrate the remaining roster and extend unique sequences.
+
+Capture real before/after views, full-body locomotion, both throw directions, pin/kick-out, submission, referee counting, and an uninterrupted match. Inspect normal and slow playback. Generated art, Blender-only turntables, and headless test logs are not gameplay proof.
+
+Keep IMPLEMENTED, AUTOMATED CHECK PASSED, and VISUALLY ACCEPTED separate. Mark checks NOT RUN when tools are unavailable. Never invent footage, asset licenses, test outcomes, or frame rates. Profile 1080p/60 FPS on identified hardware; do not assume the user's GPU or memory capacity.
+
+Report changed assets/code, exact launch commands or a playable build, checks actually run, captures actually inspected, remaining provisional work, and one next implementation task. Update the existing project notes accurately. Do not mark the entire overhaul complete after changing lighting or adding an unused skeleton.
+
+Begin implementation, not another roadmap. The first deliverable must visibly improve a real wrestler in the real game.
+
+```
+
 ## File: project.godot
 
-\\ini
+```ini
 ; Engine configuration file.
 ; It's best edited using the editor UI and not directly,
 ; but it is safe to edit directly if you know what you are doing.
@@ -150,1452 +407,124 @@ common/physics_ticks_per_second=60
 
 renderer/rendering_method="forward_plus"
 anti_aliasing/quality/msaa_3d=2
-\\n
-## File: README.md
-
-\\markdown
-# LOLCOW WRESTLING: OFFLINE MAYHEM
-
-> A stylized 3D arcade wrestling game built in Godot 4.7.2 Forward+ with Blender 5.0 DCC procedural assets, targeting 1080p @ 60 FPS on Windows standalone.
-
----
-
-## 1. Project Overview
-
-*LOLCOW WRESTLING: OFFLINE MAYHEM* is an arcade-style 3D professional wrestling title featuring 8 distinct fighters, synchronized grapple and throw sequences, continuous submission holds, dynamic referee officiating, and an integrated Character Selection system.
-
-### In Memoriam: KingCobraJFS (1991–2025)
-Reporting confirms that KingCobraJFS passed away on 21 August 2025. Throughout the entire game across all game modes, KingCobraJFS serves as the neutral, untargetable official referee. He features a permanently visible, pulsing emissive gold halo hovering above his gothic cap as an enduring memorial tribute.
-
----
-
-## 2. The 8-Character Canonical Roster
-
-Every fighter has an authoritative, canonical 42-point attribute distribution across 7 stats (Power, Mobility, Grappling, Stamina, Durability, Reversal, Showmanship; all rated 1–10).
-
-| ID | Name | Archetype | Style Summary | Signature Finisher |
-| :--- | :--- | :--- | :--- | :--- |
-| tophiachu | Tophiachu | Heavyweight Counter-Brawler | Slow heavy tank, devastating strikes & high powerslams | *Live-Stream Shutdown* |
-| novaonline | NovaOnline | Momentum Heavyweight | Balanced heavyweight with forward burst | *Going Offline* |
-| cyraxx | Cyraxx | Lightweight Burst Striker | Compact, lightning strikes, low leverage throws | *Raxx and Ruin* |
-| candy_rooks | Candy Rooks | Combination Grappler | High power and durability combination brawler | *Ribs & Kidney Beans* |
-| andy_ditch | Andy Ditch | Territory Anchor Grappler | Anchor wrestler with high grappling defense | *Case Closed* |
-| jupiter_the_hybrid | Jupiter the Hybrid | Stance-Shift Grappler | Agile kicks, swift escapes, aerial offense | *Eclipse Driver* |
-| anacondasin | AnacondaSin | Positional Submission Specialist | Dangerous lock specialist, rapid tap-out inducer | *Anaconda Lock* |
-| daniel_larson | Daniel Larson | Mobile Opportunist | Unpredictable, fast scrambler and reversal threat | *Final Encore* |
-
----
-
-## 3. Core Mechanics & Architecture
-
-1. **Deterministic Combat State Machine**:
-   - Strictly authoritative state gating on Fighter (IDLE, WALK, STRIKE, BLOCK, REVERSAL, GRAPPLE_INIT, GRAPPLE_LIFT, THROW_ATTACKER, THROW_DEFENDER, KNOCKDOWN, GETUP, PINNING, PINNED, SUBMISSION_ATTACKER, SUBMISSION_DEFENDER, VICTORY, DEFEATED).
-   - Zero sliding or desynchronization during mutual grapple locks.
-   - Attacker and defender trajectories are mutually locked and frame-synchronized.
-
-2. **Leverage & Weight-Class Throw Scaling**:
-   - Grapples dynamically evaluate the attacker-to-defender weight/power ratio.
-   - Heavyweights lifting lighter opponents execute high overhead powerslams (1.55m vertical peak).
-   - Lightweight strikers throwing heavyweights route to low-angle leverage trips (0.38m vertical peak), ensuring believable physical interactions.
-
-3. **Submissions & Pinning**:
-   - **Continuous Submissions**: Lock holds drain defender vitality and stamina continuously. Defender can mash kick-out keys to escape; if vitality drops to zero during a hold, a tap-out victory is declared.
-   - **Pinning & 3-Count**: Pin attempts alert referee KingCobraJFS to drop into position and begin 1-2-3 counts. A kick-out meter allows escapes before count 3.
-   - **Rope Break Priority**: Being within 0.8m of the ring ropes immediately breaks pins and submissions.
-
-4. **16-Bit PCM Procedural Audio Synthesizer (scripts/core/audio_manager.gd)**:
-   - Zero external WAV dependencies; all sounds synthesized in real time via 16-bit PCM waveforms:
-     - Mat slam impacts, canvas slaps, clean strike snaps, blocked thuds.
-     - Ring bell chimes and elastic rope twangs.
-     - Referee count tone accents (Count 1: 350 Hz, Count 2: 440 Hz, Count 3: 530 Hz).
-     - Rope break alert buzzer.
-     - Rising finisher power chord stinger.
-     - Triumphant 4-note brass victory fanfare.
-
-5. **Broadcast Presentation**:
-   - Dynamic 3D arena with canvas, apron, steel corner posts, and 3-tier ropes.
-   - Broadcast camera with zoom framing and trauma-based screen shake.
-   - Full arcade Character Select menu with dual navigation (WASD for P1, Arrows for P2), stat radars, CPU toggle, and match persistence.
-
----
-
-## 4. Default Input Controls
-
-### Character Select
-- **P1 Selection**: W / A / S / D
-- **P2 Selection**: Up / Left / Down / Right
-- **Toggle P2 CPU/Human**: C key
-- **Confirm / Start Match**: Space or Enter
-
-### In-Ring Combat
-| Action | Player 1 | Player 2 (If Human) |
-| :--- | :--- | :--- |
-| **Move Up / Down / Left / Right** | W / S / A / D | Up / Down / Left / Right |
-| **Strike** | J | Numpad 1 |
-| **Grapple / Throw** | K | Numpad 2 |
-| **Block / Submission** | L | Numpad 3 |
-| **Reversal** | U | Numpad 4 |
-| **Pin / Kick-out** | Space | Numpad 0 |
-| **Signature Finisher** | I | Numpad 5 |
-| **Return to Menu** | Escape | Escape |
-
----
-
-## 5. Verification & Test Suite
-
-The project includes an automated headless verification suite testing the combat state machine, 3D model geometry, audio synthesis, and all 64 attacker-defender matchups ( \times 8$).
-
-Run tests headlessly:
-`ash
-godot_console --headless -s tests/test_suite.gd
-`
-**Current Status**: 150 / 150 Passed (100% Pass, 0 Failures, 0 Warnings).
-
----
-
-## 6. Directory Layout
 
 ```
-.
-├── assets/models/         # Compiled GLB 3D assets (all 8 fighters + ring + referee)
-├── blender/               # Blender 5.0 automated generation pipeline (generate_assets.py)
-├── scenes/
-│   ├── arena/             # 3D Ring arena scene
-│   ├── fighter/           # Instantiable 3D fighter entity
-│   ├── referee/           # KingCobraJFS referee entity
-│   └── ui/                # Character select and broadcast match HUD
-├── scripts/
-│   ├── ai/                # Autonomous CPU combat controller
-│   ├── core/              # RosterData, MatchRules, MatchManager, AudioManager, MatchConfig
-│   ├── fighter/           # State machine, movement, grapple sync, combat logic
-│   ├── referee/           # KingCobraJFS ring positioning and 3-count officiating
-│   ├── ring/              # Ring boundary and broadcast camera shake
-│   └── ui/                # UI controllers
-├── tests/                 # 150-case headless automated test suite
-├── project.godot          # Engine configuration & input mappings
-└── START_GAME.bat         # Direct Windows standalone launcher
+
+## File: scripts/fighter/fighter_presentation.gd
+
+```gdscript
+class_name FighterPresentation
+extends Node
+
+## Presentation component for wrestling fighters.
+## Manages 3D character instantiation, skeletal armature detection,
+## animation blending, and visual locomotion synchronization.
+
+var fighter: CharacterBody3D = null
+var visual_root: Node3D = null
+var anim_player: AnimationPlayer = null
+var skeleton: Skeleton3D = null
+var has_skeletal_rig: bool = false
+var current_anim: String = ""
+
+func setup(p_fighter: Fighter, p_visual_root: Node3D) -> void:
+	fighter = p_fighter
+	visual_root = p_visual_root
+
+func load_model(character_id: String) -> void:
+	if not visual_root:
+		return
+		
+	for child in visual_root.get_children():
+		child.queue_free()
+		
+	anim_player = null
+	skeleton = null
+	has_skeletal_rig = false
+	current_anim = ""
+	
+	var model_path: String = "res://assets/models/" + character_id + ".glb"
+	if ResourceLoader.exists(model_path):
+		var model_res = load(model_path)
+		if model_res is PackedScene:
+			var inst: Node = model_res.instantiate()
+			visual_root.add_child(inst)
+			
+			anim_player = inst.find_child("AnimationPlayer", true, false) as AnimationPlayer
+			skeleton = inst.find_child("Skeleton3D", true, false) as Skeleton3D
+			
+			if is_instance_valid(skeleton) and is_instance_valid(anim_player):
+				# Validate core animation set
+				var anims: PackedStringArray = anim_player.get_animation_list()
+				if anims.has("idle") and anims.has("walk") and anims.has("strike") and anims.has("knockdown") and anims.has("getup"):
+					has_skeletal_rig = true
+					_configure_animation_loops()
+					
+			if has_skeletal_rig:
+				visual_root.rotation = Vector3.ZERO
+				visual_root.position = Vector3.ZERO
+				
+			play_state_animation(fighter.current_state if fighter else Fighter.State.IDLE)
+
+func _configure_animation_loops() -> void:
+	if not is_instance_valid(anim_player):
+		return
+	for loop_anim in ["idle", "walk"]:
+		if anim_player.has_animation(loop_anim):
+			var a: Animation = anim_player.get_animation(loop_anim)
+			a.loop_mode = Animation.LOOP_LINEAR
+
+func play_state_animation(st: Fighter.State) -> void:
+	if not is_instance_valid(anim_player):
+		return
+		
+	var anim_name: String = ""
+	match st:
+		Fighter.State.IDLE: anim_name = "idle"
+		Fighter.State.MOVING: anim_name = "walk"
+		Fighter.State.STRIKING: anim_name = "strike"
+		Fighter.State.BLOCKING: anim_name = "block"
+		Fighter.State.REVERSAL_STANCE: anim_name = "reversal"
+		Fighter.State.GRAPPLE_STARTUP: anim_name = "grapple"
+		Fighter.State.GRAPPLING_ATTACKER: anim_name = "throw_attacker"
+		Fighter.State.GRAPPLING_DEFENDER: anim_name = "throw_defender"
+		Fighter.State.KNOCKED_DOWN: anim_name = "knockdown"
+		Fighter.State.GETTING_UP: anim_name = "getup"
+		Fighter.State.PINNING: anim_name = "pinning"
+		Fighter.State.PINNED: anim_name = "pinned"
+		Fighter.State.SUBMISSION_ATTACKER: anim_name = "submission_attacker"
+		Fighter.State.SUBMISSION_DEFENDER: anim_name = "submission_defender"
+		Fighter.State.VICTORY: anim_name = "victory"
+		Fighter.State.DEFEATED: anim_name = "defeated"
+		
+	if anim_name != "" and anim_player.has_animation(anim_name):
+		current_anim = anim_name
+		# Blend smoothly into looping / locomotion states, instant-cut into impacts
+		var blend_time: float = 0.12
+		if st in [Fighter.State.KNOCKED_DOWN, Fighter.State.STRIKING]:
+			blend_time = 0.05
+		anim_player.play(anim_name, blend_time)
+
+func update_locomotion_stride() -> void:
+	if not has_skeletal_rig or not is_instance_valid(anim_player) or not is_instance_valid(fighter):
+		return
+		
+	if fighter.current_state == Fighter.State.MOVING:
+		var nominal_speed: float = 3.0 + (fighter.stat_mobility * 0.4)
+		var actual_speed: float = fighter.velocity.length()
+		if nominal_speed > 0.1:
+			var stride_ratio: float = actual_speed / nominal_speed
+			anim_player.speed_scale = clamp(stride_ratio, 0.4, 1.8)
+		else:
+			anim_player.speed_scale = 1.0
+	else:
+		anim_player.speed_scale = 1.0
+
 ```
-\\n
-## File: STATE.md
 
-\\markdown
-# Project State: LOLCOW WRESTLING: OFFLINE MAYHEM
-
-## Milestone Status: M0-M1 Functional -> Pass A Repairs (Exclusive Terminal Outcome Ownership & Priority Scheduling Complete)
-- **Engine**: Godot 4.7.2 (stable official, Windows x64) - Installed & Verified.
-- **3D DCC Pipeline**: Blender 5.0.1 (headless Python automation) - Verified.
-- **Target**: 1080p @ 60 FPS, Windows standalone.
-- **Authoritative Combat Loop & Integration**: Verified with 517 automated headless tests (391 focused unit/mechanics tests + 126 full scene physics integration tests, 0 failures, 0 warnings, 0 ObjectDB leaks).
-- **M2/M3 Status**: Functional baseline established. Skeletal animation rigging, authored unique animation clips, and manual visual inspections remain **NOT RUN / PENDING** per code review requirements.
-
-### Pass A Codebase Repairs & Verifications:
-1. **Exclusive Terminal Outcome Ownership & Priority Scheduling (Verified & Accepted)**:
-   - Eliminated competing outcome resolution between `Fighter` and `MatchManager`. `MatchManager` holds exclusive authority over terminal match outcomes (`_process_submission_watch`, `_process_pin_countdown`, `_resolve_pin_kick_out`, `_resolve_submission_escape`, `_resolve_submission_tap_out`).
-   - Enforced deterministic engine scheduling via `process_physics_priority`: `Fighter` = 0 (ticks movement, resistance inputs, damage, and escape progress) and `MatchManager` = 10 (authoritatively evaluates rules, counts, rope breaks, and outcomes after all participants finish their physics tick).
-   - In active matches, fighter callbacks (`_process_submission_attacker`, `_process_submission_defender`, `_process_pin_escape`) update resource values without executing fighter-level match endings.
-   - Guarded terminal states against callback overwrite: `_set_state()` strictly blocks transitions out of `VICTORY` or `DEFEATED` to gameplay states (`GETTING_UP`, `IDLE`). `_execute_submission_escape()`, `on_tap_out()`, `_execute_kick_out()`, and `on_kick_out_received()` guard against overwriting manager decisions.
-   - Symmetrically cleared paired pointers (`synchronized_partner = null`) on both participants across all breakout, rope break, pinfall, and tap-out pathways.
-   - Tested and verified:
-     - Real simultaneous submission threshold crossing from legitimate below-threshold values ($vit = 5.0$, $prog = 95.0$, $timer = 0.49$) across all 4 slot and tree permutations under both `ESCAPE_BREAKS` and `TAPOUT_WINS`.
-     - Direct callback invocation resilience preventing post-manager state corruption.
-     - Final-count kickout crossing ($99.0 \to 100+$) on tick 198 (3.30s) across manager-first and defender-first scene trees.
-     - Real scene integration frames (`test_pin_balance_scene.gd`) with 126 passing tests.
-2. **Pin-Balance Acceptance & Empirical Sequence Validation (Verified & Accepted)**:
-   - Evaluated actual gameplay throw-to-pin sequences in Godot scene physics (`scenes/fighter/fighter.tscn`, `MatchManager`, `Referee`, `CPUController` using engine `await physics_frame` steps).
-   - Verified that fresh Cyraxx taking an ordinary Tophiachu throw (177 damage, HP 663/850, 100% stamina) kicks out before Count 2 (~1.5s–1.6s) across all 4 modes:
-     - Mode 1 (CPU commands): Count 1, 1.62s KICKOUT.
-     - Mode 2 (Human 10 Hz mash): Count 1, 1.52s KICKOUT.
-     - Mode 3 (Hold-to-resist on entry): Count 1, 1.53s KICKOUT.
-     - Mode 4 (Hold-to-resist pre-held): Count 1, 1.62s KICKOUT.
-   - Verified that weakened Cyraxx taking a genuine finisher throw from Tophiachu suffers legitimate 3-count pinfall defeats across all 4 modes.
-3. **Explicit Move-Metadata Impact Classification (Verified)**:
-   - Repaired flaw where `amount >= 100.0` caused ordinary heavy throws (177 damage) to trigger 45% finisher escape penalties.
-   - Decoupled move pressure:
-     - Finisher pressure (`recent_finisher_impact_timer`): 4.5s duration, 0.55 multiplier, gated strictly by `is_finisher == true`.
-     - Ordinary heavy impact pressure (`recent_heavy_impact_timer`): 1.5s duration, 0.85 multiplier, triggered on unblocked hits $\ge 80.0$ damage.
-4. **Hold-to-Resist Accessibility Parity (Verified)**:
-   - Tuned `PIN_ESCAPE_BASE_RATE = 85.0`/s and `PIN_ESCAPE_MASH_BASE = 10.0`/pulse (at 10 Hz = 100.0/s).
-   - Proportional stamina consumption: hold drains 8.0/s; mash drains 0.8/pulse (8.0/s at 10 Hz).
-5. **Deterministic Final-Tick Priority Resolution (Tick 198 / 3.30s) (Verified)**:
-   - Fixed floating point epsilon (`+ 0.0005`) ensuring Count 3 resolves at tick 198 (3.30s).
-   - Enforced strict preemptive priority: kick-out ($\ge 100.0$) and rope breaks immediately waive off 3-count and return match state to `IN_PROGRESS`.
-   - Verified across both player slots (P1/P2 and P2/P1) and tree processing orders (Fighter before MatchManager and MatchManager before Fighter).
-   - Guarded `_end_match` against repeat calls, ensuring `match_ended` is emitted strictly once.
-6. **Unified Command Interface for Escapes (Verified in Pass A)**:
-   - `Fighter` escape logic consumes command inputs (`input_pin`, `input_strike`, `input_grapple`, `input_block`, `input_hold_pin`) without hardware polling overwriting programmatic commands.
-7. **Throw Height Ownership (Verified in Center Ring)**:
-   - Attacker retains sole vertical authority (1.55m peak verified in center ring).
-8. **Standardized Forward-Axis Conventions (Verified in Pass A)**:
-   - Synchronized throws and locomotion unified on standard Godot convention `atan2(-dx, -dz)`.
-9. **Boundary-Safe Paired Throws with Pre-Throw Trajectory Validation (Verified in Pass A Priority 2)**:
-   - Implemented `_validate_and_adjust_throw_boundaries()` in `Fighter._start_synchronized_throw()`.
-   - Calculates predicted slam impact position $\vec{P}_{\text{slam}} = \vec{P}_{\text{atk}} + \vec{F} \times d_{\text{slam}}$ and shifts the grappling pair inward toward ring center such that both attacker, defender, and landing coordinates remain $\le 3.50\text{m}$ (inside $3.65\text{m}$ rope threshold).
-   - Clamped intermediate synchronized lift (`hold_pos`) and landing (`slam_pos`) coordinates to `THROW_SAFE_RING_BOUND = 3.50m` to provide defense-in-depth during multi-frame execution.
-   - Confirmed zero out-of-bounds trajectory and zero snap-back across all 4 ring edges (North, South, East, West) and all 4 corners (NE, NW, SE, SW) across slot inversions and tree processing orders (32 edge/corner/slot permutations, 128 boundary assertions).
-10. **Directional Strike Cones & Measurable Grapple Startup (Verified in Pass A Priority 3)**:
-    - Enforced 120-degree forward contact cone ($\cos(60^\circ) = 0.50$, `STRIKE_CONE_MIN_DOT = 0.50`) in `Fighter._handle_strike_active_window()`. Verified that strikes connect when defender is in front ($0^\circ$, dot = 1.0) or angled ($45^\circ$, dot = 0.707), but strictly miss defenders on side flanks ($90^\circ$, dot = 0.0) or behind ($180^\circ$, dot = -1.0).
-    - Implemented measurable `GRAPPLE_STARTUP` window (`MatchRules.GRAPPLE_STARTUP_DURATION = 0.18s`, whiff recovery 0.25s) with procedural reaching arm animation.
-    - Verified strike interruption: incoming unblocked strikes during `GRAPPLE_STARTUP` immediately interrupt attacker back to `IDLE`, clear target references, and prevent throw execution.
-    - Verified reversal counters: defender inputting `REVERSAL_STANCE` during startup successfully counters the attacker upon startup completion, inflicting counter damage, knockdown, and awarding hype.
-    - Upgraded `CPUController` to actively detect opponent `GRAPPLE_STARTUP` within range and retaliate with strike interruptions or reversal counters based on stats.
-
-### Active Open Items from Code Review:
-1. **Manual Visual Inspection & Skeletal Rigging**: Visual checks and authored animations remain **NOT RUN** per code review specification.
-
-## Verification Summary
-- **M0 Foundation**:
-  - Full 8-character roster defined with verified 42-point attribute allocations.
-  - Complete two-player arcade input mapping configured in `project.godot`.
-- **M1 Playable Match Loop**:
-  - Playable arena with canvas, apron, turnbuckles, ropes, and bounds.
-  - Neutral official referee KingCobraJFS (1991-2025) with permanently visible, pulsing gold memorial halo.
-  - Rigid state machine with authoritative movement ownership (zero sliding during knockdowns or throws).
-  - Single-hit active damage windows.
-  - Synchronized grapple and throw sequence with mutual locking, lift, impact canvas slap, and clean release.
-  - Pinning, 3-count progression, hold/mash kick-out escape, and rope break priority.
-- **M2 Polished Slice**:
-  - Asymmetric leverage-based throw routing: lighter attackers route to low-angle leverage trips (0.38m peak) while heavyweights execute overhead powerslams (1.55m peak).
-  - Submissions system: continuous pressure damage, stamina drain, hold/mash escape, and tap-out victory condition.
-  - Procedural 16-bit PCM (22050 Hz) audio synthesis: ring bell, deep mat slam thud, clean/blocked strike snaps, canvas palm slaps, elastic rope twangs, crowd cheers, and crowd gasps.
-  - Dynamic announcer audio stingers: rising finisher power chord, triumphant brass victory fanfare, count voice accents (1, 2, 3), and rope break buzzer alert.
-  - Dynamic broadcast camera trauma shake with quadratic decay and accessibility scaling.
-  - Animation architecture: `Fighter` supports `AnimationPlayer` bindings to state transitions with procedural visual deformation fallback.
-- **M3 Full 8-Character Roster & Match Setup**:
-  - All 8 distinct 3D fighter models authored and exported to GLB in Blender 5.0:
-    - `tophiachu`: Heavyweight brawler, purple gear, curly silhouette.
-    - `novaonline`: Athletic heavyweight, fiery red/gold attire, high boots.
-    - `cyraxx`: Compact burst striker, olive gear, black beanie.
-    - `candy_rooks`: Kitchen-sink powerhouse brute, pink apron aesthetic, forearm tape.
-    - `andy_ditch`: Territory anchor grappler, padded denim blue wrestling singlet.
-    - `jupiter_the_hybrid`: Celestial martial artist, deep violet and silver split design.
-    - `anacondasin`: Submission technician, serpentine emerald/gold tights.
-    - `daniel_larson`: Erratic scrapper, lanky silhouette, bright orange jacket.
-  - KingCobraJFS (1991-2025) referee model with glowing golden halo.
-  - Complete Character Selection UI (`scenes/ui/character_select.tscn`) with 8-character roster grid, stat radars, signature move displays, P1/P2 navigation, CPU toggles, and seamless transition to match arena.
-  - `MatchConfig` persistent state tracking selected fighters and CPU flags between menus and gameplay.
-  - 100% test pass rate across all 64 attacker-defender pairings.
-\\n
-## File: KNOWN_ISSUES.md
-
-\\markdown
-## Active Open Issues & Defects Under Repair
-
-1. **Skeletal Animation Pipeline & Unique Moveset Data (Open)**:
-   - 3D character models are composed of procedural primitive geometries without bones or skeletal clips. Throws and strikes utilize parameterized programmatic tweening rather than distinct motion-captured or keyframed animation clips.
-2. **Visual Checks & Authored Animations Status**:
-   - Visual rendering inspections and authored skeletal animations remain **NOT RUN** per code review requirements.
-
----
-
-## Resolved in Pass A & Prior Milestones
-
-1. **Exclusive Terminal Outcome Ownership & Deterministic Scheduling (Resolved in Pass A Terminal Ownership)**:
-   - Fixed competing ownership between `Fighter` and `MatchManager`: `MatchManager` has exclusive authority over terminal match outcome declarations (`_process_submission_watch()`, `_process_pin_countdown()`, `_resolve_pin_kick_out()`, `_resolve_submission_escape()`, `_resolve_submission_tap_out()`).
-   - Assigned deterministic engine priorities: `Fighter.process_physics_priority = 0` and `MatchManager.process_physics_priority = 10`, ensuring fighters fully update resistance inputs, damage, and progress before `MatchManager` evaluates rules.
-   - Symmetrically cleared `synchronized_partner = null` on both participants when entering terminal outcomes.
-   - Guarded terminal states `VICTORY` and `DEFEATED` in `_set_state()` against being overwritten by gameplay callbacks (`GETTING_UP`, `IDLE`).
-   - Guarded fighter callbacks (`_execute_submission_escape()`, `on_tap_out()`, `_execute_kick_out()`, `on_kick_out_received()`) against overwriting manager decisions.
-   - Preserved programmatic pulse inputs in `_gather_player_inputs()` so injected test/AI commands are accurately consumed.
-   - Fully tested across slot inversions and tree processing orders with real scene physics frames (126 scene tests, 391 unit tests, 0 failures).
-2. **Simultaneous Submission Outcome Ordering & Centralized Hold Cleanup (Resolved in Pass A Priority 4)**:
-   - Established explicit simultaneous priority policy in `MatchManager` (`MatchRules.SUBMISSION_SIMULTANEOUS_PRIORITY = MatchRules.SubmissionPriority.ESCAPE_BREAKS`).
-   - Decoupled terminal submission resolution from individual fighter update frames into `MatchManager` resolvers: `_resolve_submission_escape()` and `_resolve_submission_tap_out()`.
-   - Guaranteed identical, deterministic outcomes across all 4 permutations of slot orders (P1/P2 vs P2/P1) and tree processing orders (Attacker-first vs Defender-first).
-   - Enforced centralized, symmetrical hold cleanup: `synchronized_partner = null` cleared on both sides during all breakout, rope break, and tap-out transitions with zero dangling references.
-3. **Directional Attack Contact & Grapple Startup (Resolved in Pass A Priority 3)**:
-   - Added forward directional dot-product gating (`STRIKE_CONE_MIN_DOT = 0.50`, 120-degree cone) to `_handle_strike_active_window()`, preventing strikes from connecting with targets on flanks or behind the attacker.
-   - Enforced measurable `GRAPPLE_STARTUP` window (`GRAPPLE_STARTUP_DURATION = 0.18s`, whiff recovery 0.25s) in `_attempt_grapple()` and `_process_grapple_startup()`.
-   - Verified that unblocked incoming strikes interrupt attacker out of `GRAPPLE_STARTUP` and clear target reference, preventing throw execution.
-   - Verified that defender reversal stance during startup successfully counters the attacker.
-   - Upgraded `CPUController` to retaliate against opponent `GRAPPLE_STARTUP` via strike interruption or reversal counter.
-3. **Boundary Safety During Throws (Resolved in Pass A Priority 2)**:
-   - Added `_validate_and_adjust_throw_boundaries()` before locking synchronized throws. Evaluates predicted slam target $\vec{P}_{\text{slam}} = \vec{P}_{\text{atk}} + \vec{F} \times d_{\text{slam}}$ and shifts both attacker and defender inward toward center ring so landing coordinates and hold coordinates remain $\le 3.50\text{m}$ (inside the $3.65\text{m}$ ring limit).
-   - Added secondary clamping in `_process_synchronized_attacker()` for `hold_pos` and `slam_pos`.
-   - Verified across 32 edge, corner, slot, and tree permutations (128 assertions) with zero out-of-bounds trajectory and zero ground release snap-back.
-4. **Pin-Balance Acceptance & Empirical Sequence Validation (Resolved in Pass A Pinfall Balance)**:
-   - Replaced flat-rate escape formula with an authoritative resource-aware model factoring in quadratic vitality, remaining stamina, reversal stats, and explicit move-metadata impact disorientation.
-   - Eliminated the bug where ordinary heavy throws ($\ge 100$ damage) inflicted finisher disorientation; ordinary heavy throws (177 dmg) now trigger a mild 1.5s heavy impact timer (0.85 mult) allowing healthy defenders to kick out swiftly, while genuine finishers inflict a 4.5s disorientation (0.55 mult).
-   - Balanced hold-to-resist as an accessibility alternative at 85.0 base/sec with proportional 8.0/s stamina drain (~85% of 10 Hz mashing speed).
-   - Resolved tick 198 (3.30s) floating point boundary precision (`+ 0.0005`) and made kickout ($\ge 100.0$) and rope break strictly preempt the 3-count pinfall across all slot inversions and tree processing orders.
-   - Empirically validated across 56 real engine physics tests (`tests/test_pin_balance_scene.gd`) that fresh Cyraxx kicks out at Count 1 (~1.5s–1.6s) across all 4 modes (CPU, 10 Hz mash, hold-on-entry, pre-held), and weakened Cyraxx loses by 3-count pinfall across all 4 modes.
-5. **CPU Pin & Submission Escape Command Disconnection (Resolved in Pass A Baseline)**:
-   - Unified all escape checks to consume the `Fighter` command interface (`input_pin`, `input_hold_pin`, `input_strike`, `input_grapple`, `input_block`) rather than polling global hardware keys during combat physics.
-6. **Conflicting Throw Height Ownership (Resolved in Pass A Baseline)**:
-   - Removed canvas grounding conflicts in central ring throws so overhead powerslams reach full 1.55m vertical peak before canvas impact.
-7. **Forward-Axis Facing Vector Standardization (Resolved in Pass A Baseline)**:
-   - Standardized all locomotion, stationary facing, and synchronized throw vectors to Godot's `-basis.z` forward convention (`atan2(-dx, -dz)`).
-8. **Canonical Finisher Names Alignment (Resolved in Pass A Baseline)**:
-   - Synchronized `README.md` to canonical names in `scripts/core/roster_data.gd`.
-9. **Desktop Launcher Script Trailing Quote Bug (Resolved in M3 Polish)**:
-   - Fixed `%~dp0` trailing backslash CRT escaping issue in `START_GAME.bat`.
-
-\\n
-## File: NEXT_TASK.md
-
-\\markdown
-# Next Implementation Tasks: Pass B (64-Matchup Scene Validation & Skeletal Animation Pipeline)
-
-## Pass A Status: 100% Complete & Verified
-All critical combat repairs mandated by source code review have been implemented, verified, and confirmed passing across 517 automated tests (391 unit/mechanics tests + 126 full scene physics integration tests with 0 failures, 0 warnings, 0 ObjectDB leaks):
-1. **Exclusive Terminal Outcome Ownership & Priority Scheduling**: Complete elimination of competing outcome resolution between `Fighter` and `MatchManager`. `MatchManager` has exclusive authority over terminal outcome evaluation (`_process_submission_watch()`, `_process_pin_countdown()`, `_resolve_pin_kick_out()`, `_resolve_submission_escape()`, `_resolve_submission_tap_out()`). Priority scheduling (`Fighter` = 0, `MatchManager` = 10) ensures all resistance and mechanics are fully updated before outcome evaluation. Symmetrical hold pointer cleanup and immutable terminal states (`VICTORY`, `DEFEATED`) prevent late callback state corruption.
-2. **Pin-Balance Acceptance**: 4-mode empirical validation (CPU, 10 Hz Mash, Hold-on-Entry, Pre-Held), explicit move metadata impact classification (ordinary heavy impact vs genuine finisher disorientation), and tick 198 (3.30s) kickout/rope break preemptive priority over 3-count.
-3. **Boundary-Safe Paired Throws**: Pre-throw spatial trajectory validation and inward pair adjustment ($d_{\text{slam}} \le 3.50\text{m}$) preventing defender out-of-bounds clipping through ring ropes ($|x| > 3.65\text{m}$).
-4. **Directional Contact & Grapple Startup**: Forward contact cone ($\cos(60^\circ) = 0.50$, $120^\circ$ cone) in strike windows, measurable `GRAPPLE_STARTUP` window ($0.18\text{s}$ duration, $0.25\text{s}$ whiff recovery), strike interruption, reversal counter, and tactical CPU reaction.
-5. **Simultaneous Submission Outcome Ordering & Centralized Hold Cleanup**: Authoritative simultaneous priority policy (`ESCAPE_BREAKS` vs `TAPOUT_WINS`) in `MatchManager`, 1.0 HP clutch survival on buzzer-beater breakouts, and symmetrical pointer clearing (`synchronized_partner = null`) across all breakout, rope break, and tap-out pathways.
-
----
-
-## Pass B Roadmap & Priorities
-
-### Priority 1: Scene Integration & Visual Verification Across All 64 Matchups
-- Run headless automated matchup validation across all 8 x 8 = 64 fighter combinations.
-- Verify scene loading, mesh attachment, stat scaling, signature move execution, and win/loss resolution for every roster pairing.
-- Note: Headless execution remains standard; visual inspections and manual playtests remain designated according to code review protocol.
-
-### Priority 2: Skeletal Animation Rigging & Authored Animation Pipeline
-- Establish glTF/GLB skeletal armature pipeline in Blender for all 8 fighter archetypes.
-- Replace procedural geometric tweening with authored skeletal animation clips:
-  - Idles, walk cycles, guard stance, strike animations (punches, kicks, backfists).
-  - Synchronized throw animations (powerslams, suplexes, trips, takedowns).
-  - Ground states (knockdown, ground struggle, pinfall hold, getting up).
-  - Submission holds (armbars, chokes, Boston crabs, figure-fours).
-- Implement Godot `AnimationTree` state machines for smooth blending and root motion support.
-
-### Priority 3: Tournament & Spectator Modes (Post-Combat Acceptance)
-- Tournament bracket generator (single-elimination 8-fighter tournament).
-- Spectator / CPU vs CPU exhibition mode with broadcast camera director transitions.
-- Victory screens, championship trophy presentation, and match statistics recap.
-\\n
-## File: scripts/core/match_rules.gd
-
-\\gdscript
-class_name MatchRules
-extends RefCounted
-
-## Authoritative match configuration constants and geometric thresholds
-
-const RING_MAT_RADIUS: float = 4.0 # Distance from center (0,0) to ropes in meters
-const ROPE_BREAK_DISTANCE: float = 0.85 # Distance from rope threshold to trigger rope break
-const THROW_SAFE_RING_BOUND: float = 3.50 # Safe inner ring boundary for synchronized throw arcs
-const PIN_COUNT_INTERVAL: float = 1.1 # Seconds per referee count
-const PIN_ESCAPE_BASE_RATE: float = 85.0 # Percent escape per second base (hold-to-resist accessibility)
-const PIN_ESCAPE_MASH_BASE: float = 10.0 # Base progress gained per active mash pulse (at 10 Hz = 100.0/s)
-const PIN_ESCAPE_DECAY_RATE: float = 8.0 # Passive escape progress decay per second when unresisted
-const PIN_ESCAPE_HOLD_STAMINA_DRAIN: float = 8.0 # Stamina units drained per second while holding to resist
-const PIN_ESCAPE_MASH_STAMINA_COST: float = 0.8 # Stamina units drained per active mash pulse (at 10 Hz = 8.0/s)
-const PIN_ESCAPE_FINISHER_PENALTY: float = 0.55 # Multiplier on escape rate following a genuine finisher impact
-const PIN_ESCAPE_HEAVY_IMPACT_PENALTY: float = 0.85 # Multiplier on escape rate following an ordinary heavy throw/slam
-const FINISHER_DISORIENTATION_DURATION: float = 4.5 # Seconds of finisher impact disorientation
-const HEAVY_IMPACT_DISORIENTATION_DURATION: float = 1.5 # Seconds of ordinary heavy impact disorientation
-const HEAVY_IMPACT_DAMAGE_THRESHOLD: float = 80.0 # Damage threshold for ordinary heavy impact
-const MAX_HYPE: float = 100.0
-const HYPE_GAIN_ON_HIT: float = 12.0
-const HYPE_GAIN_ON_COUNTER: float = 20.0
-const STAMINA_REGEN_RATE: float = 12.0 # Units per second when not attacking or sprinting
-const STRIKE_STAMINA_COST: float = 14.0
-const GRAPPLE_STAMINA_COST: float = 22.0
-const BLOCK_STAMINA_DRAIN: float = 15.0 # Per second held
-const REVERSAL_STAMINA_COST: float = 18.0
-const FINISHER_HYPE_COST: float = 100.0
-const STRIKE_CONE_MIN_DOT: float = 0.50 # 120-degree forward contact cone (cos(60 deg))
-const GRAPPLE_STARTUP_DURATION: float = 0.18 # Seconds of vulnerability before grapple lock executes
-const GRAPPLE_WHIFF_DURATION: float = 0.25 # Seconds of recovery on missed/whiffed grapple
-
-enum SubmissionPriority {
-	ESCAPE_BREAKS, # Buzzer-beater breakout waives off tap-out
-	TAPOUT_WINS     # Incapacitation takes precedence
-}
-static var SUBMISSION_SIMULTANEOUS_PRIORITY: int = SubmissionPriority.ESCAPE_BREAKS
-
-static func is_near_ropes(position_3d: Vector3) -> bool:
-	var x: float = abs(position_3d.x)
-	var z: float = abs(position_3d.z)
-	var max_coord: float = max(x, z)
-	return max_coord >= (RING_MAT_RADIUS - ROPE_BREAK_DISTANCE)
-\\n
-## File: scripts/core/roster_data.gd
-
-\\gdscript
-class_name RosterData
-extends RefCounted
-
-## Fictional stats and profiles for LOLCOW WRESTLING: OFFLINE MAYHEM.
-## All attributes and abilities are fictional game-design choices.
-
-const CHARACTERS: Dictionary = {
-	"tophiachu": {
-		"id": "tophiachu",
-		"name": "Tophiachu",
-		"title": "Live & Unfiltered",
-		"archetype": "Heavyweight Counter-Brawler",
-		"stats": {
-			"power": 8,
-			"mobility": 3,
-			"grappling": 7,
-			"stamina": 5,
-			"durability": 9,
-			"reversal": 4,
-			"showmanship": 6
-		},
-		"moves": {
-			"strike": "Comment-Section Clothesline",
-			"grapple": "Block-Button Backbreaker",
-			"corner": "Going-Live Corner Splash",
-			"finisher": "Live-Stream Shutdown",
-			"trait": "Last Word"
-		},
-		"visual": {
-			"primary_color": Color(0.45, 0.22, 0.58), # Purple
-			"secondary_color": Color(0.12, 0.12, 0.14), # Dark Charcoal
-			"height": 1.70,
-			"body_scale": Vector3(1.35, 0.95, 1.30),
-			"reach": 1.25
-		}
-	},
-	"novaonline": {
-		"id": "novaonline",
-		"name": "NovaOnline",
-		"title": "Main-Event Energy",
-		"archetype": "Momentum Heavyweight",
-		"stats": {
-			"power": 9,
-			"mobility": 4,
-			"grappling": 6,
-			"stamina": 4,
-			"durability": 9,
-			"reversal": 3,
-			"showmanship": 7
-		},
-		"moves": {
-			"strike": "Buffering Bodycheck",
-			"ground": "Main-Character Elbow",
-			"corner": "Offline Avalanche",
-			"finisher": "Going Offline",
-			"trait": "Momentum Feed"
-		},
-		"visual": {
-			"primary_color": Color(0.85, 0.15, 0.15), # Red
-			"secondary_color": Color(0.9, 0.8, 0.2), # Gold
-			"height": 1.85,
-			"body_scale": Vector3(1.25, 1.05, 1.15),
-			"reach": 1.35
-		}
-	},
-	"cyraxx": {
-		"id": "cyraxx",
-		"name": "Cyraxx",
-		"title": "Feedback Frenzy",
-		"archetype": "Lightweight Burst Striker",
-		"stats": {
-			"power": 4,
-			"mobility": 9,
-			"grappling": 5,
-			"stamina": 6,
-			"durability": 3,
-			"reversal": 8,
-			"showmanship": 7
-		},
-		"moves": {
-			"strike": "Feedback Flurry",
-			"grapple": "Mic-Drop DDT",
-			"counter": "Encore Reversal",
-			"finisher": "Raxx and Ruin",
-			"trait": "Overdrive"
-		},
-		"visual": {
-			"primary_color": Color(0.15, 0.55, 0.35), # Dark Olive Green
-			"secondary_color": Color(0.2, 0.2, 0.2), # Black
-			"height": 1.55,
-			"body_scale": Vector3(0.78, 0.88, 0.78),
-			"reach": 0.95
-		}
-	},
-	"candy_rooks": {
-		"id": "candy_rooks",
-		"name": "Candy Rooks",
-		"title": "Kitchen-Sink Brawler",
-		"archetype": "Combination Grappler",
-		"stats": {
-			"power": 7,
-			"mobility": 4,
-			"grappling": 8,
-			"stamina": 6,
-			"durability": 8,
-			"reversal": 5,
-			"showmanship": 4
-		},
-		"moves": {
-			"strike": "Kitchen-Sink Combo",
-			"rush": "Ragoon Rush",
-			"grapple": "Second-Helping Side Slam",
-			"finisher": "Ribs & Kidney Beans",
-			"trait": "Recipe Combo"
-		},
-		"visual": {
-			"primary_color": Color(0.85, 0.45, 0.65), # Pink/Apron
-			"secondary_color": Color(0.95, 0.95, 0.95), # White
-			"height": 1.68,
-			"body_scale": Vector3(1.22, 0.96, 1.20),
-			"reach": 1.18
-		}
-	},
-	"andy_ditch": {
-		"id": "andy_ditch",
-		"name": "Andy Ditch",
-		"title": "Immovable Object",
-		"archetype": "Territory Anchor Grappler",
-		"stats": {
-			"power": 8,
-			"mobility": 2,
-			"grappling": 9,
-			"stamina": 5,
-			"durability": 10,
-			"reversal": 4,
-			"showmanship": 4
-		},
-		"moves": {
-			"counter": "Sit-Down Counter",
-			"grapple": "Deadweight Takedown",
-			"taunt": "Complaint Department",
-			"finisher": "Case Closed",
-			"trait": "Hold My Ground"
-		},
-		"visual": {
-			"primary_color": Color(0.25, 0.35, 0.65), # Denim Blue
-			"secondary_color": Color(0.6, 0.6, 0.6), # Grey
-			"height": 1.72,
-			"body_scale": Vector3(1.30, 0.92, 1.25),
-			"reach": 1.15
-		}
-	},
-	"jupiter_the_hybrid": {
-		"id": "jupiter_the_hybrid",
-		"name": "Jupiter the Hybrid",
-		"title": "Double Feature",
-		"archetype": "Stance-Shift Grappler",
-		"stats": {
-			"power": 6,
-			"mobility": 7,
-			"grappling": 7,
-			"stamina": 5,
-			"durability": 5,
-			"reversal": 6,
-			"showmanship": 6
-		},
-		"moves": {
-			"stance": "Hybrid Shift",
-			"strike": "Moonrise Lariat",
-			"counter": "Midnight Counter",
-			"finisher": "Eclipse Driver",
-			"trait": "Best of Both"
-		},
-		"visual": {
-			"primary_color": Color(0.2, 0.1, 0.35), # Deep Violet
-			"secondary_color": Color(0.8, 0.8, 0.9), # Silver
-			"height": 1.80,
-			"body_scale": Vector3(1.05, 1.02, 1.02),
-			"reach": 1.28
-		}
-	},
-	"anacondasin": {
-		"id": "anacondasin",
-		"name": "AnacondaSin",
-		"title": "The Counter-Coil",
-		"archetype": "Positional Submission Specialist",
-		"stats": {
-			"power": 5,
-			"mobility": 6,
-			"grappling": 9,
-			"stamina": 6,
-			"durability": 5,
-			"reversal": 7,
-			"showmanship": 4
-		},
-		"moves": {
-			"feint": "Question-Time Feint",
-			"counter": "Coil Counter",
-			"sweep": "Wraparound Sweep",
-			"finisher": "Anaconda Lock",
-			"trait": "Tightening Grip"
-		},
-		"visual": {
-			"primary_color": Color(0.15, 0.45, 0.25), # Emerald Green
-			"secondary_color": Color(0.85, 0.75, 0.3), # Gold
-			"height": 1.65,
-			"body_scale": Vector3(1.10, 0.98, 1.10),
-			"reach": 1.20
-		}
-	},
-	"daniel_larson": {
-		"id": "daniel_larson",
-		"name": "Daniel Larson",
-		"title": "Roaring Thunder",
-		"archetype": "Mobile Opportunist",
-		"stats": {
-			"power": 4,
-			"mobility": 9,
-			"grappling": 4,
-			"stamina": 8,
-			"durability": 3,
-			"reversal": 7,
-			"showmanship": 7
-		},
-		"moves": {
-			"strike": "Roaring Thunder Knee",
-			"aerial": "Stage-Dive Elbow",
-			"escape": "Tour-Bus Escape",
-			"finisher": "Final Encore",
-			"trait": "Touring Legs"
-		},
-		"visual": {
-			"primary_color": Color(0.85, 0.45, 0.1), # Bright Orange
-			"secondary_color": Color(0.2, 0.2, 0.25), # Slate
-			"height": 1.78,
-			"body_scale": Vector3(0.82, 1.02, 0.80),
-			"reach": 1.30
-		}
-	}
-}
-
-static func get_character(id: String) -> Dictionary:
-	return CHARACTERS.get(id, {})
-
-static func get_all_ids() -> Array:
-	return CHARACTERS.keys()
-\\n
-## File: scripts/core/match_config.gd
-
-\\gdscript
-class_name MatchConfig
-extends RefCounted
-
-## Global match configuration tracking selected fighters and CPU state.
-## Persists match selections between Character Select and the Ring Arena.
-
-static var p1_character_id: String = "tophiachu"
-static var p2_character_id: String = "cyraxx"
-static var p2_is_cpu: bool = true
-
-static func set_match(p1_id: String, p2_id: String, cpu_p2: bool = true) -> void:
-	p1_character_id = p1_id
-	p2_character_id = p2_id
-	p2_is_cpu = cpu_p2
-
-static func reset_defaults() -> void:
-	p1_character_id = "tophiachu"
-	p2_character_id = "cyraxx"
-	p2_is_cpu = true
-\\n
-## File: scripts/core/match_manager.gd
-
-\\gdscript
-class_name MatchManager
-extends Node
-
-## Authoritative match state coordinator.
-## Manages match progression, pin counting, submissions, rope breaks, and victory conditions.
-
-signal match_started()
-signal pin_started(pinner: Fighter, pinned: Fighter)
-signal pin_count_ticked(count: int)
-signal pin_broken(reason: String)
-signal submission_started(attacker: Fighter, defender: Fighter)
-signal submission_escaped()
-signal rope_break_called()
-signal match_ended(winner: Fighter, method: String)
-
-enum MatchState {
-	INTRO,
-	IN_PROGRESS,
-	PIN_ATTEMPT,
-	SUBMISSION_ATTEMPT,
-	MATCH_OVER
-}
-
-@export var fighter_1: Fighter
-@export var fighter_2: Fighter
-@export var referee: Referee
-@export var hud: Node
-
-var current_state: MatchState = MatchState.IN_PROGRESS
-var current_pinner: Fighter = null
-var current_pinned: Fighter = null
-var pin_timer: float = 0.0
-var current_count: int = 0
-
-static var instance: MatchManager = null
-
-func _init() -> void:
-	instance = self
-	# Priority 10 ensures MatchManager evaluates rules and terminal outcomes
-	# AFTER all fighters (priority 0) have completed mechanics and input processing for the tick.
-	process_physics_priority = 10
-
-func _notification(what: int) -> void:
-	if what == NOTIFICATION_PREDELETE:
-		if instance == self:
-			instance = null
-
-func _ready() -> void:
-	_setup_match()
-
-func _setup_match() -> void:
-	if not is_instance_valid(fighter_1) or not is_instance_valid(fighter_2):
-		return
-	
-	fighter_1.opponent = fighter_2
-	fighter_2.opponent = fighter_1
-	
-	if referee:
-		referee.setup_targets(fighter_1, fighter_2)
-		
-	# Connect fighter pin signals
-	if not fighter_1.pin_initiated.is_connected(_on_fighter_pin_initiated):
-		fighter_1.pin_initiated.connect(_on_fighter_pin_initiated)
-	if not fighter_2.pin_initiated.is_connected(_on_fighter_pin_initiated):
-		fighter_2.pin_initiated.connect(_on_fighter_pin_initiated)
-		
-	if not fighter_1.kick_out_succeeded.is_connected(_on_kick_out_succeeded):
-		fighter_1.kick_out_succeeded.connect(_on_kick_out_succeeded)
-	if not fighter_2.kick_out_succeeded.is_connected(_on_kick_out_succeeded):
-		fighter_2.kick_out_succeeded.connect(_on_kick_out_succeeded)
-
-	# Connect fighter submission signals
-	if not fighter_1.submission_initiated.is_connected(_on_fighter_submission_initiated):
-		fighter_1.submission_initiated.connect(_on_fighter_submission_initiated)
-	if not fighter_2.submission_initiated.is_connected(_on_fighter_submission_initiated):
-		fighter_2.submission_initiated.connect(_on_fighter_submission_initiated)
-		
-	if not fighter_1.submission_escaped.is_connected(_on_submission_escaped):
-		fighter_1.submission_escaped.connect(_on_submission_escaped)
-	if not fighter_2.submission_escaped.is_connected(_on_submission_escaped):
-		fighter_2.submission_escaped.connect(_on_submission_escaped)
-		
-	if not fighter_1.tap_out_submitted.is_connected(_on_tap_out_submitted):
-		fighter_1.tap_out_submitted.connect(_on_tap_out_submitted)
-	if not fighter_2.tap_out_submitted.is_connected(_on_tap_out_submitted):
-		fighter_2.tap_out_submitted.connect(_on_tap_out_submitted)
-
-	if AudioManager.instance:
-		AudioManager.instance.play_ring_bell()
-
-	match_started.emit()
-
-func _physics_process(delta: float) -> void:
-	if Input.is_action_just_pressed("match_restart"):
-		restart_match()
-		return
-		
-	if current_state == MatchState.PIN_ATTEMPT:
-		_process_pin_countdown(delta)
-	elif current_state == MatchState.SUBMISSION_ATTEMPT:
-		_process_submission_watch(delta)
-
-static func get_fighter_pos(f: Fighter) -> Vector3:
-	if not is_instance_valid(f):
-		return Vector3.ZERO
-	if f.is_inside_tree() and f.get_parent() is Node3D:
-		return f.global_position
-	return f.position
-
-# ==============================================================================
-# Pin Management
-# ==============================================================================
-
-func _on_fighter_pin_initiated(pinner: Fighter, pinned: Fighter) -> void:
-	if current_state != MatchState.IN_PROGRESS:
-		return
-		
-	current_pinner = pinner
-	current_pinned = pinned
-	
-	# Priority 1: Check Rope Break immediately on pin start
-	var pin_pos: Vector3 = get_fighter_pos(pinned)
-	var pnr_pos: Vector3 = get_fighter_pos(pinner)
-	if MatchRules.is_near_ropes(pin_pos) or MatchRules.is_near_ropes(pnr_pos):
-		_call_rope_break()
-		return
-		
-	current_state = MatchState.PIN_ATTEMPT
-	pin_timer = 0.0
-	current_count = 0
-	
-	if referee:
-		referee.on_pin_started(get_fighter_pos(pinned))
-	
-	pin_started.emit(pinner, pinned)
-
-func _process_pin_countdown(delta: float) -> void:
-	if not is_instance_valid(current_pinned) or not is_instance_valid(current_pinner):
-		_abort_pin("INVALID_PARTICIPANTS")
-		return
-		
-	# 1. Authoritative Rope Break (Highest Priority)
-	if MatchRules.is_near_ropes(get_fighter_pos(current_pinned)) or MatchRules.is_near_ropes(get_fighter_pos(current_pinner)):
-		_call_rope_break()
-		return
-		
-	# 2. Authoritative Kick-Out Check (Checks updated defender resistance)
-	if current_pinned.pin_escape_progress >= 100.0:
-		_resolve_pin_kick_out(current_pinner, current_pinned)
-		return
-		
-	pin_timer += delta
-	
-	var next_threshold: float = (current_count + 1) * MatchRules.PIN_COUNT_INTERVAL
-	if (pin_timer + 0.0005) >= next_threshold:
-		current_count += 1
-		pin_count_ticked.emit(current_count)
-		if referee:
-			referee.on_pin_count(current_count)
-		if AudioManager.instance:
-			AudioManager.instance.play_referee_slap()
-			AudioManager.instance.play_count_tone(current_count)
-			
-		if current_count >= 3:
-			# Final-tick priority check: rope break or kickout strictly preempts 3-count pinfall
-			if MatchRules.is_near_ropes(get_fighter_pos(current_pinned)) or MatchRules.is_near_ropes(get_fighter_pos(current_pinner)):
-				_call_rope_break()
-				return
-			if is_instance_valid(current_pinned) and current_pinned.pin_escape_progress >= 100.0:
-				_resolve_pin_kick_out(current_pinner, current_pinned)
-				return
-			_end_match(current_pinner, "PINFALL (3-COUNT)")
-
-func _resolve_pin_kick_out(pinner: Fighter, pinned: Fighter) -> void:
-	if current_state != MatchState.PIN_ATTEMPT:
-		return
-	current_state = MatchState.IN_PROGRESS
-	
-	pinned.synchronized_partner = null
-	pinner.synchronized_partner = null
-	
-	if pinned.visual_root:
-		pinned.visual_root.rotation = Vector3.ZERO
-		pinned.visual_root.position = Vector3.ZERO
-	if pinner.visual_root:
-		pinner.visual_root.position = Vector3.ZERO
-		
-	pinner._set_state(Fighter.State.IDLE)
-	pinned._set_state(Fighter.State.GETTING_UP)
-	
-	# Push pinning opponent away
-	var push_back: Vector3 = pinner.global_transform.basis.z.normalized() if pinner.is_inside_tree() else pinner.transform.basis.z.normalized()
-	if pinner.is_inside_tree():
-		pinner.global_position += push_back * 1.2
-	else:
-		pinner.position += push_back * 1.2
-		
-	current_pinner = null
-	current_pinned = null
-	
-	if referee:
-		referee.on_pin_broken()
-	if AudioManager.instance:
-		AudioManager.instance.play_crowd_gasp()
-		
-	pin_broken.emit("KICKOUT")
-	pinned.kick_out_succeeded.emit(pinned)
-
-func _on_kick_out_succeeded(fighter: Fighter) -> void:
-	if current_state == MatchState.PIN_ATTEMPT and fighter == current_pinned:
-		_resolve_pin_kick_out(current_pinner, current_pinned)
-
-func _abort_pin(reason: String) -> void:
-	pin_broken.emit(reason)
-	if referee:
-		referee.on_pin_broken()
-	current_pinner = null
-	current_pinned = null
-	current_state = MatchState.IN_PROGRESS
-
-# ==============================================================================
-# Submission Management
-# ==============================================================================
-
-func _on_fighter_submission_initiated(attacker: Fighter, defender: Fighter) -> void:
-	if current_state != MatchState.IN_PROGRESS:
-		return
-		
-	current_pinner = attacker
-	current_pinned = defender
-	
-	# Check rope break
-	if MatchRules.is_near_ropes(get_fighter_pos(defender)) or MatchRules.is_near_ropes(get_fighter_pos(attacker)):
-		_call_rope_break()
-		return
-		
-	current_state = MatchState.SUBMISSION_ATTEMPT
-	if referee:
-		referee.on_pin_started(get_fighter_pos(defender))
-		
-	submission_started.emit(attacker, defender)
-
-func _process_submission_watch(_delta: float) -> void:
-	if not is_instance_valid(current_pinned) or not is_instance_valid(current_pinner):
-		_abort_pin("INVALID_PARTICIPANTS")
-		return
-		
-	# 1. Authoritative Rope Break (Highest Priority)
-	if MatchRules.is_near_ropes(get_fighter_pos(current_pinned)) or MatchRules.is_near_ropes(get_fighter_pos(current_pinner)):
-		_call_rope_break()
-		return
-		
-	var attacker: Fighter = current_pinner
-	var defender: Fighter = current_pinned
-	
-	var has_escaped: bool = (defender.pin_escape_progress >= 100.0)
-	var has_tapped: bool = (defender.vitality <= 0.0)
-	
-	if has_escaped and has_tapped:
-		# Simultaneous Frame: Evaluate authoritative priority policy
-		if MatchRules.SUBMISSION_SIMULTANEOUS_PRIORITY == MatchRules.SubmissionPriority.ESCAPE_BREAKS:
-			_resolve_submission_escape(attacker, defender)
-		else:
-			_resolve_submission_tap_out(attacker, defender)
-	elif has_escaped:
-		_resolve_submission_escape(attacker, defender)
-	elif has_tapped:
-		_resolve_submission_tap_out(attacker, defender)
-
-func _on_submission_escaped(fighter: Fighter = null) -> void:
-	if current_state != MatchState.SUBMISSION_ATTEMPT:
-		return
-	var defender: Fighter = current_pinned if is_instance_valid(current_pinned) else fighter
-	var attacker: Fighter = current_pinner if is_instance_valid(current_pinner) else (defender.opponent if is_instance_valid(defender) else null)
-	
-	if not is_instance_valid(defender) or not is_instance_valid(attacker):
-		return
-		
-	# Check for simultaneous tap-out on same frame
-	if defender.vitality <= 0.0 and MatchRules.SUBMISSION_SIMULTANEOUS_PRIORITY == MatchRules.SubmissionPriority.TAPOUT_WINS:
-		_resolve_submission_tap_out(attacker, defender)
-		return
-		
-	_resolve_submission_escape(attacker, defender)
-
-func _on_tap_out_submitted(loser: Fighter) -> void:
-	if current_state != MatchState.SUBMISSION_ATTEMPT:
-		return
-	var defender: Fighter = loser
-	var attacker: Fighter = current_pinner if is_instance_valid(current_pinner) else (defender.opponent if is_instance_valid(defender) else null)
-	
-	if not is_instance_valid(defender) or not is_instance_valid(attacker):
-		return
-		
-	# Check for simultaneous escape on same frame
-	if defender.pin_escape_progress >= 100.0 and MatchRules.SUBMISSION_SIMULTANEOUS_PRIORITY == MatchRules.SubmissionPriority.ESCAPE_BREAKS:
-		_resolve_submission_escape(attacker, defender)
-		return
-		
-	_resolve_submission_tap_out(attacker, defender)
-
-func _resolve_submission_escape(attacker: Fighter, defender: Fighter) -> void:
-	if current_state != MatchState.SUBMISSION_ATTEMPT:
-		return
-	current_state = MatchState.IN_PROGRESS
-	
-	# Symmetrical cleanup of hold pointers
-	attacker.synchronized_partner = null
-	defender.synchronized_partner = null
-	
-	# If defender reached 0 HP but broke free via buzzer-beater escape, grant 1.0 HP clutch survival
-	if defender.vitality <= 0.0:
-		defender.vitality = 1.0
-		defender.vitality_changed.emit(defender.vitality, defender.max_vitality)
-		
-	attacker._set_state(Fighter.State.IDLE)
-	defender._set_state(Fighter.State.GETTING_UP)
-	
-	if defender.visual_root:
-		defender.visual_root.rotation = Vector3.ZERO
-		defender.visual_root.position = Vector3.ZERO
-	if attacker.visual_root:
-		attacker.visual_root.position = Vector3.ZERO
-		
-	# Symmetrical pushback
-	var push_back: Vector3 = attacker.global_transform.basis.z.normalized() if attacker.is_inside_tree() else attacker.transform.basis.z.normalized()
-	if attacker.is_inside_tree():
-		attacker.global_position += push_back * 1.2
-	else:
-		attacker.position += push_back * 1.2
-		
-	current_pinner = null
-	current_pinned = null
-	
-	if referee:
-		referee.on_pin_broken()
-	if AudioManager.instance:
-		AudioManager.instance.play_crowd_gasp()
-		
-	submission_escaped.emit()
-
-func _resolve_submission_tap_out(attacker: Fighter, defender: Fighter) -> void:
-	if current_state != MatchState.SUBMISSION_ATTEMPT:
-		return
-		
-	# Symmetrical cleanup of hold pointers
-	attacker.synchronized_partner = null
-	defender.synchronized_partner = null
-	
-	current_pinner = null
-	current_pinned = null
-	
-	_end_match(attacker, "SUBMISSION (TAP OUT)")
-
-# ==============================================================================
-# General Match Control
-# ==============================================================================
-
-func _call_rope_break() -> void:
-	rope_break_called.emit()
-	if referee:
-		referee.on_rope_break()
-	if AudioManager.instance:
-		AudioManager.instance.play_rope_break_alert()
-		
-	if is_instance_valid(current_pinner):
-		current_pinner.synchronized_partner = null
-		current_pinner.break_pin_rope_break()
-		current_pinner.break_submission_rope_break()
-	if is_instance_valid(current_pinned):
-		current_pinned.synchronized_partner = null
-		current_pinned.break_pin_rope_break()
-		current_pinned.break_submission_rope_break()
-		
-	current_pinner = null
-	current_pinned = null
-	current_state = MatchState.IN_PROGRESS
-
-func _end_match(winner: Fighter, method: String) -> void:
-	if current_state == MatchState.MATCH_OVER:
-		return
-	current_state = MatchState.MATCH_OVER
-	var loser: Fighter = fighter_2 if winner == fighter_1 else fighter_1
-	
-	winner.set_victory()
-	loser.set_defeated()
-	
-	if referee:
-		referee.on_match_won(winner.global_position)
-	if AudioManager.instance:
-		AudioManager.instance.play_ring_bell()
-		AudioManager.instance.play_crowd_cheer()
-		AudioManager.instance.play_victory_fanfare()
-		
-	match_ended.emit(winner, method)
-
-func restart_match() -> void:
-	get_tree().reload_current_scene()
-\\n
-## File: scripts/core/audio_manager.gd
-
-\\gdscript
-class_name AudioManager
-extends Node
-
-## Audio synthesizer and manager for LOLCOW WRESTLING: OFFLINE MAYHEM.
-## Generates and plays procedural 16-bit PCM audio streams for mat impacts,
-## ring bell, referee slaps, strikes, ropes, crowd reactions, and announcer stingers.
-
-static var instance: AudioManager
-
-var sfx_players: Array[AudioStreamPlayer] = []
-var crowd_player: AudioStreamPlayer
-var fanfare_player: AudioStreamPlayer
-
-# Pre-synthesized streams
-var snd_bell: AudioStreamWAV
-var snd_mat_slam: AudioStreamWAV
-var snd_strike_clean: AudioStreamWAV
-var snd_strike_blocked: AudioStreamWAV
-var snd_ref_slap: AudioStreamWAV
-var snd_rope: AudioStreamWAV
-var snd_crowd_cheer: AudioStreamWAV
-var snd_crowd_gasp: AudioStreamWAV
-var snd_finisher_stinger: AudioStreamWAV
-var snd_victory_fanfare: AudioStreamWAV
-var snd_rope_break: AudioStreamWAV
-var snd_counts: Array[AudioStreamWAV] = []
-
-func _ready() -> void:
-	if instance == null:
-		instance = self
-	_create_audio_streams()
-	_setup_players()
-
-func _setup_players() -> void:
-	for i in range(10):
-		var p: AudioStreamPlayer = AudioStreamPlayer.new()
-		add_child(p)
-		sfx_players.append(p)
-		
-	crowd_player = AudioStreamPlayer.new()
-	add_child(crowd_player)
-
-	fanfare_player = AudioStreamPlayer.new()
-	add_child(fanfare_player)
-
-func _play_sfx(stream: AudioStreamWAV, volume_db: float = 0.0, pitch_scale: float = 1.0) -> void:
-	if not stream:
-		return
-	for p in sfx_players:
-		if not p.playing:
-			p.stream = stream
-			p.volume_db = volume_db
-			p.pitch_scale = pitch_scale
-			p.play()
-			return
-	# Fallback to first player
-	if not sfx_players.is_empty():
-		sfx_players[0].stream = stream
-		sfx_players[0].volume_db = volume_db
-		sfx_players[0].pitch_scale = pitch_scale
-		sfx_players[0].play()
-
-func play_ring_bell() -> void:
-	_play_sfx(snd_bell, 2.0, 1.0)
-
-func play_mat_slam(is_heavy: bool = true) -> void:
-	var pitch: float = randf_range(0.85, 1.05) if not is_heavy else randf_range(0.75, 0.9)
-	var vol: float = 4.0 if is_heavy else 1.0
-	_play_sfx(snd_mat_slam, vol, pitch)
-
-func play_strike(is_blocked: bool = false) -> void:
-	if is_blocked:
-		_play_sfx(snd_strike_blocked, -2.0, randf_range(0.9, 1.1))
-	else:
-		_play_sfx(snd_strike_clean, 2.0, randf_range(0.95, 1.05))
-
-func play_referee_slap() -> void:
-	_play_sfx(snd_ref_slap, 3.0, randf_range(0.98, 1.02))
-
-func play_rope_twang() -> void:
-	_play_sfx(snd_rope, 0.0, randf_range(0.9, 1.1))
-
-func play_crowd_cheer() -> void:
-	if crowd_player:
-		crowd_player.stream = snd_crowd_cheer
-		crowd_player.volume_db = -4.0
-		crowd_player.play()
-
-func play_crowd_gasp() -> void:
-	_play_sfx(snd_crowd_gasp, -1.0, 1.0)
-
-func play_finisher_stinger() -> void:
-	_play_sfx(snd_finisher_stinger, 4.0, 1.0)
-
-func play_victory_fanfare() -> void:
-	if fanfare_player:
-		fanfare_player.stream = snd_victory_fanfare
-		fanfare_player.volume_db = 2.0
-		fanfare_player.play()
-
-func play_rope_break_alert() -> void:
-	_play_sfx(snd_rope_break, 1.0, 1.0)
-
-func play_count_tone(count: int) -> void:
-	if count >= 1 and count <= snd_counts.size():
-		_play_sfx(snd_counts[count - 1], 3.0, 1.0)
-
-# ==============================================================================
-# Procedural Audio Synthesis (16-bit PCM Mono, 22050 Hz)
-# ==============================================================================
-
-func _create_audio_streams() -> void:
-	snd_bell = _synthesize_bell()
-	snd_mat_slam = _synthesize_mat_slam()
-	snd_strike_clean = _synthesize_strike_clean()
-	snd_strike_blocked = _synthesize_strike_blocked()
-	snd_ref_slap = _synthesize_ref_slap()
-	snd_rope = _synthesize_rope()
-	snd_crowd_cheer = _synthesize_crowd(true)
-	snd_crowd_gasp = _synthesize_crowd(false)
-	snd_finisher_stinger = _synthesize_finisher_stinger()
-	snd_victory_fanfare = _synthesize_victory_fanfare()
-	snd_rope_break = _synthesize_rope_break()
-	
-	snd_counts.clear()
-	for c in [1, 2, 3]:
-		snd_counts.append(_synthesize_count_tone(c))
-
-func _create_wav(samples: PackedByteArray, sample_rate: int = 22050) -> AudioStreamWAV:
-	var wav: AudioStreamWAV = AudioStreamWAV.new()
-	wav.format = AudioStreamWAV.FORMAT_16_BITS
-	wav.mix_rate = sample_rate
-	wav.stereo = false
-	wav.data = samples
-	return wav
-
-func _synthesize_bell() -> AudioStreamWAV:
-	var rate: int = 22050
-	var duration: float = 1.4
-	var num_samples: int = int(rate * duration)
-	var bytes: PackedByteArray = PackedByteArray()
-	bytes.resize(num_samples * 2)
-	
-	var freqs: Array[float] = [880.0, 1760.0, 2640.0, 3520.0, 420.0]
-	var weights: Array[float] = [0.45, 0.25, 0.15, 0.1, 0.2]
-	
-	for i in range(num_samples):
-		var t: float = float(i) / rate
-		var env: float = exp(-3.8 * t)
-		var sample_val: float = 0.0
-		for k in range(freqs.size()):
-			sample_val += sin(TAU * freqs[k] * t) * weights[k]
-		sample_val *= env * 0.95
-		var int16: int = clampi(int(sample_val * 32767.0), -32768, 32767)
-		bytes.encode_s16(i * 2, int16)
-		
-	return _create_wav(bytes, rate)
-
-func _synthesize_mat_slam() -> AudioStreamWAV:
-	var rate: int = 22050
-	var duration: float = 0.75
-	var num_samples: int = int(rate * duration)
-	var bytes: PackedByteArray = PackedByteArray()
-	bytes.resize(num_samples * 2)
-	
-	for i in range(num_samples):
-		var t: float = float(i) / rate
-		var env: float = exp(-6.5 * t)
-		var freq: float = lerp(90.0, 35.0, clamp(t / 0.35, 0.0, 1.0))
-		var sub: float = sin(TAU * freq * t) * 0.75
-		var noise_env: float = exp(-35.0 * t)
-		var noise: float = (randf() * 2.0 - 1.0) * noise_env * 0.45
-		var sample_val: float = (sub + noise) * env * 0.98
-		var int16: int = clampi(int(sample_val * 32767.0), -32768, 32767)
-		bytes.encode_s16(i * 2, int16)
-		
-	return _create_wav(bytes, rate)
-
-func _synthesize_strike_clean() -> AudioStreamWAV:
-	var rate: int = 22050
-	var duration: float = 0.28
-	var num_samples: int = int(rate * duration)
-	var bytes: PackedByteArray = PackedByteArray()
-	bytes.resize(num_samples * 2)
-	
-	for i in range(num_samples):
-		var t: float = float(i) / rate
-		var env: float = exp(-18.0 * t)
-		var snap_env: float = exp(-45.0 * t)
-		var punch: float = sin(TAU * 160.0 * t) * 0.55
-		var snap: float = (randf() * 2.0 - 1.0) * snap_env * 0.65
-		var sample_val: float = (punch + snap) * env * 0.95
-		var int16: int = clampi(int(sample_val * 32767.0), -32768, 32767)
-		bytes.encode_s16(i * 2, int16)
-		
-	return _create_wav(bytes, rate)
-
-func _synthesize_strike_blocked() -> AudioStreamWAV:
-	var rate: int = 22050
-	var duration: float = 0.22
-	var num_samples: int = int(rate * duration)
-	var bytes: PackedByteArray = PackedByteArray()
-	bytes.resize(num_samples * 2)
-	
-	for i in range(num_samples):
-		var t: float = float(i) / rate
-		var env: float = exp(-16.0 * t)
-		var punch: float = sin(TAU * 110.0 * t) * 0.7
-		var int16: int = clampi(int(punch * env * 32767.0), -32768, 32767)
-		bytes.encode_s16(i * 2, int16)
-		
-	return _create_wav(bytes, rate)
-
-func _synthesize_ref_slap() -> AudioStreamWAV:
-	var rate: int = 22050
-	var duration: float = 0.35
-	var num_samples: int = int(rate * duration)
-	var bytes: PackedByteArray = PackedByteArray()
-	bytes.resize(num_samples * 2)
-	
-	for i in range(num_samples):
-		var t: float = float(i) / rate
-		var env: float = exp(-14.0 * t)
-		var slap_noise: float = (randf() * 2.0 - 1.0) * exp(-40.0 * t) * 0.7
-		var low_thump: float = sin(TAU * 120.0 * t) * 0.45
-		var sample_val: float = (slap_noise + low_thump) * env * 0.95
-		var int16: int = clampi(int(sample_val * 32767.0), -32768, 32767)
-		bytes.encode_s16(i * 2, int16)
-		
-	return _create_wav(bytes, rate)
-
-func _synthesize_rope() -> AudioStreamWAV:
-	var rate: int = 22050
-	var duration: float = 0.45
-	var num_samples: int = int(rate * duration)
-	var bytes: PackedByteArray = PackedByteArray()
-	bytes.resize(num_samples * 2)
-	
-	for i in range(num_samples):
-		var t: float = float(i) / rate
-		var env: float = exp(-8.0 * t)
-		var twang: float = sin(TAU * 65.0 * t) * 0.6 + sin(TAU * 130.0 * t) * 0.3
-		var int16: int = clampi(int(twang * env * 32767.0), -32768, 32767)
-		bytes.encode_s16(i * 2, int16)
-		
-	return _create_wav(bytes, rate)
-
-func _synthesize_crowd(is_cheer: bool) -> AudioStreamWAV:
-	var rate: int = 22050
-	var duration: float = 2.0 if is_cheer else 1.0
-	var num_samples: int = int(rate * duration)
-	var bytes: PackedByteArray = PackedByteArray()
-	bytes.resize(num_samples * 2)
-	
-	var last_noise: float = 0.0
-	for i in range(num_samples):
-		var t: float = float(i) / rate
-		var raw_noise: float = randf() * 2.0 - 1.0
-		last_noise = lerp(last_noise, raw_noise, 0.12)
-		var env: float = 1.0
-		if is_cheer:
-			if t < 0.4:
-				env = t / 0.4
-			else:
-				env = exp(-1.2 * (t - 0.4))
-		else:
-			env = exp(-2.5 * t)
-			
-		var sample_val: float = last_noise * env * 0.8
-		var int16: int = clampi(int(sample_val * 32767.0), -32768, 32767)
-		bytes.encode_s16(i * 2, int16)
-		
-	return _create_wav(bytes, rate)
-
-func _synthesize_finisher_stinger() -> AudioStreamWAV:
-	var rate: int = 22050
-	var duration: float = 1.1
-	var num_samples: int = int(rate * duration)
-	var bytes: PackedByteArray = PackedByteArray()
-	bytes.resize(num_samples * 2)
-	
-	# Power chord with rising pitch sweep and distortion
-	for i in range(num_samples):
-		var t: float = float(i) / rate
-		var env: float = min(t / 0.15, 1.0) * exp(-2.2 * t)
-		var f_base: float = lerp(110.0, 220.0, clamp(t / 0.5, 0.0, 1.0))
-		var chord: float = sin(TAU * f_base * t) * 0.4 + sin(TAU * (f_base * 1.5) * t) * 0.35 + sin(TAU * (f_base * 2.0) * t) * 0.25
-		# Soft overdrive clipping
-		var driven: float = clamp(chord * 1.8, -1.0, 1.0)
-		var sample_val: float = driven * env * 0.95
-		var int16: int = clampi(int(sample_val * 32767.0), -32768, 32767)
-		bytes.encode_s16(i * 2, int16)
-		
-	return _create_wav(bytes, rate)
-
-func _synthesize_victory_fanfare() -> AudioStreamWAV:
-	var rate: int = 22050
-	var duration: float = 2.4
-	var num_samples: int = int(rate * duration)
-	var bytes: PackedByteArray = PackedByteArray()
-	bytes.resize(num_samples * 2)
-	
-	# Fanfare notes: C4 (261.6), E4 (329.6), G4 (392.0), C5 (523.2)
-	var notes: Array[float] = [261.63, 329.63, 392.00, 523.25]
-	var note_starts: Array[float] = [0.0, 0.35, 0.70, 1.05]
-	var note_durs: Array[float] = [0.35, 0.35, 0.35, 1.35]
-	
-	for i in range(num_samples):
-		var t: float = float(i) / rate
-		var sample_val: float = 0.0
-		for n in range(notes.size()):
-			var n_start: float = note_starts[n]
-			var n_dur: float = note_durs[n]
-			if t >= n_start and t < (n_start + n_dur):
-				var local_t: float = t - n_start
-				var env: float = min(local_t / 0.04, 1.0) * exp(-2.0 * local_t)
-				var tone: float = sin(TAU * notes[n] * local_t) * 0.5 + sin(TAU * (notes[n] * 2.0) * local_t) * 0.25 + sin(TAU * (notes[n] * 3.0) * local_t) * 0.12
-				sample_val += tone * env
-		sample_val = clamp(sample_val * 0.85, -1.0, 1.0)
-		var int16: int = clampi(int(sample_val * 32767.0), -32768, 32767)
-		bytes.encode_s16(i * 2, int16)
-		
-	return _create_wav(bytes, rate)
-
-func _synthesize_rope_break() -> AudioStreamWAV:
-	var rate: int = 22050
-	var duration: float = 0.5
-	var num_samples: int = int(rate * duration)
-	var bytes: PackedByteArray = PackedByteArray()
-	bytes.resize(num_samples * 2)
-	
-	# Dual-tone buzzer alert (220 Hz + 277 Hz)
-	for i in range(num_samples):
-		var t: float = float(i) / rate
-		var env: float = min(t / 0.02, 1.0) * exp(-5.0 * t)
-		var buzzer: float = (sin(TAU * 220.0 * t) + sin(TAU * 277.0 * t)) * 0.5
-		# Square-ish grit
-		var clipped: float = 0.7 if buzzer > 0.0 else -0.7
-		var sample_val: float = clipped * env * 0.8
-		var int16: int = clampi(int(sample_val * 32767.0), -32768, 32767)
-		bytes.encode_s16(i * 2, int16)
-		
-	return _create_wav(bytes, rate)
-
-func _synthesize_count_tone(count: int) -> AudioStreamWAV:
-	var rate: int = 22050
-	var duration: float = 0.45
-	var num_samples: int = int(rate * duration)
-	var bytes: PackedByteArray = PackedByteArray()
-	bytes.resize(num_samples * 2)
-	
-	# Distinct pitch per count (count 1: 300 Hz, count 2: 400 Hz, count 3: 520 Hz)
-	var base_freq: float = 260.0 + (count * 90.0)
-	
-	for i in range(num_samples):
-		var t: float = float(i) / rate
-		var env: float = min(t / 0.015, 1.0) * exp(-7.5 * t)
-		var tone: float = sin(TAU * base_freq * t) * 0.6 + sin(TAU * (base_freq * 2.0) * t) * 0.3
-		var transient_noise: float = (randf() * 2.0 - 1.0) * exp(-40.0 * t) * 0.3
-		var sample_val: float = (tone + transient_noise) * env * 0.95
-		var int16: int = clampi(int(sample_val * 32767.0), -32768, 32767)
-		bytes.encode_s16(i * 2, int16)
-		
-	return _create_wav(bytes, rate)
-\\n
-## File: scripts/core/main_scene.gd
-
-\\gdscript
-class_name MainScene
-extends Node3D
-
-## Main scene controller for match initialization and mode toggles.
-
-@export var fighter_1: Fighter
-@export var fighter_2: Fighter
-@export var cpu_controller_p2: CPUController
-@export var match_manager: MatchManager
-
-func _ready() -> void:
-	if fighter_1:
-		fighter_1.character_id = MatchConfig.p1_character_id
-		fighter_1.load_character_data()
-	if fighter_2:
-		fighter_2.character_id = MatchConfig.p2_character_id
-		fighter_2.is_cpu = MatchConfig.p2_is_cpu
-		fighter_2.load_character_data()
-		
-	if cpu_controller_p2 and fighter_2:
-		cpu_controller_p2.set_physics_process(fighter_2.is_cpu)
-
-func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("toggle_cpu"):
-		if cpu_controller_p2 and fighter_2:
-			fighter_2.is_cpu = not fighter_2.is_cpu
-			MatchConfig.p2_is_cpu = fighter_2.is_cpu
-			cpu_controller_p2.set_physics_process(fighter_2.is_cpu)
-			print("CPU P2 Toggled: ", fighter_2.is_cpu)
-			
-	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_ESCAPE:
-			get_tree().change_scene_to_file("res://scenes/ui/character_select.tscn")
-\\n
 ## File: scripts/fighter/fighter.gd
 
-\\gdscript
+```gdscript
 class_name Fighter
 extends CharacterBody3D
 
@@ -1641,10 +570,14 @@ enum State {
 
 # Visual nodes
 @export var visual_root: Node3D
-@export var body_mesh: MeshInstance3D
 @export var left_arm: Node3D
 @export var right_arm: Node3D
+const FighterPresentationScript = preload("res://scripts/fighter/fighter_presentation.gd")
 var anim_player: AnimationPlayer = null
+var presentation = null
+
+func is_rigged() -> bool:
+	return presentation != null and presentation.has_skeletal_rig
 
 # Internal attributes scaled from RosterData
 var char_name: String = "Fighter"
@@ -1709,7 +642,9 @@ func _init() -> void:
 func _ready() -> void:
 	load_character_data()
 
-func load_character_data() -> void:
+func load_character_data(p_character_id: String = "") -> void:
+	if p_character_id != "":
+		character_id = p_character_id
 	var data: Dictionary = RosterData.get_character(character_id)
 	if data.is_empty():
 		return
@@ -1740,17 +675,13 @@ func load_character_data() -> void:
 	hype_changed.emit(hype, MatchRules.MAX_HYPE)
 
 	if visual_root:
-		for child in visual_root.get_children():
-			child.queue_free()
-		anim_player = null
-		var model_path: String = "res://assets/models/" + character_id + ".glb"
-		if ResourceLoader.exists(model_path):
-			var model_res = load(model_path)
-			if model_res is PackedScene:
-				var inst: Node = model_res.instantiate()
-				visual_root.add_child(inst)
-				anim_player = inst.find_child("AnimationPlayer", true, false) as AnimationPlayer
-				_play_state_animation(current_state)
+		if presentation == null:
+			presentation = FighterPresentationScript.new()
+			presentation.name = "FighterPresentation"
+			add_child(presentation)
+			presentation.setup(self, visual_root)
+		presentation.load_model(character_id)
+		anim_player = presentation.anim_player
 	
 	character_loaded.emit(self)
 
@@ -1765,6 +696,8 @@ func _physics_process(delta: float) -> void:
 	
 	_tick_stamina(delta)
 	_update_state_machine(delta)
+	if presentation:
+		presentation.update_locomotion_stride()
 	_clamp_within_ring()
 	_clear_consumed_pulse_inputs()
 
@@ -1854,7 +787,7 @@ func _update_state_machine(delta: float) -> void:
 			
 		State.KNOCKED_DOWN:
 			velocity = Vector3.ZERO
-			if visual_root:
+			if visual_root and not is_rigged():
 				visual_root.rotation.x = deg_to_rad(-90.0)
 				visual_root.position.y = 0.15
 			if state_timer >= knockdown_duration:
@@ -1862,7 +795,7 @@ func _update_state_machine(delta: float) -> void:
 				
 		State.GETTING_UP:
 			velocity = Vector3.ZERO
-			if visual_root:
+			if visual_root and not is_rigged():
 				var t: float = clamp(state_timer / 0.6, 0.0, 1.0)
 				visual_root.rotation.x = lerp(deg_to_rad(-90.0), 0.0, t)
 				visual_root.position.y = lerp(0.15, 0.0, t)
@@ -1874,25 +807,25 @@ func _update_state_machine(delta: float) -> void:
 				
 		State.PINNING:
 			velocity = Vector3.ZERO
-			if visual_root:
+			if visual_root and not is_rigged():
 				visual_root.position.y = -0.3
 				
 		State.PINNED:
 			velocity = Vector3.ZERO
-			if visual_root:
+			if visual_root and not is_rigged():
 				visual_root.rotation.x = deg_to_rad(-90.0)
 				visual_root.position.y = 0.1
 			_process_pin_escape(delta)
 			
 		State.SUBMISSION_ATTACKER:
 			velocity = Vector3.ZERO
-			if visual_root:
+			if visual_root and not is_rigged():
 				visual_root.position.y = -0.25
 			_process_submission_attacker(delta)
 			
 		State.SUBMISSION_DEFENDER:
 			velocity = Vector3.ZERO
-			if visual_root:
+			if visual_root and not is_rigged():
 				visual_root.rotation.x = deg_to_rad(-90.0)
 				visual_root.position.y = 0.1
 			_process_submission_defender(delta)
@@ -1905,7 +838,7 @@ func _update_state_machine(delta: float) -> void:
 				
 		State.DEFEATED:
 			velocity = Vector3.ZERO
-			if visual_root:
+			if visual_root and not is_rigged():
 				visual_root.rotation.x = deg_to_rad(-90.0)
 				visual_root.position.y = 0.1
 
@@ -1988,7 +921,7 @@ func _start_strike() -> void:
 	_set_state(State.STRIKING)
 	
 	# Arm punch animation
-	if right_arm:
+	if right_arm and not is_rigged():
 		var tween: Tween = create_tween()
 		tween.tween_property(right_arm, "position:z", -0.8, 0.15)
 		tween.tween_property(right_arm, "position:z", 0.0, 0.25)
@@ -2076,7 +1009,7 @@ func _attempt_grapple(is_finisher: bool = false) -> void:
 	_set_state(State.GRAPPLE_STARTUP)
 	
 	# Procedural reaching visual feedback
-	if left_arm and right_arm:
+	if left_arm and right_arm and not is_rigged():
 		var tween: Tween = create_tween().set_parallel(true)
 		tween.tween_property(left_arm, "position:z", -0.5, 0.12)
 		tween.tween_property(right_arm, "position:z", -0.5, 0.12)
@@ -2092,7 +1025,7 @@ func _process_grapple_startup(_delta: float) -> void:
 				var target: Fighter = grapple_target
 				grapple_target = null
 				
-				if left_arm and right_arm:
+				if left_arm and right_arm and not is_rigged():
 					left_arm.position.z = 0.0
 					right_arm.position.z = 0.0
 				
@@ -2108,7 +1041,7 @@ func _process_grapple_startup(_delta: float) -> void:
 		# Target moved away, was knocked down, or missed: wait for whiff recovery
 		grapple_target = null
 		if state_timer >= MatchRules.GRAPPLE_WHIFF_DURATION:
-			if left_arm and right_arm:
+			if left_arm and right_arm and not is_rigged():
 				left_arm.position.z = 0.0
 				right_arm.position.z = 0.0
 			_set_state(State.IDLE)
@@ -2572,28 +1505,29 @@ func _set_state(new_state: State) -> void:
 	state_changed.emit(old_state, new_state)
 
 func _play_state_animation(st: State) -> void:
-	if not is_instance_valid(anim_player):
-		return
-	var anim_name: String = ""
-	match st:
-		State.IDLE: anim_name = "idle"
-		State.MOVING: anim_name = "walk"
-		State.STRIKING: anim_name = "strike"
-		State.BLOCKING: anim_name = "block"
-		State.REVERSAL_STANCE: anim_name = "reversal"
-		State.GRAPPLE_STARTUP: anim_name = "grapple"
-		State.GRAPPLING_ATTACKER: anim_name = "throw_attacker"
-		State.GRAPPLING_DEFENDER: anim_name = "throw_defender"
-		State.KNOCKED_DOWN: anim_name = "knockdown"
-		State.GETTING_UP: anim_name = "getup"
-		State.PINNING: anim_name = "pinning"
-		State.PINNED: anim_name = "pinned"
-		State.SUBMISSION_ATTACKER: anim_name = "submission_attacker"
-		State.SUBMISSION_DEFENDER: anim_name = "submission_defender"
-		State.VICTORY: anim_name = "victory"
-		State.DEFEATED: anim_name = "defeated"
-	if anim_name != "" and anim_player.has_animation(anim_name):
-		anim_player.play(anim_name)
+	if presentation:
+		presentation.play_state_animation(st)
+	elif is_instance_valid(anim_player):
+		var anim_name: String = ""
+		match st:
+			State.IDLE: anim_name = "idle"
+			State.MOVING: anim_name = "walk"
+			State.STRIKING: anim_name = "strike"
+			State.BLOCKING: anim_name = "block"
+			State.REVERSAL_STANCE: anim_name = "reversal"
+			State.GRAPPLE_STARTUP: anim_name = "grapple"
+			State.GRAPPLING_ATTACKER: anim_name = "throw_attacker"
+			State.GRAPPLING_DEFENDER: anim_name = "throw_defender"
+			State.KNOCKED_DOWN: anim_name = "knockdown"
+			State.GETTING_UP: anim_name = "getup"
+			State.PINNING: anim_name = "pinning"
+			State.PINNED: anim_name = "pinned"
+			State.SUBMISSION_ATTACKER: anim_name = "submission_attacker"
+			State.SUBMISSION_DEFENDER: anim_name = "submission_defender"
+			State.VICTORY: anim_name = "victory"
+			State.DEFEATED: anim_name = "defeated"
+		if anim_name != "" and anim_player.has_animation(anim_name):
+			anim_player.play(anim_name)
 
 func _clamp_within_ring() -> void:
 	# Single authoritative ownership: attacker solely controls defender's position during throws
@@ -2617,10 +1551,12 @@ func set_victory() -> void:
 func set_defeated() -> void:
 	synchronized_partner = null
 	_set_state(State.DEFEATED)
-\\n
+
+```
+
 ## File: scripts/ai/cpu_controller.gd
 
-\\gdscript
+```gdscript
 class_name CPUController
 extends Node
 
@@ -2741,10 +1677,1151 @@ func _think() -> void:
 	else:
 		# Approach opponent
 		fighter.input_dir = dir_norm
-\\n
+
+```
+
+## File: scripts/core/match_rules.gd
+
+```gdscript
+class_name MatchRules
+extends RefCounted
+
+## Authoritative match configuration constants and geometric thresholds
+
+const RING_MAT_RADIUS: float = 4.0 # Distance from center (0,0) to ropes in meters
+const ROPE_BREAK_DISTANCE: float = 0.85 # Distance from rope threshold to trigger rope break
+const THROW_SAFE_RING_BOUND: float = 3.50 # Safe inner ring boundary for synchronized throw arcs
+const PIN_COUNT_INTERVAL: float = 1.1 # Seconds per referee count
+const PIN_ESCAPE_BASE_RATE: float = 85.0 # Percent escape per second base (hold-to-resist accessibility)
+const PIN_ESCAPE_MASH_BASE: float = 10.0 # Base progress gained per active mash pulse (at 10 Hz = 100.0/s)
+const PIN_ESCAPE_DECAY_RATE: float = 8.0 # Passive escape progress decay per second when unresisted
+const PIN_ESCAPE_HOLD_STAMINA_DRAIN: float = 8.0 # Stamina units drained per second while holding to resist
+const PIN_ESCAPE_MASH_STAMINA_COST: float = 0.8 # Stamina units drained per active mash pulse (at 10 Hz = 8.0/s)
+const PIN_ESCAPE_FINISHER_PENALTY: float = 0.55 # Multiplier on escape rate following a genuine finisher impact
+const PIN_ESCAPE_HEAVY_IMPACT_PENALTY: float = 0.85 # Multiplier on escape rate following an ordinary heavy throw/slam
+const FINISHER_DISORIENTATION_DURATION: float = 4.5 # Seconds of finisher impact disorientation
+const HEAVY_IMPACT_DISORIENTATION_DURATION: float = 1.5 # Seconds of ordinary heavy impact disorientation
+const HEAVY_IMPACT_DAMAGE_THRESHOLD: float = 80.0 # Damage threshold for ordinary heavy impact
+const MAX_HYPE: float = 100.0
+const HYPE_GAIN_ON_HIT: float = 12.0
+const HYPE_GAIN_ON_COUNTER: float = 20.0
+const STAMINA_REGEN_RATE: float = 12.0 # Units per second when not attacking or sprinting
+const STRIKE_STAMINA_COST: float = 14.0
+const GRAPPLE_STAMINA_COST: float = 22.0
+const BLOCK_STAMINA_DRAIN: float = 15.0 # Per second held
+const REVERSAL_STAMINA_COST: float = 18.0
+const FINISHER_HYPE_COST: float = 100.0
+const STRIKE_CONE_MIN_DOT: float = 0.50 # 120-degree forward contact cone (cos(60 deg))
+const GRAPPLE_STARTUP_DURATION: float = 0.18 # Seconds of vulnerability before grapple lock executes
+const GRAPPLE_WHIFF_DURATION: float = 0.25 # Seconds of recovery on missed/whiffed grapple
+
+enum SubmissionPriority {
+	ESCAPE_BREAKS, # Buzzer-beater breakout waives off tap-out
+	TAPOUT_WINS     # Incapacitation takes precedence
+}
+static var SUBMISSION_SIMULTANEOUS_PRIORITY: int = SubmissionPriority.ESCAPE_BREAKS
+
+static func is_near_ropes(position_3d: Vector3) -> bool:
+	var x: float = abs(position_3d.x)
+	var z: float = abs(position_3d.z)
+	var max_coord: float = max(x, z)
+	return max_coord >= (RING_MAT_RADIUS - ROPE_BREAK_DISTANCE)
+
+```
+
+## File: scripts/core/match_manager.gd
+
+```gdscript
+class_name MatchManager
+extends Node
+
+## Authoritative match state coordinator.
+## Manages match progression, pin counting, submissions, rope breaks, and victory conditions.
+
+signal match_started()
+signal pin_started(pinner: Fighter, pinned: Fighter)
+signal pin_count_ticked(count: int)
+signal pin_broken(reason: String)
+signal submission_started(attacker: Fighter, defender: Fighter)
+signal submission_escaped()
+signal rope_break_called()
+signal match_ended(winner: Fighter, method: String)
+
+enum MatchState {
+	INTRO,
+	IN_PROGRESS,
+	PIN_ATTEMPT,
+	SUBMISSION_ATTEMPT,
+	MATCH_OVER
+}
+
+@export var fighter_1: Fighter
+@export var fighter_2: Fighter
+@export var referee: Referee
+@export var hud: Node
+
+var current_state: MatchState = MatchState.IN_PROGRESS
+var current_pinner: Fighter = null
+var current_pinned: Fighter = null
+var pin_timer: float = 0.0
+var current_count: int = 0
+
+static var instance: MatchManager = null
+
+func _init() -> void:
+	instance = self
+	# Priority 10 ensures MatchManager evaluates rules and terminal outcomes
+	# AFTER all fighters (priority 0) have completed mechanics and input processing for the tick.
+	process_physics_priority = 10
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		if instance == self:
+			instance = null
+
+func _ready() -> void:
+	_setup_match()
+
+func _setup_match() -> void:
+	if not is_instance_valid(fighter_1) or not is_instance_valid(fighter_2):
+		return
+	
+	fighter_1.opponent = fighter_2
+	fighter_2.opponent = fighter_1
+	
+	if referee:
+		referee.setup_targets(fighter_1, fighter_2)
+		
+	# Connect fighter pin signals
+	if not fighter_1.pin_initiated.is_connected(_on_fighter_pin_initiated):
+		fighter_1.pin_initiated.connect(_on_fighter_pin_initiated)
+	if not fighter_2.pin_initiated.is_connected(_on_fighter_pin_initiated):
+		fighter_2.pin_initiated.connect(_on_fighter_pin_initiated)
+		
+	if not fighter_1.kick_out_succeeded.is_connected(_on_kick_out_succeeded):
+		fighter_1.kick_out_succeeded.connect(_on_kick_out_succeeded)
+	if not fighter_2.kick_out_succeeded.is_connected(_on_kick_out_succeeded):
+		fighter_2.kick_out_succeeded.connect(_on_kick_out_succeeded)
+
+	# Connect fighter submission signals
+	if not fighter_1.submission_initiated.is_connected(_on_fighter_submission_initiated):
+		fighter_1.submission_initiated.connect(_on_fighter_submission_initiated)
+	if not fighter_2.submission_initiated.is_connected(_on_fighter_submission_initiated):
+		fighter_2.submission_initiated.connect(_on_fighter_submission_initiated)
+		
+	if not fighter_1.submission_escaped.is_connected(_on_submission_escaped):
+		fighter_1.submission_escaped.connect(_on_submission_escaped)
+	if not fighter_2.submission_escaped.is_connected(_on_submission_escaped):
+		fighter_2.submission_escaped.connect(_on_submission_escaped)
+		
+	if not fighter_1.tap_out_submitted.is_connected(_on_tap_out_submitted):
+		fighter_1.tap_out_submitted.connect(_on_tap_out_submitted)
+	if not fighter_2.tap_out_submitted.is_connected(_on_tap_out_submitted):
+		fighter_2.tap_out_submitted.connect(_on_tap_out_submitted)
+
+	if AudioManager.instance:
+		AudioManager.instance.play_ring_bell()
+
+	match_started.emit()
+
+func _physics_process(delta: float) -> void:
+	if Input.is_action_just_pressed("match_restart"):
+		restart_match()
+		return
+		
+	if current_state == MatchState.PIN_ATTEMPT:
+		_process_pin_countdown(delta)
+	elif current_state == MatchState.SUBMISSION_ATTEMPT:
+		_process_submission_watch(delta)
+
+static func get_fighter_pos(f: Fighter) -> Vector3:
+	if not is_instance_valid(f):
+		return Vector3.ZERO
+	if f.is_inside_tree() and f.get_parent() is Node3D:
+		return f.global_position
+	return f.position
+
+# ==============================================================================
+# Pin Management
+# ==============================================================================
+
+func _on_fighter_pin_initiated(pinner: Fighter, pinned: Fighter) -> void:
+	if current_state != MatchState.IN_PROGRESS:
+		return
+		
+	current_pinner = pinner
+	current_pinned = pinned
+	
+	# Priority 1: Check Rope Break immediately on pin start
+	var pin_pos: Vector3 = get_fighter_pos(pinned)
+	var pnr_pos: Vector3 = get_fighter_pos(pinner)
+	if MatchRules.is_near_ropes(pin_pos) or MatchRules.is_near_ropes(pnr_pos):
+		_call_rope_break()
+		return
+		
+	current_state = MatchState.PIN_ATTEMPT
+	pin_timer = 0.0
+	current_count = 0
+	
+	if referee:
+		referee.on_pin_started(get_fighter_pos(pinned))
+	
+	pin_started.emit(pinner, pinned)
+
+func _process_pin_countdown(delta: float) -> void:
+	if not is_instance_valid(current_pinned) or not is_instance_valid(current_pinner):
+		_abort_pin("INVALID_PARTICIPANTS")
+		return
+		
+	# 1. Authoritative Rope Break (Highest Priority)
+	if MatchRules.is_near_ropes(get_fighter_pos(current_pinned)) or MatchRules.is_near_ropes(get_fighter_pos(current_pinner)):
+		_call_rope_break()
+		return
+		
+	# 2. Authoritative Kick-Out Check (Checks updated defender resistance)
+	if current_pinned.pin_escape_progress >= 100.0:
+		_resolve_pin_kick_out(current_pinner, current_pinned)
+		return
+		
+	pin_timer += delta
+	
+	var next_threshold: float = (current_count + 1) * MatchRules.PIN_COUNT_INTERVAL
+	if (pin_timer + 0.0005) >= next_threshold:
+		current_count += 1
+		pin_count_ticked.emit(current_count)
+		if referee:
+			referee.on_pin_count(current_count)
+		if AudioManager.instance:
+			AudioManager.instance.play_referee_slap()
+			AudioManager.instance.play_count_tone(current_count)
+			
+		if current_count >= 3:
+			# Final-tick priority check: rope break or kickout strictly preempts 3-count pinfall
+			if MatchRules.is_near_ropes(get_fighter_pos(current_pinned)) or MatchRules.is_near_ropes(get_fighter_pos(current_pinner)):
+				_call_rope_break()
+				return
+			if is_instance_valid(current_pinned) and current_pinned.pin_escape_progress >= 100.0:
+				_resolve_pin_kick_out(current_pinner, current_pinned)
+				return
+			_end_match(current_pinner, "PINFALL (3-COUNT)")
+
+func _resolve_pin_kick_out(pinner: Fighter, pinned: Fighter) -> void:
+	if current_state != MatchState.PIN_ATTEMPT:
+		return
+	current_state = MatchState.IN_PROGRESS
+	
+	pinned.synchronized_partner = null
+	pinner.synchronized_partner = null
+	
+	if pinned.visual_root:
+		pinned.visual_root.rotation = Vector3.ZERO
+		pinned.visual_root.position = Vector3.ZERO
+	if pinner.visual_root:
+		pinner.visual_root.position = Vector3.ZERO
+		
+	pinner._set_state(Fighter.State.IDLE)
+	pinned._set_state(Fighter.State.GETTING_UP)
+	
+	# Push pinning opponent away
+	var push_back: Vector3 = pinner.global_transform.basis.z.normalized() if pinner.is_inside_tree() else pinner.transform.basis.z.normalized()
+	if pinner.is_inside_tree():
+		pinner.global_position += push_back * 1.2
+	else:
+		pinner.position += push_back * 1.2
+		
+	current_pinner = null
+	current_pinned = null
+	
+	if referee:
+		referee.on_pin_broken()
+	if AudioManager.instance:
+		AudioManager.instance.play_crowd_gasp()
+		
+	pin_broken.emit("KICKOUT")
+	pinned.kick_out_succeeded.emit(pinned)
+
+func _on_kick_out_succeeded(fighter: Fighter) -> void:
+	if current_state == MatchState.PIN_ATTEMPT and fighter == current_pinned:
+		_resolve_pin_kick_out(current_pinner, current_pinned)
+
+func _abort_pin(reason: String) -> void:
+	pin_broken.emit(reason)
+	if referee:
+		referee.on_pin_broken()
+	current_pinner = null
+	current_pinned = null
+	current_state = MatchState.IN_PROGRESS
+
+# ==============================================================================
+# Submission Management
+# ==============================================================================
+
+func _on_fighter_submission_initiated(attacker: Fighter, defender: Fighter) -> void:
+	if current_state != MatchState.IN_PROGRESS:
+		return
+		
+	current_pinner = attacker
+	current_pinned = defender
+	
+	# Check rope break
+	if MatchRules.is_near_ropes(get_fighter_pos(defender)) or MatchRules.is_near_ropes(get_fighter_pos(attacker)):
+		_call_rope_break()
+		return
+		
+	current_state = MatchState.SUBMISSION_ATTEMPT
+	if referee:
+		referee.on_pin_started(get_fighter_pos(defender))
+		
+	submission_started.emit(attacker, defender)
+
+func _process_submission_watch(_delta: float) -> void:
+	if not is_instance_valid(current_pinned) or not is_instance_valid(current_pinner):
+		_abort_pin("INVALID_PARTICIPANTS")
+		return
+		
+	# 1. Authoritative Rope Break (Highest Priority)
+	if MatchRules.is_near_ropes(get_fighter_pos(current_pinned)) or MatchRules.is_near_ropes(get_fighter_pos(current_pinner)):
+		_call_rope_break()
+		return
+		
+	var attacker: Fighter = current_pinner
+	var defender: Fighter = current_pinned
+	
+	var has_escaped: bool = (defender.pin_escape_progress >= 100.0)
+	var has_tapped: bool = (defender.vitality <= 0.0)
+	
+	if has_escaped and has_tapped:
+		# Simultaneous Frame: Evaluate authoritative priority policy
+		if MatchRules.SUBMISSION_SIMULTANEOUS_PRIORITY == MatchRules.SubmissionPriority.ESCAPE_BREAKS:
+			_resolve_submission_escape(attacker, defender)
+		else:
+			_resolve_submission_tap_out(attacker, defender)
+	elif has_escaped:
+		_resolve_submission_escape(attacker, defender)
+	elif has_tapped:
+		_resolve_submission_tap_out(attacker, defender)
+
+func _on_submission_escaped(fighter: Fighter = null) -> void:
+	if current_state != MatchState.SUBMISSION_ATTEMPT:
+		return
+	var defender: Fighter = current_pinned if is_instance_valid(current_pinned) else fighter
+	var attacker: Fighter = current_pinner if is_instance_valid(current_pinner) else (defender.opponent if is_instance_valid(defender) else null)
+	
+	if not is_instance_valid(defender) or not is_instance_valid(attacker):
+		return
+		
+	# Check for simultaneous tap-out on same frame
+	if defender.vitality <= 0.0 and MatchRules.SUBMISSION_SIMULTANEOUS_PRIORITY == MatchRules.SubmissionPriority.TAPOUT_WINS:
+		_resolve_submission_tap_out(attacker, defender)
+		return
+		
+	_resolve_submission_escape(attacker, defender)
+
+func _on_tap_out_submitted(loser: Fighter) -> void:
+	if current_state != MatchState.SUBMISSION_ATTEMPT:
+		return
+	var defender: Fighter = loser
+	var attacker: Fighter = current_pinner if is_instance_valid(current_pinner) else (defender.opponent if is_instance_valid(defender) else null)
+	
+	if not is_instance_valid(defender) or not is_instance_valid(attacker):
+		return
+		
+	# Check for simultaneous escape on same frame
+	if defender.pin_escape_progress >= 100.0 and MatchRules.SUBMISSION_SIMULTANEOUS_PRIORITY == MatchRules.SubmissionPriority.ESCAPE_BREAKS:
+		_resolve_submission_escape(attacker, defender)
+		return
+		
+	_resolve_submission_tap_out(attacker, defender)
+
+func _resolve_submission_escape(attacker: Fighter, defender: Fighter) -> void:
+	if current_state != MatchState.SUBMISSION_ATTEMPT:
+		return
+	current_state = MatchState.IN_PROGRESS
+	
+	# Symmetrical cleanup of hold pointers
+	attacker.synchronized_partner = null
+	defender.synchronized_partner = null
+	
+	# If defender reached 0 HP but broke free via buzzer-beater escape, grant 1.0 HP clutch survival
+	if defender.vitality <= 0.0:
+		defender.vitality = 1.0
+		defender.vitality_changed.emit(defender.vitality, defender.max_vitality)
+		
+	attacker._set_state(Fighter.State.IDLE)
+	defender._set_state(Fighter.State.GETTING_UP)
+	
+	if defender.visual_root:
+		defender.visual_root.rotation = Vector3.ZERO
+		defender.visual_root.position = Vector3.ZERO
+	if attacker.visual_root:
+		attacker.visual_root.position = Vector3.ZERO
+		
+	# Symmetrical pushback
+	var push_back: Vector3 = attacker.global_transform.basis.z.normalized() if attacker.is_inside_tree() else attacker.transform.basis.z.normalized()
+	if attacker.is_inside_tree():
+		attacker.global_position += push_back * 1.2
+	else:
+		attacker.position += push_back * 1.2
+		
+	current_pinner = null
+	current_pinned = null
+	
+	if referee:
+		referee.on_pin_broken()
+	if AudioManager.instance:
+		AudioManager.instance.play_crowd_gasp()
+		
+	submission_escaped.emit()
+
+func _resolve_submission_tap_out(attacker: Fighter, defender: Fighter) -> void:
+	if current_state != MatchState.SUBMISSION_ATTEMPT:
+		return
+		
+	# Symmetrical cleanup of hold pointers
+	attacker.synchronized_partner = null
+	defender.synchronized_partner = null
+	
+	current_pinner = null
+	current_pinned = null
+	
+	_end_match(attacker, "SUBMISSION (TAP OUT)")
+
+# ==============================================================================
+# General Match Control
+# ==============================================================================
+
+func _call_rope_break() -> void:
+	rope_break_called.emit()
+	if referee:
+		referee.on_rope_break()
+	if AudioManager.instance:
+		AudioManager.instance.play_rope_break_alert()
+		
+	if is_instance_valid(current_pinner):
+		current_pinner.synchronized_partner = null
+		current_pinner.break_pin_rope_break()
+		current_pinner.break_submission_rope_break()
+	if is_instance_valid(current_pinned):
+		current_pinned.synchronized_partner = null
+		current_pinned.break_pin_rope_break()
+		current_pinned.break_submission_rope_break()
+		
+	current_pinner = null
+	current_pinned = null
+	current_state = MatchState.IN_PROGRESS
+
+func _end_match(winner: Fighter, method: String) -> void:
+	if current_state == MatchState.MATCH_OVER:
+		return
+	current_state = MatchState.MATCH_OVER
+	var loser: Fighter = fighter_2 if winner == fighter_1 else fighter_1
+	
+	winner.set_victory()
+	loser.set_defeated()
+	
+	if referee:
+		referee.on_match_won(winner.global_position)
+	if AudioManager.instance:
+		AudioManager.instance.play_ring_bell()
+		AudioManager.instance.play_crowd_cheer()
+		AudioManager.instance.play_victory_fanfare()
+		
+	match_ended.emit(winner, method)
+
+func restart_match() -> void:
+	get_tree().reload_current_scene()
+
+```
+
+## File: scripts/core/match_config.gd
+
+```gdscript
+class_name MatchConfig
+extends RefCounted
+
+## Global match configuration tracking selected fighters and CPU state.
+## Persists match selections between Character Select and the Ring Arena.
+
+static var p1_character_id: String = "tophiachu"
+static var p2_character_id: String = "cyraxx"
+static var p2_is_cpu: bool = true
+
+static func set_match(p1_id: String, p2_id: String, cpu_p2: bool = true) -> void:
+	p1_character_id = p1_id
+	p2_character_id = p2_id
+	p2_is_cpu = cpu_p2
+
+static func reset_defaults() -> void:
+	p1_character_id = "tophiachu"
+	p2_character_id = "cyraxx"
+	p2_is_cpu = true
+
+```
+
+## File: scripts/core/main_scene.gd
+
+```gdscript
+class_name MainScene
+extends Node3D
+
+## Main scene controller for match initialization and mode toggles.
+
+@export var fighter_1: Fighter
+@export var fighter_2: Fighter
+@export var cpu_controller_p2: CPUController
+@export var match_manager: MatchManager
+
+func _ready() -> void:
+	if fighter_1:
+		fighter_1.character_id = MatchConfig.p1_character_id
+		fighter_1.load_character_data()
+	if fighter_2:
+		fighter_2.character_id = MatchConfig.p2_character_id
+		fighter_2.is_cpu = MatchConfig.p2_is_cpu
+		fighter_2.load_character_data()
+		
+	if cpu_controller_p2 and fighter_2:
+		cpu_controller_p2.set_physics_process(fighter_2.is_cpu)
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("toggle_cpu"):
+		if cpu_controller_p2 and fighter_2:
+			fighter_2.is_cpu = not fighter_2.is_cpu
+			MatchConfig.p2_is_cpu = fighter_2.is_cpu
+			cpu_controller_p2.set_physics_process(fighter_2.is_cpu)
+			print("CPU P2 Toggled: ", fighter_2.is_cpu)
+			
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_ESCAPE:
+			get_tree().change_scene_to_file("res://scenes/ui/character_select.tscn")
+
+```
+
+## File: scripts/core/roster_data.gd
+
+```gdscript
+class_name RosterData
+extends RefCounted
+
+## Fictional stats and profiles for LOLCOW WRESTLING: OFFLINE MAYHEM.
+## All attributes and abilities are fictional game-design choices.
+
+const CHARACTERS: Dictionary = {
+	"tophiachu": {
+		"id": "tophiachu",
+		"name": "Tophiachu",
+		"title": "Live & Unfiltered",
+		"archetype": "Heavyweight Counter-Brawler",
+		"stats": {
+			"power": 8,
+			"mobility": 3,
+			"grappling": 7,
+			"stamina": 5,
+			"durability": 9,
+			"reversal": 4,
+			"showmanship": 6
+		},
+		"moves": {
+			"strike": "Comment-Section Clothesline",
+			"grapple": "Block-Button Backbreaker",
+			"corner": "Going-Live Corner Splash",
+			"finisher": "Live-Stream Shutdown",
+			"trait": "Last Word"
+		},
+		"visual": {
+			"primary_color": Color(0.45, 0.22, 0.58), # Purple
+			"secondary_color": Color(0.12, 0.12, 0.14), # Dark Charcoal
+			"height": 1.70,
+			"body_scale": Vector3(1.35, 0.95, 1.30),
+			"reach": 1.25
+		}
+	},
+	"novaonline": {
+		"id": "novaonline",
+		"name": "NovaOnline",
+		"title": "Main-Event Energy",
+		"archetype": "Momentum Heavyweight",
+		"stats": {
+			"power": 9,
+			"mobility": 4,
+			"grappling": 6,
+			"stamina": 4,
+			"durability": 9,
+			"reversal": 3,
+			"showmanship": 7
+		},
+		"moves": {
+			"strike": "Buffering Bodycheck",
+			"ground": "Main-Character Elbow",
+			"corner": "Offline Avalanche",
+			"finisher": "Going Offline",
+			"trait": "Momentum Feed"
+		},
+		"visual": {
+			"primary_color": Color(0.85, 0.15, 0.15), # Red
+			"secondary_color": Color(0.9, 0.8, 0.2), # Gold
+			"height": 1.85,
+			"body_scale": Vector3(1.25, 1.05, 1.15),
+			"reach": 1.35
+		}
+	},
+	"cyraxx": {
+		"id": "cyraxx",
+		"name": "Cyraxx",
+		"title": "Feedback Frenzy",
+		"archetype": "Lightweight Burst Striker",
+		"stats": {
+			"power": 4,
+			"mobility": 9,
+			"grappling": 5,
+			"stamina": 6,
+			"durability": 3,
+			"reversal": 8,
+			"showmanship": 7
+		},
+		"moves": {
+			"strike": "Feedback Flurry",
+			"grapple": "Mic-Drop DDT",
+			"counter": "Encore Reversal",
+			"finisher": "Raxx and Ruin",
+			"trait": "Overdrive"
+		},
+		"visual": {
+			"primary_color": Color(0.15, 0.55, 0.35), # Dark Olive Green
+			"secondary_color": Color(0.2, 0.2, 0.2), # Black
+			"height": 1.55,
+			"body_scale": Vector3(0.78, 0.88, 0.78),
+			"reach": 0.95
+		}
+	},
+	"candy_rooks": {
+		"id": "candy_rooks",
+		"name": "Candy Rooks",
+		"title": "Kitchen-Sink Brawler",
+		"archetype": "Combination Grappler",
+		"stats": {
+			"power": 7,
+			"mobility": 4,
+			"grappling": 8,
+			"stamina": 6,
+			"durability": 8,
+			"reversal": 5,
+			"showmanship": 4
+		},
+		"moves": {
+			"strike": "Kitchen-Sink Combo",
+			"rush": "Ragoon Rush",
+			"grapple": "Second-Helping Side Slam",
+			"finisher": "Ribs & Kidney Beans",
+			"trait": "Recipe Combo"
+		},
+		"visual": {
+			"primary_color": Color(0.85, 0.45, 0.65), # Pink/Apron
+			"secondary_color": Color(0.95, 0.95, 0.95), # White
+			"height": 1.68,
+			"body_scale": Vector3(1.22, 0.96, 1.20),
+			"reach": 1.18
+		}
+	},
+	"andy_ditch": {
+		"id": "andy_ditch",
+		"name": "Andy Ditch",
+		"title": "Immovable Object",
+		"archetype": "Territory Anchor Grappler",
+		"stats": {
+			"power": 8,
+			"mobility": 2,
+			"grappling": 9,
+			"stamina": 5,
+			"durability": 10,
+			"reversal": 4,
+			"showmanship": 4
+		},
+		"moves": {
+			"counter": "Sit-Down Counter",
+			"grapple": "Deadweight Takedown",
+			"taunt": "Complaint Department",
+			"finisher": "Case Closed",
+			"trait": "Hold My Ground"
+		},
+		"visual": {
+			"primary_color": Color(0.25, 0.35, 0.65), # Denim Blue
+			"secondary_color": Color(0.6, 0.6, 0.6), # Grey
+			"height": 1.72,
+			"body_scale": Vector3(1.30, 0.92, 1.25),
+			"reach": 1.15
+		}
+	},
+	"jupiter_the_hybrid": {
+		"id": "jupiter_the_hybrid",
+		"name": "Jupiter the Hybrid",
+		"title": "Double Feature",
+		"archetype": "Stance-Shift Grappler",
+		"stats": {
+			"power": 6,
+			"mobility": 7,
+			"grappling": 7,
+			"stamina": 5,
+			"durability": 5,
+			"reversal": 6,
+			"showmanship": 6
+		},
+		"moves": {
+			"stance": "Hybrid Shift",
+			"strike": "Moonrise Lariat",
+			"counter": "Midnight Counter",
+			"finisher": "Eclipse Driver",
+			"trait": "Best of Both"
+		},
+		"visual": {
+			"primary_color": Color(0.2, 0.1, 0.35), # Deep Violet
+			"secondary_color": Color(0.8, 0.8, 0.9), # Silver
+			"height": 1.80,
+			"body_scale": Vector3(1.05, 1.02, 1.02),
+			"reach": 1.28
+		}
+	},
+	"anacondasin": {
+		"id": "anacondasin",
+		"name": "AnacondaSin",
+		"title": "The Counter-Coil",
+		"archetype": "Positional Submission Specialist",
+		"stats": {
+			"power": 5,
+			"mobility": 6,
+			"grappling": 9,
+			"stamina": 6,
+			"durability": 5,
+			"reversal": 7,
+			"showmanship": 4
+		},
+		"moves": {
+			"feint": "Question-Time Feint",
+			"counter": "Coil Counter",
+			"sweep": "Wraparound Sweep",
+			"finisher": "Anaconda Lock",
+			"trait": "Tightening Grip"
+		},
+		"visual": {
+			"primary_color": Color(0.15, 0.45, 0.25), # Emerald Green
+			"secondary_color": Color(0.85, 0.75, 0.3), # Gold
+			"height": 1.65,
+			"body_scale": Vector3(1.10, 0.98, 1.10),
+			"reach": 1.20
+		}
+	},
+	"daniel_larson": {
+		"id": "daniel_larson",
+		"name": "Daniel Larson",
+		"title": "Roaring Thunder",
+		"archetype": "Mobile Opportunist",
+		"stats": {
+			"power": 4,
+			"mobility": 9,
+			"grappling": 4,
+			"stamina": 8,
+			"durability": 3,
+			"reversal": 7,
+			"showmanship": 7
+		},
+		"moves": {
+			"strike": "Roaring Thunder Knee",
+			"aerial": "Stage-Dive Elbow",
+			"escape": "Tour-Bus Escape",
+			"finisher": "Final Encore",
+			"trait": "Touring Legs"
+		},
+		"visual": {
+			"primary_color": Color(0.85, 0.45, 0.1), # Bright Orange
+			"secondary_color": Color(0.2, 0.2, 0.25), # Slate
+			"height": 1.78,
+			"body_scale": Vector3(0.82, 1.02, 0.80),
+			"reach": 1.30
+		}
+	}
+}
+
+static func get_character(id: String) -> Dictionary:
+	return CHARACTERS.get(id, {})
+
+static func get_all_ids() -> Array:
+	return CHARACTERS.keys()
+
+```
+
+## File: scripts/core/audio_manager.gd
+
+```gdscript
+class_name AudioManager
+extends Node
+
+## Audio synthesizer and manager for LOLCOW WRESTLING: OFFLINE MAYHEM.
+## Generates and plays procedural 16-bit PCM audio streams for mat impacts,
+## ring bell, referee slaps, strikes, ropes, crowd reactions, and announcer stingers.
+
+static var instance: AudioManager
+
+var sfx_players: Array[AudioStreamPlayer] = []
+var crowd_player: AudioStreamPlayer
+var fanfare_player: AudioStreamPlayer
+
+# Pre-synthesized streams
+var snd_bell: AudioStreamWAV
+var snd_mat_slam: AudioStreamWAV
+var snd_strike_clean: AudioStreamWAV
+var snd_strike_blocked: AudioStreamWAV
+var snd_ref_slap: AudioStreamWAV
+var snd_rope: AudioStreamWAV
+var snd_crowd_cheer: AudioStreamWAV
+var snd_crowd_gasp: AudioStreamWAV
+var snd_finisher_stinger: AudioStreamWAV
+var snd_victory_fanfare: AudioStreamWAV
+var snd_rope_break: AudioStreamWAV
+var snd_counts: Array[AudioStreamWAV] = []
+
+func _ready() -> void:
+	if instance == null:
+		instance = self
+	_create_audio_streams()
+	_setup_players()
+
+func _setup_players() -> void:
+	for i in range(10):
+		var p: AudioStreamPlayer = AudioStreamPlayer.new()
+		add_child(p)
+		sfx_players.append(p)
+		
+	crowd_player = AudioStreamPlayer.new()
+	add_child(crowd_player)
+
+	fanfare_player = AudioStreamPlayer.new()
+	add_child(fanfare_player)
+
+func _play_sfx(stream: AudioStreamWAV, volume_db: float = 0.0, pitch_scale: float = 1.0) -> void:
+	if not stream:
+		return
+	for p in sfx_players:
+		if not p.playing:
+			p.stream = stream
+			p.volume_db = volume_db
+			p.pitch_scale = pitch_scale
+			p.play()
+			return
+	# Fallback to first player
+	if not sfx_players.is_empty():
+		sfx_players[0].stream = stream
+		sfx_players[0].volume_db = volume_db
+		sfx_players[0].pitch_scale = pitch_scale
+		sfx_players[0].play()
+
+func play_ring_bell() -> void:
+	_play_sfx(snd_bell, 2.0, 1.0)
+
+func play_mat_slam(is_heavy: bool = true) -> void:
+	var pitch: float = randf_range(0.85, 1.05) if not is_heavy else randf_range(0.75, 0.9)
+	var vol: float = 4.0 if is_heavy else 1.0
+	_play_sfx(snd_mat_slam, vol, pitch)
+
+func play_strike(is_blocked: bool = false) -> void:
+	if is_blocked:
+		_play_sfx(snd_strike_blocked, -2.0, randf_range(0.9, 1.1))
+	else:
+		_play_sfx(snd_strike_clean, 2.0, randf_range(0.95, 1.05))
+
+func play_referee_slap() -> void:
+	_play_sfx(snd_ref_slap, 3.0, randf_range(0.98, 1.02))
+
+func play_rope_twang() -> void:
+	_play_sfx(snd_rope, 0.0, randf_range(0.9, 1.1))
+
+func play_crowd_cheer() -> void:
+	if crowd_player:
+		crowd_player.stream = snd_crowd_cheer
+		crowd_player.volume_db = -4.0
+		crowd_player.play()
+
+func play_crowd_gasp() -> void:
+	_play_sfx(snd_crowd_gasp, -1.0, 1.0)
+
+func play_finisher_stinger() -> void:
+	_play_sfx(snd_finisher_stinger, 4.0, 1.0)
+
+func play_victory_fanfare() -> void:
+	if fanfare_player:
+		fanfare_player.stream = snd_victory_fanfare
+		fanfare_player.volume_db = 2.0
+		fanfare_player.play()
+
+func play_rope_break_alert() -> void:
+	_play_sfx(snd_rope_break, 1.0, 1.0)
+
+func play_count_tone(count: int) -> void:
+	if count >= 1 and count <= snd_counts.size():
+		_play_sfx(snd_counts[count - 1], 3.0, 1.0)
+
+# ==============================================================================
+# Procedural Audio Synthesis (16-bit PCM Mono, 22050 Hz)
+# ==============================================================================
+
+func _create_audio_streams() -> void:
+	snd_bell = _synthesize_bell()
+	snd_mat_slam = _synthesize_mat_slam()
+	snd_strike_clean = _synthesize_strike_clean()
+	snd_strike_blocked = _synthesize_strike_blocked()
+	snd_ref_slap = _synthesize_ref_slap()
+	snd_rope = _synthesize_rope()
+	snd_crowd_cheer = _synthesize_crowd(true)
+	snd_crowd_gasp = _synthesize_crowd(false)
+	snd_finisher_stinger = _synthesize_finisher_stinger()
+	snd_victory_fanfare = _synthesize_victory_fanfare()
+	snd_rope_break = _synthesize_rope_break()
+	
+	snd_counts.clear()
+	for c in [1, 2, 3]:
+		snd_counts.append(_synthesize_count_tone(c))
+
+func _create_wav(samples: PackedByteArray, sample_rate: int = 22050) -> AudioStreamWAV:
+	var wav: AudioStreamWAV = AudioStreamWAV.new()
+	wav.format = AudioStreamWAV.FORMAT_16_BITS
+	wav.mix_rate = sample_rate
+	wav.stereo = false
+	wav.data = samples
+	return wav
+
+func _synthesize_bell() -> AudioStreamWAV:
+	var rate: int = 22050
+	var duration: float = 1.4
+	var num_samples: int = int(rate * duration)
+	var bytes: PackedByteArray = PackedByteArray()
+	bytes.resize(num_samples * 2)
+	
+	var freqs: Array[float] = [880.0, 1760.0, 2640.0, 3520.0, 420.0]
+	var weights: Array[float] = [0.45, 0.25, 0.15, 0.1, 0.2]
+	
+	for i in range(num_samples):
+		var t: float = float(i) / rate
+		var env: float = exp(-3.8 * t)
+		var sample_val: float = 0.0
+		for k in range(freqs.size()):
+			sample_val += sin(TAU * freqs[k] * t) * weights[k]
+		sample_val *= env * 0.95
+		var int16: int = clampi(int(sample_val * 32767.0), -32768, 32767)
+		bytes.encode_s16(i * 2, int16)
+		
+	return _create_wav(bytes, rate)
+
+func _synthesize_mat_slam() -> AudioStreamWAV:
+	var rate: int = 22050
+	var duration: float = 0.75
+	var num_samples: int = int(rate * duration)
+	var bytes: PackedByteArray = PackedByteArray()
+	bytes.resize(num_samples * 2)
+	
+	for i in range(num_samples):
+		var t: float = float(i) / rate
+		var env: float = exp(-6.5 * t)
+		var freq: float = lerp(90.0, 35.0, clamp(t / 0.35, 0.0, 1.0))
+		var sub: float = sin(TAU * freq * t) * 0.75
+		var noise_env: float = exp(-35.0 * t)
+		var noise: float = (randf() * 2.0 - 1.0) * noise_env * 0.45
+		var sample_val: float = (sub + noise) * env * 0.98
+		var int16: int = clampi(int(sample_val * 32767.0), -32768, 32767)
+		bytes.encode_s16(i * 2, int16)
+		
+	return _create_wav(bytes, rate)
+
+func _synthesize_strike_clean() -> AudioStreamWAV:
+	var rate: int = 22050
+	var duration: float = 0.28
+	var num_samples: int = int(rate * duration)
+	var bytes: PackedByteArray = PackedByteArray()
+	bytes.resize(num_samples * 2)
+	
+	for i in range(num_samples):
+		var t: float = float(i) / rate
+		var env: float = exp(-18.0 * t)
+		var snap_env: float = exp(-45.0 * t)
+		var punch: float = sin(TAU * 160.0 * t) * 0.55
+		var snap: float = (randf() * 2.0 - 1.0) * snap_env * 0.65
+		var sample_val: float = (punch + snap) * env * 0.95
+		var int16: int = clampi(int(sample_val * 32767.0), -32768, 32767)
+		bytes.encode_s16(i * 2, int16)
+		
+	return _create_wav(bytes, rate)
+
+func _synthesize_strike_blocked() -> AudioStreamWAV:
+	var rate: int = 22050
+	var duration: float = 0.22
+	var num_samples: int = int(rate * duration)
+	var bytes: PackedByteArray = PackedByteArray()
+	bytes.resize(num_samples * 2)
+	
+	for i in range(num_samples):
+		var t: float = float(i) / rate
+		var env: float = exp(-16.0 * t)
+		var punch: float = sin(TAU * 110.0 * t) * 0.7
+		var int16: int = clampi(int(punch * env * 32767.0), -32768, 32767)
+		bytes.encode_s16(i * 2, int16)
+		
+	return _create_wav(bytes, rate)
+
+func _synthesize_ref_slap() -> AudioStreamWAV:
+	var rate: int = 22050
+	var duration: float = 0.35
+	var num_samples: int = int(rate * duration)
+	var bytes: PackedByteArray = PackedByteArray()
+	bytes.resize(num_samples * 2)
+	
+	for i in range(num_samples):
+		var t: float = float(i) / rate
+		var env: float = exp(-14.0 * t)
+		var slap_noise: float = (randf() * 2.0 - 1.0) * exp(-40.0 * t) * 0.7
+		var low_thump: float = sin(TAU * 120.0 * t) * 0.45
+		var sample_val: float = (slap_noise + low_thump) * env * 0.95
+		var int16: int = clampi(int(sample_val * 32767.0), -32768, 32767)
+		bytes.encode_s16(i * 2, int16)
+		
+	return _create_wav(bytes, rate)
+
+func _synthesize_rope() -> AudioStreamWAV:
+	var rate: int = 22050
+	var duration: float = 0.45
+	var num_samples: int = int(rate * duration)
+	var bytes: PackedByteArray = PackedByteArray()
+	bytes.resize(num_samples * 2)
+	
+	for i in range(num_samples):
+		var t: float = float(i) / rate
+		var env: float = exp(-8.0 * t)
+		var twang: float = sin(TAU * 65.0 * t) * 0.6 + sin(TAU * 130.0 * t) * 0.3
+		var int16: int = clampi(int(twang * env * 32767.0), -32768, 32767)
+		bytes.encode_s16(i * 2, int16)
+		
+	return _create_wav(bytes, rate)
+
+func _synthesize_crowd(is_cheer: bool) -> AudioStreamWAV:
+	var rate: int = 22050
+	var duration: float = 2.0 if is_cheer else 1.0
+	var num_samples: int = int(rate * duration)
+	var bytes: PackedByteArray = PackedByteArray()
+	bytes.resize(num_samples * 2)
+	
+	var last_noise: float = 0.0
+	for i in range(num_samples):
+		var t: float = float(i) / rate
+		var raw_noise: float = randf() * 2.0 - 1.0
+		last_noise = lerp(last_noise, raw_noise, 0.12)
+		var env: float = 1.0
+		if is_cheer:
+			if t < 0.4:
+				env = t / 0.4
+			else:
+				env = exp(-1.2 * (t - 0.4))
+		else:
+			env = exp(-2.5 * t)
+			
+		var sample_val: float = last_noise * env * 0.8
+		var int16: int = clampi(int(sample_val * 32767.0), -32768, 32767)
+		bytes.encode_s16(i * 2, int16)
+		
+	return _create_wav(bytes, rate)
+
+func _synthesize_finisher_stinger() -> AudioStreamWAV:
+	var rate: int = 22050
+	var duration: float = 1.1
+	var num_samples: int = int(rate * duration)
+	var bytes: PackedByteArray = PackedByteArray()
+	bytes.resize(num_samples * 2)
+	
+	# Power chord with rising pitch sweep and distortion
+	for i in range(num_samples):
+		var t: float = float(i) / rate
+		var env: float = min(t / 0.15, 1.0) * exp(-2.2 * t)
+		var f_base: float = lerp(110.0, 220.0, clamp(t / 0.5, 0.0, 1.0))
+		var chord: float = sin(TAU * f_base * t) * 0.4 + sin(TAU * (f_base * 1.5) * t) * 0.35 + sin(TAU * (f_base * 2.0) * t) * 0.25
+		# Soft overdrive clipping
+		var driven: float = clamp(chord * 1.8, -1.0, 1.0)
+		var sample_val: float = driven * env * 0.95
+		var int16: int = clampi(int(sample_val * 32767.0), -32768, 32767)
+		bytes.encode_s16(i * 2, int16)
+		
+	return _create_wav(bytes, rate)
+
+func _synthesize_victory_fanfare() -> AudioStreamWAV:
+	var rate: int = 22050
+	var duration: float = 2.4
+	var num_samples: int = int(rate * duration)
+	var bytes: PackedByteArray = PackedByteArray()
+	bytes.resize(num_samples * 2)
+	
+	# Fanfare notes: C4 (261.6), E4 (329.6), G4 (392.0), C5 (523.2)
+	var notes: Array[float] = [261.63, 329.63, 392.00, 523.25]
+	var note_starts: Array[float] = [0.0, 0.35, 0.70, 1.05]
+	var note_durs: Array[float] = [0.35, 0.35, 0.35, 1.35]
+	
+	for i in range(num_samples):
+		var t: float = float(i) / rate
+		var sample_val: float = 0.0
+		for n in range(notes.size()):
+			var n_start: float = note_starts[n]
+			var n_dur: float = note_durs[n]
+			if t >= n_start and t < (n_start + n_dur):
+				var local_t: float = t - n_start
+				var env: float = min(local_t / 0.04, 1.0) * exp(-2.0 * local_t)
+				var tone: float = sin(TAU * notes[n] * local_t) * 0.5 + sin(TAU * (notes[n] * 2.0) * local_t) * 0.25 + sin(TAU * (notes[n] * 3.0) * local_t) * 0.12
+				sample_val += tone * env
+		sample_val = clamp(sample_val * 0.85, -1.0, 1.0)
+		var int16: int = clampi(int(sample_val * 32767.0), -32768, 32767)
+		bytes.encode_s16(i * 2, int16)
+		
+	return _create_wav(bytes, rate)
+
+func _synthesize_rope_break() -> AudioStreamWAV:
+	var rate: int = 22050
+	var duration: float = 0.5
+	var num_samples: int = int(rate * duration)
+	var bytes: PackedByteArray = PackedByteArray()
+	bytes.resize(num_samples * 2)
+	
+	# Dual-tone buzzer alert (220 Hz + 277 Hz)
+	for i in range(num_samples):
+		var t: float = float(i) / rate
+		var env: float = min(t / 0.02, 1.0) * exp(-5.0 * t)
+		var buzzer: float = (sin(TAU * 220.0 * t) + sin(TAU * 277.0 * t)) * 0.5
+		# Square-ish grit
+		var clipped: float = 0.7 if buzzer > 0.0 else -0.7
+		var sample_val: float = clipped * env * 0.8
+		var int16: int = clampi(int(sample_val * 32767.0), -32768, 32767)
+		bytes.encode_s16(i * 2, int16)
+		
+	return _create_wav(bytes, rate)
+
+func _synthesize_count_tone(count: int) -> AudioStreamWAV:
+	var rate: int = 22050
+	var duration: float = 0.45
+	var num_samples: int = int(rate * duration)
+	var bytes: PackedByteArray = PackedByteArray()
+	bytes.resize(num_samples * 2)
+	
+	# Distinct pitch per count (count 1: 300 Hz, count 2: 400 Hz, count 3: 520 Hz)
+	var base_freq: float = 260.0 + (count * 90.0)
+	
+	for i in range(num_samples):
+		var t: float = float(i) / rate
+		var env: float = min(t / 0.015, 1.0) * exp(-7.5 * t)
+		var tone: float = sin(TAU * base_freq * t) * 0.6 + sin(TAU * (base_freq * 2.0) * t) * 0.3
+		var transient_noise: float = (randf() * 2.0 - 1.0) * exp(-40.0 * t) * 0.3
+		var sample_val: float = (tone + transient_noise) * env * 0.95
+		var int16: int = clampi(int(sample_val * 32767.0), -32768, 32767)
+		bytes.encode_s16(i * 2, int16)
+		
+	return _create_wav(bytes, rate)
+
+```
+
 ## File: scripts/ring/broadcast_camera.gd
 
-\\gdscript
+```gdscript
 class_name BroadcastCamera
 extends Camera3D
 
@@ -2805,10 +2882,207 @@ func _physics_process(delta: float) -> void:
 	
 	var look_target: Vector3 = Vector3(midpoint.x, 0.9, midpoint.z)
 	look_at(look_target, Vector3.UP)
-\\n
+
+```
+
+## File: scripts/ring/ring.gd
+
+```gdscript
+class_name WrestlingRing
+extends Node3D
+
+## 3D Wrestling Ring with canvas, 4 turnbuckle posts, and 3-tiered ropes.
+
+@export var mat_size: float = 8.0
+@export var rope_radius: float = 3.8
+
+func _ready() -> void:
+	pass
+
+```
+
+## File: scripts/referee/referee.gd
+
+```gdscript
+class_name Referee
+extends Node3D
+
+## Neutral referee KingCobraJFS (1991-2025).
+## Untargetable, non-colliding official featuring a permanent visible glowing halo.
+## The match rules govern the authoritative count; the referee communicates it.
+
+signal count_pulse(count_number: int)
+
+enum RefereeState {
+	IDLE,
+	OBSERVING,
+	RUNNING_TO_PIN,
+	COUNTING_PIN,
+	SIGNAL_ROPE_BREAK,
+	VICTORY
+}
+
+@export var halo_node: Node3D
+@export var mesh_instance: Node3D
+@export var count_label_3d: Label3D
+
+var current_state: RefereeState = RefereeState.OBSERVING
+var target_fighter_1: Node3D
+var target_fighter_2: Node3D
+var current_count: int = 0
+var halo_base_scale: Vector3 = Vector3.ONE
+var halo_pulse_timer: float = 0.0
+var halo_material: StandardMaterial3D
+
+func _ready() -> void:
+	if halo_node:
+		halo_base_scale = halo_node.scale
+		# Find halo mesh material if present
+		var halo_mesh: MeshInstance3D = halo_node.get_node_or_null("HaloMesh") as MeshInstance3D
+		if halo_mesh and halo_mesh.material_override:
+			halo_material = halo_mesh.material_override as StandardMaterial3D
+	
+	if count_label_3d:
+		count_label_3d.visible = false
+
+func _process(delta: float) -> void:
+	_update_halo_visuals(delta)
+	
+	match current_state:
+		RefereeState.OBSERVING:
+			_observe_match(delta)
+		RefereeState.RUNNING_TO_PIN:
+			pass
+		RefereeState.COUNTING_PIN:
+			pass
+		RefereeState.SIGNAL_ROPE_BREAK:
+			pass
+		RefereeState.VICTORY:
+			pass
+
+func setup_targets(f1: Node3D, f2: Node3D) -> void:
+	target_fighter_1 = f1
+	target_fighter_2 = f2
+
+func _observe_match(delta: float) -> void:
+	if not is_instance_valid(target_fighter_1) or not is_instance_valid(target_fighter_2):
+		return
+	
+	# Position referee on side of the action, keeping ~2.5m distance
+	var midpoint: Vector3 = (target_fighter_1.global_position + target_fighter_2.global_position) * 0.5
+	var perp_dir: Vector3 = (target_fighter_2.global_position - target_fighter_1.global_position).cross(Vector3.UP).normalized()
+	if perp_dir.is_zero_approx():
+		perp_dir = Vector3.FORWARD
+	
+	var desired_pos: Vector3 = midpoint + perp_dir * 2.2
+	# Clamp inside ring bounds
+	desired_pos.x = clamp(desired_pos.x, -2.8, 2.8)
+	desired_pos.z = clamp(desired_pos.z, -2.8, 2.8)
+	desired_pos.y = 0.0 # Canvas height
+	
+	global_position = global_position.lerp(desired_pos, 3.0 * delta)
+	
+	# Look towards midpoint
+	var look_target: Vector3 = Vector3(midpoint.x, global_position.y, midpoint.z)
+	if not global_position.is_equal_approx(look_target):
+		look_at(look_target, Vector3.UP)
+
+func on_pin_started(pin_position: Vector3) -> void:
+	current_state = RefereeState.COUNTING_PIN
+	current_count = 0
+	
+	# Move near the pinned fighters
+	var offset: Vector3 = Vector3(1.2, 0.0, 0.0)
+	global_position = pin_position + offset
+	global_position.x = clamp(global_position.x, -3.2, 3.2)
+	global_position.z = clamp(global_position.z, -3.2, 3.2)
+	global_position.y = 0.0
+	
+	look_at(Vector3(pin_position.x, global_position.y, pin_position.z), Vector3.UP)
+	
+	# Drop to mat pose
+	if mesh_instance:
+		mesh_instance.position.y = -0.35 # Kneeling down to canvas
+	
+	if count_label_3d:
+		count_label_3d.text = ""
+		count_label_3d.visible = true
+
+func on_pin_count(count_num: int) -> void:
+	current_count = count_num
+	halo_pulse_timer = 0.4
+	
+	if count_label_3d:
+		count_label_3d.text = str(count_num) + "!"
+		count_label_3d.modulate = Color(1.0, 0.85, 0.2)
+	
+	# Canvas slap bounce animation
+	if mesh_instance:
+		var tween: Tween = create_tween()
+		tween.tween_property(mesh_instance, "position:y", -0.45, 0.08)
+		tween.tween_property(mesh_instance, "position:y", -0.35, 0.12)
+	
+	count_pulse.emit(count_num)
+
+func on_rope_break() -> void:
+	current_state = RefereeState.SIGNAL_ROPE_BREAK
+	if count_label_3d:
+		count_label_3d.text = "ROPE BREAK!"
+		count_label_3d.modulate = Color(1.0, 0.2, 0.2)
+	
+	# Stand up and signal
+	if mesh_instance:
+		mesh_instance.position.y = 0.0
+	
+	var tween: Tween = create_tween()
+	tween.tween_interval(1.2)
+	tween.tween_callback(func():
+		if count_label_3d:
+			count_label_3d.visible = false
+		current_state = RefereeState.OBSERVING
+	)
+
+func on_pin_broken() -> void:
+	if current_state == RefereeState.COUNTING_PIN:
+		current_state = RefereeState.OBSERVING
+		if count_label_3d:
+			count_label_3d.visible = false
+		if mesh_instance:
+			mesh_instance.position.y = 0.0
+
+func on_match_won(winner_position: Vector3) -> void:
+	current_state = RefereeState.VICTORY
+	if count_label_3d:
+		count_label_3d.text = "WINNER!"
+		count_label_3d.modulate = Color(0.2, 1.0, 0.4)
+		count_label_3d.visible = true
+	if mesh_instance:
+		mesh_instance.position.y = 0.0
+	look_at(Vector3(winner_position.x, global_position.y, winner_position.z), Vector3.UP)
+
+func _update_halo_visuals(delta: float) -> void:
+	if not halo_node:
+		return
+	
+	# Constant gentle rotation
+	halo_node.rotate_y(1.5 * delta)
+	
+	if halo_pulse_timer > 0.0:
+		halo_pulse_timer -= delta
+		var pulse_strength: float = clamp(halo_pulse_timer / 0.4, 0.0, 1.0)
+		halo_node.scale = halo_base_scale * (1.0 + 0.45 * pulse_strength)
+		if halo_material:
+			halo_material.emission_energy_multiplier = 3.0 + 4.0 * pulse_strength
+	else:
+		halo_node.scale = halo_base_scale
+		if halo_material:
+			halo_material.emission_energy_multiplier = 2.5
+
+```
+
 ## File: scripts/ui/character_select.gd
 
-\\gdscript
+```gdscript
 class_name CharacterSelect
 extends Control
 
@@ -3065,10 +3339,12 @@ func _start_match() -> void:
 		AudioManager.instance.play_ring_bell()
 	character_selected.emit(p1_id, p2_id, p2_is_cpu)
 	get_tree().change_scene_to_file("res://scenes/main.tscn")
-\\n
+
+```
+
 ## File: scripts/ui/match_hud.gd
 
-\\gdscript
+```gdscript
 class_name MatchHUD
 extends Control
 
@@ -3272,844 +3548,219 @@ func _on_match_ended(winner: Fighter, method: String) -> void:
 		victory_panel.visible = true
 		if victory_label:
 			victory_label.text = winner.char_name.to_upper() + " WINS!\n[" + method + "]\n\nPress [R] to Rematch | [ESC] Character Select"
-\\n
-## File: scenes/main.tscn
 
-\\tscn
-[gd_scene format=3 uid="uid://dmainscene01"]
+```
+
+## File: tests/test_visual_presentation.gd
+
+```gdscript
+extends SceneTree
+
+## Dedicated Visual Presentation Test for LOLCOW WRESTLING
+## Verifies skinned mesh loading, 22-bone humanoid armature, 16-clip animation library,
+## state playback routing, stride scaling, and fallback safety for unmigrated characters.
+
+var total_tests: int = 0
+var passed_tests: int = 0
+var failed_tests: int = 0
+
+func _init() -> void:
+	print("==================================================")
+	print("RUNNING VISUAL PRESENTATION & SKELETAL RIG TESTS")
+	print("==================================================")
+	
+	test_tophiachu_skeletal_rig_and_bones()
+	test_tophiachu_animation_library()
+	test_state_driven_animation_routing()
+	test_visual_root_legacy_override_disabled_for_rigged()
+	test_locomotion_stride_scaling()
+	test_unmigrated_roster_fallback_safety()
+	
+	print("==================================================")
+	print("PRESENTATION TEST RESULTS: %d Passed, %d Failed, %d Total" % [passed_tests, failed_tests, total_tests])
+	print("==================================================")
+	
+	if failed_tests > 0:
+		quit(1)
+	else:
+		quit(0)
+
+func assert_test(condition: bool, test_name: String) -> void:
+	total_tests += 1
+	if condition:
+		passed_tests += 1
+		print("[PASS] %s" % test_name)
+	else:
+		failed_tests += 1
+		printerr("[FAIL] %s" % test_name)
+
+func test_tophiachu_skeletal_rig_and_bones() -> void:
+	var fighter_scene = load("res://scenes/fighter/fighter.tscn")
+	assert_test(fighter_scene != null, "Tophiachu Rig: fighter.tscn loaded successfully")
+	
+	var fighter = fighter_scene.instantiate()
+	root.add_child(fighter)
+	fighter.load_character_data("tophiachu")
+	
+	assert_test(fighter.presentation != null, "Tophiachu Rig: FighterPresentation component instantiated")
+	assert_test(fighter.presentation.has_skeletal_rig == true, "Tophiachu Rig: has_skeletal_rig is true")
+	assert_test(fighter.is_rigged() == true, "Tophiachu Rig: fighter.is_rigged() reports true")
+	assert_test(is_instance_valid(fighter.presentation.skeleton), "Tophiachu Rig: Skeleton3D node valid")
+	assert_test(is_instance_valid(fighter.presentation.anim_player), "Tophiachu Rig: AnimationPlayer node valid")
+	
+	var skel: Skeleton3D = fighter.presentation.skeleton
+	var expected_bones = [
+		"Root", "Hips", "Spine", "Chest", "Neck", "Head",
+		"Clavicle.L", "Clavicle.R", "UpperArm.L", "UpperArm.R",
+		"Forearm.L", "Forearm.R", "Hand.L", "Hand.R",
+		"Thigh.L", "Thigh.R", "Shin.L", "Shin.R",
+		"Foot.L", "Foot.R", "Toe.L", "Toe.R"
+	]
+	
+	var all_bones_found: bool = true
+	for b_name in expected_bones:
+		var b_idx = skel.find_bone(b_name)
+		if b_idx == -1:
+			all_bones_found = false
+			printerr("Missing bone in skeleton: %s" % b_name)
+	assert_test(all_bones_found, "Tophiachu Rig: All 22 canonical humanoid bones found in Skeleton3D")
+	assert_test(skel.get_bone_count() >= 22, "Tophiachu Rig: Bone count is at least 22 (actual: %d)" % skel.get_bone_count())
+	
+	fighter.queue_free()
+
+func test_tophiachu_animation_library() -> void:
+	var fighter_scene = load("res://scenes/fighter/fighter.tscn")
+	var fighter = fighter_scene.instantiate()
+	root.add_child(fighter)
+	fighter.load_character_data("tophiachu")
+	
+	var ap: AnimationPlayer = fighter.presentation.anim_player
+	var expected_clips = [
+		"idle", "walk", "strike", "knockdown", "getup",
+		"block", "reversal", "grapple", "throw_attacker", "throw_defender",
+		"pinning", "pinned", "submission_attacker", "submission_defender",
+		"victory", "defeated"
+	]
+	
+	var all_clips_exist: bool = true
+	for c_name in expected_clips:
+		if not ap.has_animation(c_name):
+			all_clips_exist = false
+			printerr("Missing animation clip: %s" % c_name)
+	assert_test(all_clips_exist, "Tophiachu Library: All 16 keyframed clips present in AnimationPlayer")
+	
+	# Verify looping behavior
+	var idle_anim: Animation = ap.get_animation("idle")
+	var walk_anim: Animation = ap.get_animation("walk")
+	var strike_anim: Animation = ap.get_animation("strike")
+	
+	assert_test(idle_anim.loop_mode == Animation.LOOP_LINEAR, "Tophiachu Library: 'idle' loop_mode is LOOP_LINEAR")
+	assert_test(walk_anim.loop_mode == Animation.LOOP_LINEAR, "Tophiachu Library: 'walk' loop_mode is LOOP_LINEAR")
+	assert_test(strike_anim.loop_mode == Animation.LOOP_NONE, "Tophiachu Library: 'strike' loop_mode is LOOP_NONE")
+	
+	fighter.queue_free()
+
+func test_state_driven_animation_routing() -> void:
+	var fighter_scene = load("res://scenes/fighter/fighter.tscn")
+	var fighter = fighter_scene.instantiate()
+	root.add_child(fighter)
+	fighter.load_character_data("tophiachu")
+	
+	var pres = fighter.presentation
+	
+	pres.play_state_animation(Fighter.State.IDLE)
+	assert_test(pres.current_anim == "idle", "State Routing: IDLE plays 'idle'")
+	
+	pres.play_state_animation(Fighter.State.MOVING)
+	assert_test(pres.current_anim == "walk", "State Routing: MOVING plays 'walk'")
+	
+	pres.play_state_animation(Fighter.State.STRIKING)
+	assert_test(pres.current_anim == "strike", "State Routing: STRIKING plays 'strike'")
+	
+	pres.play_state_animation(Fighter.State.KNOCKED_DOWN)
+	assert_test(pres.current_anim == "knockdown", "State Routing: KNOCKED_DOWN plays 'knockdown'")
+	
+	pres.play_state_animation(Fighter.State.GETTING_UP)
+	assert_test(pres.current_anim == "getup", "State Routing: GETTING_UP plays 'getup'")
+	
+	pres.play_state_animation(Fighter.State.VICTORY)
+	assert_test(pres.current_anim == "victory", "State Routing: VICTORY plays 'victory'")
+	
+	pres.play_state_animation(Fighter.State.DEFEATED)
+	assert_test(pres.current_anim == "defeated", "State Routing: DEFEATED plays 'defeated'")
+	
+	fighter.queue_free()
+
+func test_visual_root_legacy_override_disabled_for_rigged() -> void:
+	var fighter_scene = load("res://scenes/fighter/fighter.tscn")
+	var fighter = fighter_scene.instantiate()
+	root.add_child(fighter)
+	fighter.load_character_data("tophiachu")
+	
+	# Transition fighter to KNOCKED_DOWN
+	fighter.current_state = Fighter.State.KNOCKED_DOWN
+	fighter._play_state_animation(Fighter.State.KNOCKED_DOWN)
+	
+	# visual_root rotation should NOT be tipped over (legacy mannequin did -PI/2)
+	assert_test(fighter.visual_root.rotation.x == 0.0, "Legacy Guard: Rigged fighter visual_root.rotation.x remains 0 on KNOCKED_DOWN")
+	assert_test(fighter.visual_root.position.y == 0.0, "Legacy Guard: Rigged fighter visual_root.position.y remains 0 on KNOCKED_DOWN")
+	
+	# Transition to DEFEATED
+	fighter.current_state = Fighter.State.DEFEATED
+	fighter._play_state_animation(Fighter.State.DEFEATED)
+	assert_test(fighter.visual_root.rotation.x == 0.0, "Legacy Guard: Rigged fighter visual_root.rotation.x remains 0 on DEFEATED")
+	
+	fighter.queue_free()
+
+func test_locomotion_stride_scaling() -> void:
+	var fighter_scene = load("res://scenes/fighter/fighter.tscn")
+	var fighter = fighter_scene.instantiate()
+	root.add_child(fighter)
+	fighter.load_character_data("tophiachu")
+	
+	fighter.current_state = Fighter.State.MOVING
+	# Set velocity to match nominal speed: 3.0 + (stat_mobility * 0.4)
+	var nominal = 3.0 + (fighter.stat_mobility * 0.4)
+	fighter.velocity = Vector3(nominal, 0, 0)
+	fighter.presentation.update_locomotion_stride()
+	
+	assert_test(abs(fighter.presentation.anim_player.speed_scale - 1.0) < 0.05, "Stride Scaling: Speed scale is ~1.0 at nominal speed")
+	
+	# Faster sprint
+	fighter.velocity = Vector3(nominal * 1.5, 0, 0)
+	fighter.presentation.update_locomotion_stride()
+	assert_test(abs(fighter.presentation.anim_player.speed_scale - 1.5) < 0.05, "Stride Scaling: Speed scale increases to ~1.5 when moving faster")
+	
+	# Stationary or IDLE
+	fighter.current_state = Fighter.State.IDLE
+	fighter.presentation.update_locomotion_stride()
+	assert_test(fighter.presentation.anim_player.speed_scale == 1.0, "Stride Scaling: Speed scale resets to 1.0 in IDLE")
+	
+	fighter.queue_free()
+
+func test_unmigrated_roster_fallback_safety() -> void:
+	var fighter_scene = load("res://scenes/fighter/fighter.tscn")
+	var fighter = fighter_scene.instantiate()
+	root.add_child(fighter)
+	# Load an unmigrated character
+	fighter.load_character_data("cyraxx")
+	
+	assert_test(fighter.presentation != null, "Fallback Safety: Presentation component exists for unmigrated fighter")
+	assert_test(fighter.is_rigged() == false, "Fallback Safety: Unmigrated fighter is_rigged() is false")
+	
+	# Check that legacy state changes still set visual_root rotations without errors
+	fighter.current_state = Fighter.State.KNOCKED_DOWN
+	# Legacy code sets visual_root.rotation.x = -PI/2
+	fighter.visual_root.rotation.x = -PI / 2.0
+	assert_test(abs(fighter.visual_root.rotation.x - (-PI / 2.0)) < 0.01, "Fallback Safety: Legacy mannequin rotation applies cleanly to unmigrated fighter")
+	
+	fighter.queue_free()
+
+```
 
-[ext_resource type="Script" path="res://scripts/core/main_scene.gd" id="1_main"]
-[ext_resource type="PackedScene" path="res://scenes/arena/ring_arena.tscn" id="2_arena"]
-[ext_resource type="PackedScene" path="res://scenes/fighter/fighter.tscn" id="3_fighter"]
-[ext_resource type="PackedScene" path="res://scenes/referee/referee.tscn" id="4_referee"]
-[ext_resource type="Script" path="res://scripts/core/match_manager.gd" id="5_match"]
-[ext_resource type="Script" path="res://scripts/ring/broadcast_camera.gd" id="6_cam"]
-[ext_resource type="Script" path="res://scripts/ai/cpu_controller.gd" id="7_cpu"]
-[ext_resource type="PackedScene" path="res://scenes/ui/match_hud.tscn" id="8_hud"]
-[ext_resource type="Script" path="res://scripts/core/audio_manager.gd" id="9_audio"]
-
-[sub_resource type="Environment" id="Environment_arena"]
-background_mode = 1
-background_color = Color(0.04, 0.04, 0.05, 1)
-ambient_light_source = 2
-ambient_light_color = Color(0.25, 0.25, 0.3, 1)
-tonemap_mode = 2
-glow_enabled = true
-glow_intensity = 0.8
-glow_bloom = 0.25
-
-[node name="Main" type="Node3D" node_paths=PackedStringArray("fighter_1", "fighter_2", "cpu_controller_p2", "match_manager")]
-script = ExtResource("1_main")
-fighter_1 = NodePath("Tophiachu")
-fighter_2 = NodePath("Cyraxx")
-cpu_controller_p2 = NodePath("CPUController_P2")
-match_manager = NodePath("MatchManager")
-
-[node name="AudioManager" type="Node" parent="."]
-script = ExtResource("9_audio")
-
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
-environment = SubResource("Environment_arena")
-
-[node name="SpotLight_Center" type="SpotLight3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 9, 0)
-light_color = Color(1, 0.98, 0.9, 1)
-light_energy = 8.0
-spot_range = 16.0
-spot_angle = 45.0
-
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
-transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 5, 8, 5)
-light_color = Color(0.9, 0.9, 0.95, 1)
-light_energy = 1.2
-shadow_enabled = true
-
-[node name="RingArena" parent="." instance=ExtResource("2_arena")]
-
-[node name="Tophiachu" parent="." instance=ExtResource("3_fighter")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.8, 0, 0)
-character_id = "tophiachu"
-player_index = 1
-is_cpu = false
-
-[node name="Cyraxx" parent="." instance=ExtResource("3_fighter")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.8, 0, 0)
-character_id = "cyraxx"
-player_index = 2
-is_cpu = true
-
-[node name="CPUController_P2" type="Node" parent="." node_paths=PackedStringArray("fighter")]
-script = ExtResource("7_cpu")
-fighter = NodePath("../Cyraxx")
-
-[node name="Referee" parent="." instance=ExtResource("4_referee")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -2.4)
-
-[node name="MatchManager" type="Node" parent="." node_paths=PackedStringArray("fighter_1", "fighter_2", "referee", "hud")]
-script = ExtResource("5_match")
-fighter_1 = NodePath("../Tophiachu")
-fighter_2 = NodePath("../Cyraxx")
-referee = NodePath("../Referee")
-hud = NodePath("../CanvasLayer/MatchHUD")
-
-[node name="BroadcastCamera" type="Camera3D" parent="." node_paths=PackedStringArray("target_1", "target_2")]
-transform = Transform3D(1, 0, 0, 0, 0.866025, 0.5, 0, -0.5, 0.866025, 0, 4.8, 9)
-current = true
-fov = 55.0
-script = ExtResource("6_cam")
-target_1 = NodePath("../Tophiachu")
-target_2 = NodePath("../Cyraxx")
-
-[node name="CanvasLayer" type="CanvasLayer" parent="."]
-
-[node name="MatchHUD" parent="CanvasLayer" node_paths=PackedStringArray("match_manager") instance=ExtResource("8_hud")]
-match_manager = NodePath("../../MatchManager")
-\\n
-## File: scenes/fighter/fighter.tscn
-
-\\tscn
-[gd_scene format=3 uid="uid://dfighter001"]
-
-[ext_resource type="Script" path="res://scripts/fighter/fighter.gd" id="1_script"]
-
-[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_root"]
-radius = 0.45
-height = 1.8
-
-[node name="Fighter" type="CharacterBody3D" node_paths=PackedStringArray("visual_root")]
-collision_layer = 2
-collision_mask = 3
-script = ExtResource("1_script")
-visual_root = NodePath("VisualRoot")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
-shape = SubResource("CapsuleShape3D_root")
-
-[node name="VisualRoot" type="Node3D" parent="."]
-\\n
-## File: scenes/referee/referee.tscn
-
-\\tscn
-[gd_scene format=3 uid="uid://b23k1v4j7m9n"]
-
-[ext_resource type="Script" path="res://scripts/referee/referee.gd" id="1_script"]
-[ext_resource type="PackedScene" path="res://assets/models/referee_cobra.glb" id="2_model"]
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_halo"]
-albedo_color = Color(1, 0.85, 0.2, 1)
-metallic = 0.2
-roughness = 0.1
-emission_enabled = true
-emission = Color(1, 0.85, 0.2, 1)
-emission_energy_multiplier = 3.0
-
-[sub_resource type="TorusMesh" id="TorusMesh_halo"]
-material = SubResource("StandardMaterial3D_halo")
-inner_radius = 0.3
-outer_radius = 0.38
-rings = 24
-ring_segments = 16
-
-[node name="Referee" type="Node3D" node_paths=PackedStringArray("halo_node", "mesh_instance", "count_label_3d")]
-script = ExtResource("1_script")
-halo_node = NodePath("HaloAnchor")
-mesh_instance = NodePath("ModelAnchor")
-count_label_3d = NodePath("CountLabel3D")
-
-[node name="ModelAnchor" type="Node3D" parent="."]
-
-[node name="Model" parent="ModelAnchor" instance=ExtResource("2_model")]
-
-[node name="HaloAnchor" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.3, 0)
-
-[node name="HaloMesh" type="MeshInstance3D" parent="HaloAnchor"]
-mesh = SubResource("TorusMesh_halo")
-surface_material_override/0 = SubResource("StandardMaterial3D_halo")
-
-[node name="CountLabel3D" type="Label3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.7, 0)
-billboard = 1
-font_size = 64
-outline_size = 16
-text = "1!"
-\\n
-## File: scenes/arena/ring_arena.tscn
-
-\\tscn
-[gd_scene format=3 uid="uid://dpw54n6g87v8"]
-
-[ext_resource type="PackedScene" path="res://assets/models/ring_arena.glb" id="1_arena"]
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_mat"]
-size = Vector3(8, 0.4, 8)
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_rope_ns"]
-size = Vector3(8, 2, 0.2)
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_rope_ew"]
-size = Vector3(0.2, 2, 8)
-
-[node name="RingArena" type="Node3D"]
-
-[node name="Model" parent="." instance=ExtResource("1_arena")]
-
-[node name="RingFloorCollision" type="StaticBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.2, 0)
-collision_layer = 1
-collision_mask = 3
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="RingFloorCollision"]
-shape = SubResource("BoxShape3D_mat")
-
-[node name="RopeNorth" type="StaticBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 3.85)
-collision_layer = 1
-collision_mask = 2
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="RopeNorth"]
-shape = SubResource("BoxShape3D_rope_ns")
-
-[node name="RopeSouth" type="StaticBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -3.85)
-collision_layer = 1
-collision_mask = 2
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="RopeSouth"]
-shape = SubResource("BoxShape3D_rope_ns")
-
-[node name="RopeEast" type="StaticBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.85, 1, 0)
-collision_layer = 1
-collision_mask = 2
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="RopeEast"]
-shape = SubResource("BoxShape3D_rope_ew")
-
-[node name="RopeWest" type="StaticBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.85, 1, 0)
-collision_layer = 1
-collision_mask = 2
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="RopeWest"]
-shape = SubResource("BoxShape3D_rope_ew")
-\\n
-## File: scenes/ui/character_select.tscn
-
-\\tscn
-[gd_scene format=3 uid="uid://dcharselect01"]
-
-[ext_resource type="Script" path="res://scripts/ui/character_select.gd" id="1_script"]
-[ext_resource type="Script" path="res://scripts/core/audio_manager.gd" id="2_audio"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
-bg_color = Color(0.06, 0.06, 0.08, 1)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card_p1"]
-bg_color = Color(0.08, 0.12, 0.16, 0.9)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.2, 0.7, 0.9, 0.8)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card_p2"]
-bg_color = Color(0.16, 0.08, 0.08, 0.9)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.9, 0.3, 0.3, 0.8)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_grid"]
-bg_color = Color(0.1, 0.1, 0.12, 0.85)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[node name="CharacterSelect" type="Control" node_paths=PackedStringArray("grid_container", "p1_name_label", "p1_title_label", "p1_archetype_label", "p1_stats_container", "p1_finisher_label", "p1_trait_label", "p2_name_label", "p2_title_label", "p2_archetype_label", "p2_stats_container", "p2_finisher_label", "p2_trait_label", "cpu_toggle_button", "start_match_button")]
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-script = ExtResource("1_script")
-grid_container = NodePath("CenterPanel/GridContainer")
-p1_name_label = NodePath("P1_Card/VBox/Name")
-p1_title_label = NodePath("P1_Card/VBox/Title")
-p1_archetype_label = NodePath("P1_Card/VBox/Archetype")
-p1_stats_container = NodePath("P1_Card/VBox/Stats")
-p1_finisher_label = NodePath("P1_Card/VBox/Finisher")
-p1_trait_label = NodePath("P1_Card/VBox/Trait")
-p2_name_label = NodePath("P2_Card/VBox/Name")
-p2_title_label = NodePath("P2_Card/VBox/Title")
-p2_archetype_label = NodePath("P2_Card/VBox/Archetype")
-p2_stats_container = NodePath("P2_Card/VBox/Stats")
-p2_finisher_label = NodePath("P2_Card/VBox/Finisher")
-p2_trait_label = NodePath("P2_Card/VBox/Trait")
-cpu_toggle_button = NodePath("CenterPanel/VBoxActions/CPUToggleBtn")
-start_match_button = NodePath("CenterPanel/VBoxActions/StartMatchBtn")
-
-[node name="AudioManager" type="Node" parent="."]
-script = ExtResource("2_audio")
-
-[node name="Background" type="Panel" parent="."]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_bg")
-
-[node name="Header" type="VBoxContainer" parent="."]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_top = 25.0
-offset_bottom = 105.0
-grow_horizontal = 2
-theme_override_constants/separation = 4
-
-[node name="Title" type="Label" parent="Header"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.85, 0.25, 1)
-theme_override_font_sizes/font_size = 36
-text = "LOLCOW WRESTLING: OFFLINE MAYHEM"
-horizontal_alignment = 1
-
-[node name="Subtitle" type="Label" parent="Header"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.7, 0.7, 0.75, 1)
-theme_override_font_sizes/font_size = 18
-text = "CHOOSE YOUR FIGHTER"
-horizontal_alignment = 1
-
-[node name="P1_Card" type="PanelContainer" parent="."]
-layout_mode = 1
-anchors_preset = 9
-anchor_bottom = 1.0
-offset_left = 40.0
-offset_top = 130.0
-offset_right = 380.0
-offset_bottom = -70.0
-grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_card_p1")
-
-[node name="VBox" type="VBoxContainer" parent="P1_Card"]
-layout_mode = 2
-offset_left = 15.0
-offset_top = 15.0
-offset_right = 325.0
-offset_bottom = 865.0
-theme_override_constants/separation = 10
-
-[node name="Tag" type="Label" parent="P1_Card/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.2, 0.8, 1, 1)
-theme_override_font_sizes/font_size = 20
-text = "PLAYER 1"
-
-[node name="Name" type="Label" parent="P1_Card/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 26
-text = "TOPHIACHU"
-
-[node name="Title" type="Label" parent="P1_Card/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.8, 0.8, 0.5, 1)
-theme_override_font_sizes/font_size = 14
-text = "\"Live & Unfiltered\""
-
-[node name="Archetype" type="Label" parent="P1_Card/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.65, 0.85, 0.65, 1)
-theme_override_font_sizes/font_size = 15
-text = "Heavyweight Counter-Brawler"
-
-[node name="HSeparator1" type="HSeparator" parent="P1_Card/VBox"]
-layout_mode = 2
-
-[node name="Stats" type="VBoxContainer" parent="P1_Card/VBox"]
-layout_mode = 2
-theme_override_constants/separation = 6
-
-[node name="HSeparator2" type="HSeparator" parent="P1_Card/VBox"]
-layout_mode = 2
-
-[node name="Finisher" type="Label" parent="P1_Card/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.6, 0.3, 1)
-theme_override_font_sizes/font_size = 15
-text = "FINISHER: Live-Stream Shutdown"
-autowrap_mode = 2
-
-[node name="Trait" type="Label" parent="P1_Card/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.9, 0.9, 0.5, 1)
-theme_override_font_sizes/font_size = 14
-text = "TRAIT: Last Word"
-autowrap_mode = 2
-
-[node name="Prompt" type="Label" parent="P1_Card/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.5, 0.7, 0.8, 1)
-theme_override_font_sizes/font_size = 13
-text = "\n[W/A/S/D] Navigate P1"
-
-[node name="P2_Card" type="PanelContainer" parent="."]
-layout_mode = 1
-anchors_preset = 11
-anchor_left = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -380.0
-offset_top = 130.0
-offset_right = -40.0
-offset_bottom = -70.0
-grow_horizontal = 0
-grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_card_p2")
-
-[node name="VBox" type="VBoxContainer" parent="P2_Card"]
-layout_mode = 2
-offset_left = 15.0
-offset_top = 15.0
-offset_right = 325.0
-offset_bottom = 865.0
-theme_override_constants/separation = 10
-
-[node name="Tag" type="Label" parent="P2_Card/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.3, 0.3, 1)
-theme_override_font_sizes/font_size = 20
-text = "PLAYER 2"
-
-[node name="Name" type="Label" parent="P2_Card/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 26
-text = "CYRAXX"
-
-[node name="Title" type="Label" parent="P2_Card/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.8, 0.8, 0.5, 1)
-theme_override_font_sizes/font_size = 14
-text = "\"Feedback Frenzy\""
-
-[node name="Archetype" type="Label" parent="P2_Card/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.65, 0.85, 0.65, 1)
-theme_override_font_sizes/font_size = 15
-text = "Lightweight Burst Striker"
-
-[node name="HSeparator1" type="HSeparator" parent="P2_Card/VBox"]
-layout_mode = 2
-
-[node name="Stats" type="VBoxContainer" parent="P2_Card/VBox"]
-layout_mode = 2
-theme_override_constants/separation = 6
-
-[node name="HSeparator2" type="HSeparator" parent="P2_Card/VBox"]
-layout_mode = 2
-
-[node name="Finisher" type="Label" parent="P2_Card/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.6, 0.3, 1)
-theme_override_font_sizes/font_size = 15
-text = "FINISHER: Raxx and Ruin"
-autowrap_mode = 2
-
-[node name="Trait" type="Label" parent="P2_Card/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.9, 0.9, 0.5, 1)
-theme_override_font_sizes/font_size = 14
-text = "TRAIT: Overdrive"
-autowrap_mode = 2
-
-[node name="Prompt" type="Label" parent="P2_Card/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.8, 0.5, 0.5, 1)
-theme_override_font_sizes/font_size = 13
-text = "\n[Arrows] Navigate P2"
-
-[node name="CenterPanel" type="Panel" parent="."]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -540.0
-offset_top = -410.0
-offset_right = 540.0
-offset_bottom = 470.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_grid")
-
-[node name="GridContainer" type="GridContainer" parent="CenterPanel"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -380.0
-offset_top = -180.0
-offset_right = 380.0
-offset_bottom = 60.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/h_separation = 20
-theme_override_constants/v_separation = 20
-columns = 4
-
-[node name="VBoxActions" type="VBoxContainer" parent="CenterPanel"]
-layout_mode = 1
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -220.0
-offset_top = -340.0
-offset_right = 220.0
-offset_bottom = -200.0
-grow_horizontal = 2
-grow_vertical = 0
-theme_override_constants/separation = 16
-
-[node name="CPUToggleBtn" type="Button" parent="CenterPanel/VBoxActions"]
-custom_minimum_size = Vector2(0, 48)
-layout_mode = 2
-theme_override_font_sizes/font_size = 18
-text = "P2 MODE: [CPU]"
-
-[node name="StartMatchBtn" type="Button" parent="CenterPanel/VBoxActions"]
-custom_minimum_size = Vector2(0, 56)
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.9, 0.2, 1)
-theme_override_font_sizes/font_size = 22
-text = "FIGHT! [SPACE / ENTER]"
-
-[node name="Footer" type="VBoxContainer" parent="."]
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -65.0
-offset_bottom = -15.0
-grow_horizontal = 2
-grow_vertical = 0
-theme_override_constants/separation = 4
-
-[node name="Instructions" type="Label" parent="Footer"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.7, 0.7, 0.75, 1)
-theme_override_font_sizes/font_size = 15
-text = "[W/A/S/D] P1 Select  |  [Arrows] P2 Select  |  [C] Toggle P2 CPU  |  [SPACE / ENTER] Start Match"
-horizontal_alignment = 1
-
-[node name="RefereeMemorial" type="Label" parent="Footer"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.85, 0.3, 0.9)
-theme_override_font_sizes/font_size = 14
-text = "Official Referee: KingCobraJFS (1991–2025) presiding over all bouts with pulsing golden halo."
-horizontal_alignment = 1
-\\n
-## File: scenes/ui/match_hud.tscn
-
-\\tscn
-[gd_scene format=3 uid="uid://dmhud001"]
-
-[ext_resource type="Script" path="res://scripts/ui/match_hud.gd" id="1_script"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_p1_hp"]
-bg_color = Color(0.85, 0.15, 0.2, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_p1_sta"]
-bg_color = Color(0.2, 0.75, 0.35, 1)
-corner_radius_top_left = 2
-corner_radius_top_right = 2
-corner_radius_bottom_right = 2
-corner_radius_bottom_left = 2
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hype"]
-bg_color = Color(0.85, 0.65, 0.1, 1)
-corner_radius_top_left = 2
-corner_radius_top_right = 2
-corner_radius_bottom_right = 2
-corner_radius_bottom_left = 2
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
-bg_color = Color(0.1, 0.1, 0.12, 0.8)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
-bg_color = Color(0.05, 0.05, 0.07, 0.88)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.9, 0.75, 0.2, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[node name="MatchHUD" type="Control" node_paths=PackedStringArray("p1_name_label", "p1_title_label", "p1_vitality_bar", "p1_stamina_bar", "p1_hype_bar", "p1_state_label", "p2_name_label", "p2_title_label", "p2_vitality_bar", "p2_stamina_bar", "p2_hype_bar", "p2_state_label", "center_announcement", "pin_escape_container", "pin_escape_bar", "victory_panel", "victory_label")]
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-script = ExtResource("1_script")
-p1_name_label = NodePath("P1_Container/Name")
-p1_title_label = NodePath("P1_Container/Title")
-p1_vitality_bar = NodePath("P1_Container/VitalityBar")
-p1_stamina_bar = NodePath("P1_Container/StaminaBar")
-p1_hype_bar = NodePath("P1_Container/HypeBar")
-p1_state_label = NodePath("P1_Container/State")
-p2_name_label = NodePath("P2_Container/Name")
-p2_title_label = NodePath("P2_Container/Title")
-p2_vitality_bar = NodePath("P2_Container/VitalityBar")
-p2_stamina_bar = NodePath("P2_Container/StaminaBar")
-p2_hype_bar = NodePath("P2_Container/HypeBar")
-p2_state_label = NodePath("P2_Container/State")
-center_announcement = NodePath("CenterAnnouncement")
-pin_escape_container = NodePath("PinEscapeContainer")
-pin_escape_bar = NodePath("PinEscapeContainer/ProgressBar")
-victory_panel = NodePath("VictoryPanel")
-victory_label = NodePath("VictoryPanel/Label")
-
-[node name="P1_Container" type="VBoxContainer" parent="."]
-layout_mode = 0
-offset_left = 40.0
-offset_top = 30.0
-offset_right = 460.0
-offset_bottom = 160.0
-
-[node name="Name" type="Label" parent="P1_Container"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 26
-text = "TOPHIACHU"
-
-[node name="Title" type="Label" parent="P1_Container"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
-theme_override_font_sizes/font_size = 14
-text = "Live & Unfiltered"
-
-[node name="VitalityBar" type="ProgressBar" parent="P1_Container"]
-custom_minimum_size = Vector2(0, 24)
-layout_mode = 2
-theme_override_styles/background = SubResource("StyleBoxFlat_bg")
-theme_override_styles/fill = SubResource("StyleBoxFlat_p1_hp")
-value = 100.0
-show_percentage = false
-
-[node name="StaminaBar" type="ProgressBar" parent="P1_Container"]
-custom_minimum_size = Vector2(0, 10)
-layout_mode = 2
-theme_override_styles/background = SubResource("StyleBoxFlat_bg")
-theme_override_styles/fill = SubResource("StyleBoxFlat_p1_sta")
-value = 100.0
-show_percentage = false
-
-[node name="HypeBar" type="ProgressBar" parent="P1_Container"]
-custom_minimum_size = Vector2(0, 8)
-layout_mode = 2
-theme_override_styles/background = SubResource("StyleBoxFlat_bg")
-theme_override_styles/fill = SubResource("StyleBoxFlat_hype")
-value = 0.0
-show_percentage = false
-
-[node name="State" type="Label" parent="P1_Container"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.9, 0.7, 0.2, 1)
-theme_override_font_sizes/font_size = 14
-text = "IDLE"
-
-[node name="P2_Container" type="VBoxContainer" parent="."]
-layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -460.0
-offset_top = 30.0
-offset_right = -40.0
-offset_bottom = 160.0
-grow_horizontal = 0
-
-[node name="Name" type="Label" parent="P2_Container"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 26
-text = "CYRAXX"
-horizontal_alignment = 2
-
-[node name="Title" type="Label" parent="P2_Container"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
-theme_override_font_sizes/font_size = 14
-text = "Feedback Frenzy"
-horizontal_alignment = 2
-
-[node name="VitalityBar" type="ProgressBar" parent="P2_Container"]
-custom_minimum_size = Vector2(0, 24)
-layout_mode = 2
-theme_override_styles/background = SubResource("StyleBoxFlat_bg")
-theme_override_styles/fill = SubResource("StyleBoxFlat_p1_hp")
-value = 100.0
-fill_mode = 1
-show_percentage = false
-
-[node name="StaminaBar" type="ProgressBar" parent="P2_Container"]
-custom_minimum_size = Vector2(0, 10)
-layout_mode = 2
-theme_override_styles/background = SubResource("StyleBoxFlat_bg")
-theme_override_styles/fill = SubResource("StyleBoxFlat_p1_sta")
-value = 100.0
-fill_mode = 1
-show_percentage = false
-
-[node name="HypeBar" type="ProgressBar" parent="P2_Container"]
-custom_minimum_size = Vector2(0, 8)
-layout_mode = 2
-theme_override_styles/background = SubResource("StyleBoxFlat_bg")
-theme_override_styles/fill = SubResource("StyleBoxFlat_hype")
-value = 0.0
-fill_mode = 1
-show_percentage = false
-
-[node name="State" type="Label" parent="P2_Container"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.9, 0.7, 0.2, 1)
-theme_override_font_sizes/font_size = 14
-text = "IDLE"
-horizontal_alignment = 2
-
-[node name="CenterAnnouncement" type="Label" parent="."]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -300.0
-offset_top = -120.0
-offset_right = 300.0
-offset_bottom = -40.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_colors/font_color = Color(1, 0.9, 0.2, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 12
-theme_override_font_sizes/font_size = 48
-text = "COUNT: 1!"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="PinEscapeContainer" type="VBoxContainer" parent="."]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -250.0
-offset_top = 20.0
-offset_right = 250.0
-offset_bottom = 90.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="Label" type="Label" parent="PinEscapeContainer"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 8
-theme_override_font_sizes/font_size = 20
-text = "TAP [SPACE] / [NUM0] TO KICK OUT!"
-horizontal_alignment = 1
-
-[node name="ProgressBar" type="ProgressBar" parent="PinEscapeContainer"]
-custom_minimum_size = Vector2(0, 22)
-layout_mode = 2
-theme_override_styles/background = SubResource("StyleBoxFlat_bg")
-theme_override_styles/fill = SubResource("StyleBoxFlat_p1_sta")
-value = 0.0
-show_percentage = true
-
-[node name="ControlsReminder" type="Label" parent="."]
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -45.0
-grow_horizontal = 2
-grow_vertical = 0
-theme_override_colors/font_color = Color(0.85, 0.85, 0.9, 0.9)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 6
-theme_override_font_sizes/font_size = 14
-text = "P1: WASD=Move | J=Strike | K=Grapple | L=Block | U=Reversal | SPACE=Pin  ||  P2: Arrows=Move | Num1=Strike | Num2=Grapple | Num3=Block | Num4=Reversal | Num0=Pin  ||  [R] Restart"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="VictoryPanel" type="PanelContainer" parent="."]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -350.0
-offset_top = -140.0
-offset_right = 350.0
-offset_bottom = 140.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
-
-[node name="Label" type="Label" parent="VictoryPanel"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.88, 0.3, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 10
-theme_override_font_sizes/font_size = 36
-text = "TOPHIACHU WINS!
-[PINFALL 3-COUNT]
-
-Press [R] to Restart Match"
-horizontal_alignment = 1
-vertical_alignment = 1
-\\n
 ## File: tests/test_suite.gd
 
-\\gdscript
+```gdscript
 extends SceneTree
 
 ## Automated Headless Test Suite for LOLCOW WRESTLING: OFFLINE MAYHEM.
@@ -4148,6 +3799,7 @@ func _init() -> void:
 	test_pass_a_simultaneous_submission_ordering()
 	test_pass_a_callback_state_overwrite_resilience()
 	test_pass_a_final_count_escape_crossing()
+	test_visual_presentation_and_skeletal_rig()
 	
 	print("==================================================")
 	print("TEST RESULTS: %d Passed, %d Failed, %d Total" % [passed_tests, failed_tests, total_tests])
@@ -5643,11 +5295,74 @@ func test_pass_a_final_count_escape_crossing() -> void:
 		pinner.free()
 		pinned.free()
 
+func test_visual_presentation_and_skeletal_rig() -> void:
+	var fighter_scene = load("res://scenes/fighter/fighter.tscn")
+	assert_true(fighter_scene != null, "Presentation Test: fighter.tscn loaded")
+	
+	var fighter = fighter_scene.instantiate()
+	root.add_child(fighter)
+	fighter.load_character_data("tophiachu")
+	
+	assert_true(fighter.presentation != null, "Presentation Test: FighterPresentation instantiated")
+	assert_true(fighter.presentation.has_skeletal_rig == true, "Presentation Test: Tophiachu has_skeletal_rig is true")
+	assert_true(fighter.is_rigged() == true, "Presentation Test: Tophiachu is_rigged() reports true")
+	assert_true(is_instance_valid(fighter.presentation.skeleton), "Presentation Test: Skeleton3D valid")
+	assert_true(is_instance_valid(fighter.presentation.anim_player), "Presentation Test: AnimationPlayer valid")
+	
+	var skel: Skeleton3D = fighter.presentation.skeleton
+	var expected_bones = [
+		"Root", "Hips", "Spine", "Chest", "Neck", "Head",
+		"Clavicle.L", "Clavicle.R", "UpperArm.L", "UpperArm.R",
+		"Forearm.L", "Forearm.R", "Hand.L", "Hand.R",
+		"Thigh.L", "Thigh.R", "Shin.L", "Shin.R",
+		"Foot.L", "Foot.R", "Toe.L", "Toe.R"
+	]
+	var all_bones: bool = true
+	for b in expected_bones:
+		if skel.find_bone(b) == -1:
+			all_bones = false
+	assert_true(all_bones, "Presentation Test: All 22 canonical humanoid bones verified")
+	
+	var ap: AnimationPlayer = fighter.presentation.anim_player
+	var expected_anims = [
+		"idle", "walk", "strike", "knockdown", "getup",
+		"block", "reversal", "grapple", "throw_attacker", "throw_defender",
+		"pinning", "pinned", "submission_attacker", "submission_defender",
+		"victory", "defeated"
+	]
+	var all_anims: bool = true
+	for a in expected_anims:
+		if not ap.has_animation(a):
+			all_anims = false
+	assert_true(all_anims, "Presentation Test: All 16 keyframed clips present in AnimationPlayer")
+	
+	# Verify looping
+	assert_true(ap.get_animation("idle").loop_mode == Animation.LOOP_LINEAR, "Presentation Test: 'idle' loops linearly")
+	assert_true(ap.get_animation("walk").loop_mode == Animation.LOOP_LINEAR, "Presentation Test: 'walk' loops linearly")
+	
+	# Verify visual_root guard
+	fighter.current_state = Fighter.State.KNOCKED_DOWN
+	fighter._play_state_animation(Fighter.State.KNOCKED_DOWN)
+	assert_true(fighter.visual_root.rotation.x == 0.0, "Presentation Test: visual_root.rotation.x remains 0 on rigged fighter")
+	
+	# Verify unmigrated fallback
+	var unmigrated = fighter_scene.instantiate()
+	root.add_child(unmigrated)
+	unmigrated.load_character_data("cyraxx")
+	assert_true(unmigrated.presentation != null, "Presentation Test: Presentation exists for unmigrated fighter")
+	assert_true(unmigrated.is_rigged() == false, "Presentation Test: Unmigrated fighter is_rigged() is false")
+	
+	fighter.queue_free()
+	unmigrated.queue_free()
 
-\\n
+
+
+
+```
+
 ## File: tests/test_pin_balance_scene.gd
 
-\\gdscript
+```gdscript
 extends SceneTree
 
 ## Dedicated Scene Integration Test Suite for Pin-Balance Acceptance
@@ -6349,4 +6064,688 @@ func test_scene_callback_overwrite_resilience() -> void:
 	assert_true(d2.current_state in [Fighter.State.GETTING_UP, Fighter.State.IDLE], "Scene Callback Overwrite [ESCAPE_BREAKS]: Legal recovery state")
 	
 	await _cleanup_scene(ctx2)
-\\n
+
+```
+
+## File: blender/build_skinned_character.py
+
+```python
+﻿# Blender 5.0 Skinned Character & Animation Generator for Tophiachu
+# Specialized production script for LOLCOW WRESTLING: OFFLINE MAYHEM
+import bpy
+import bmesh
+import math
+from mathutils import Vector, Euler
+
+def clear_scene():
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+
+def create_material(name, diffuse_color, roughness=0.5, metallic=0.0):
+    mat = bpy.data.materials.new(name=name)
+    mat.use_nodes = True
+    nodes = mat.node_tree.nodes
+    bsdf = nodes.get("Principled BSDF")
+    if bsdf:
+        bsdf.inputs['Base Color'].default_value = diffuse_color
+        bsdf.inputs['Roughness'].default_value = roughness
+        bsdf.inputs['Metallic'].default_value = metallic
+    return mat
+
+def build_humanoid_armature():
+    arm_data = bpy.data.armatures.new("TophiachuArmature")
+    arm_obj = bpy.data.objects.new("TophiachuArmature", arm_data)
+    bpy.context.collection.objects.link(arm_obj)
+    bpy.context.view_layer.objects.active = arm_obj
+    
+    bpy.ops.object.mode_set(mode='EDIT')
+    eb = arm_data.edit_bones
+    
+    # Floor Root
+    root = eb.new("Root")
+    root.head = (0, 0, 0)
+    root.tail = (0, 0, 0.1)
+    
+    # Pelvis / Hips
+    hips = eb.new("Hips")
+    hips.head = (0, 0, 0.88)
+    hips.tail = (0, 0, 1.04)
+    hips.parent = root
+    
+    # Spine & Torso
+    spine = eb.new("Spine")
+    spine.head = (0, 0, 1.04)
+    spine.tail = (0, 0, 1.24)
+    spine.parent = hips
+    
+    chest = eb.new("Chest")
+    chest.head = (0, 0, 1.24)
+    chest.tail = (0, 0, 1.46)
+    chest.parent = spine
+    
+    # Neck & Head
+    neck = eb.new("Neck")
+    neck.head = (0, 0, 1.46)
+    neck.tail = (0, 0, 1.56)
+    neck.parent = chest
+    
+    head = eb.new("Head")
+    head.head = (0, 0, 1.56)
+    head.tail = (0, 0, 1.82)
+    head.parent = neck
+    
+    # Shoulders & Arms
+    for side, sign in [("L", 1.0), ("R", -1.0)]:
+        clav = eb.new(f"Clavicle.{side}")
+        clav.head = (sign * 0.05, 0, 1.42)
+        clav.tail = (sign * 0.22, 0, 1.40)
+        clav.parent = chest
+        
+        upper_arm = eb.new(f"UpperArm.{side}")
+        upper_arm.head = (sign * 0.24, 0, 1.38)
+        upper_arm.tail = (sign * 0.44, 0, 1.14)
+        upper_arm.parent = clav
+        
+        forearm = eb.new(f"Forearm.{side}")
+        forearm.head = (sign * 0.44, 0, 1.14)
+        forearm.tail = (sign * 0.54, 0, 0.88)
+        forearm.parent = upper_arm
+        
+        hand = eb.new(f"Hand.{side}")
+        hand.head = (sign * 0.54, 0, 0.88)
+        hand.tail = (sign * 0.58, 0, 0.74)
+        hand.parent = forearm
+        
+    # Legs & Feet
+    for side, sign in [("L", 1.0), ("R", -1.0)]:
+        thigh = eb.new(f"Thigh.{side}")
+        thigh.head = (sign * 0.18, 0, 0.88)
+        thigh.tail = (sign * 0.18, 0, 0.50)
+        thigh.parent = hips
+        
+        shin = eb.new(f"Shin.{side}")
+        shin.head = (sign * 0.18, 0, 0.50)
+        shin.tail = (sign * 0.18, 0, 0.12)
+        shin.parent = thigh
+        
+        foot = eb.new(f"Foot.{side}")
+        foot.head = (sign * 0.18, 0, 0.12)
+        foot.tail = (sign * 0.18, -0.16, 0.03)
+        foot.parent = shin
+        
+        toe = eb.new(f"Toe.{side}")
+        toe.head = (sign * 0.18, -0.16, 0.03)
+        toe.tail = (sign * 0.18, -0.24, 0.01)
+        toe.parent = foot
+
+    bpy.ops.object.mode_set(mode='OBJECT')
+    return arm_obj
+
+def build_character_mesh(arm_obj):
+    # Materials
+    mat_skin = create_material("SkinTophiachu", (0.58, 0.40, 0.30, 1.0), roughness=0.65)
+    mat_hair = create_material("HairTophiachu", (0.14, 0.09, 0.06, 1.0), roughness=0.85)
+    mat_outfit = create_material("OutfitTophiachu", (0.38, 0.16, 0.48, 1.0), roughness=0.45)
+    mat_trim = create_material("TrimTophiachu", (0.08, 0.08, 0.10, 1.0), roughness=0.50)
+    mat_boots = create_material("BootsTophiachu", (0.08, 0.08, 0.09, 1.0), roughness=0.35)
+    mat_wraps = create_material("WrapsTophiachu", (0.88, 0.88, 0.90, 1.0), roughness=0.80)
+    mat_eyes = create_material("EyesTophiachu", (0.95, 0.95, 0.95, 1.0), roughness=0.20)
+    
+    mesh_data = bpy.data.meshes.new("TophiachuMesh")
+    mesh_obj = bpy.data.objects.new("TophiachuMesh", mesh_data)
+    bpy.context.collection.objects.link(mesh_obj)
+    
+    mesh_obj.data.materials.append(mat_skin)    # 0
+    mesh_obj.data.materials.append(mat_outfit)  # 1
+    mesh_obj.data.materials.append(mat_trim)    # 2
+    mesh_obj.data.materials.append(mat_hair)    # 3
+    mesh_obj.data.materials.append(mat_boots)   # 4
+    mesh_obj.data.materials.append(mat_wraps)   # 5
+    mesh_obj.data.materials.append(mat_eyes)    # 6
+    
+    bm = bmesh.new()
+    
+    # 1. Heavyweight Torso (Hips to Shoulders)
+    torso_slices = [
+        (0.86, 0.36, 0.28, 1), # lower hips
+        (0.96, 0.40, 0.30, 1), # hips peak
+        (1.08, 0.38, 0.29, 1), # lower waist
+        (1.18, 0.36, 0.28, 1), # mid waist
+        (1.28, 0.39, 0.30, 1), # lower chest
+        (1.38, 0.42, 0.31, 1), # chest peak
+        (1.46, 0.35, 0.25, 2), # upper chest / neckline trim
+    ]
+    num_seg = 16
+    torso_rings = []
+    prev_ring = None
+    
+    for z, rx, ry, m_idx in torso_slices:
+        current_ring = []
+        for i in range(num_seg):
+            angle = 2.0 * math.pi * i / num_seg
+            vx = math.cos(angle) * rx
+            vy = math.sin(angle) * ry
+            vert = bm.verts.new((vx, vy, z))
+            current_ring.append(vert)
+        if prev_ring:
+            for i in range(num_seg):
+                ni = (i + 1) % num_seg
+                f = bm.faces.new([prev_ring[i], prev_ring[ni], current_ring[ni], current_ring[i]])
+                f.material_index = m_idx
+        prev_ring = current_ring
+        torso_rings.append(current_ring)
+        
+    # Cap bottom of hips
+    bottom_center = bm.verts.new((0, 0, 0.86))
+    first_ring = torso_rings[0]
+    for i in range(num_seg):
+        ni = (i + 1) % num_seg
+        f = bm.faces.new([bottom_center, first_ring[ni], first_ring[i]])
+        f.material_index = 1
+        
+    # 2. Neck
+    neck_slices = [
+        (1.46, 0.16, 0.15, 0),
+        (1.52, 0.14, 0.13, 0),
+        (1.58, 0.15, 0.14, 0),
+    ]
+    prev_neck = None
+    for z, rx, ry, m_idx in neck_slices:
+        current_ring = []
+        for i in range(12):
+            angle = 2.0 * math.pi * i / 12
+            vx = math.cos(angle) * rx
+            vy = math.sin(angle) * ry
+            vert = bm.verts.new((vx, vy, z))
+            current_ring.append(vert)
+        if prev_neck:
+            for i in range(12):
+                ni = (i + 1) % 12
+                f = bm.faces.new([prev_neck[i], prev_neck[ni], current_ring[ni], current_ring[i]])
+                f.material_index = m_idx
+        prev_neck = current_ring
+        
+    # 3. Head with Facial Structure
+    head_slices = [
+        (1.58, 0.17, 0.16, 0), # Jawline / Chin
+        (1.64, 0.22, 0.21, 0), # Mouth & Cheeks
+        (1.70, 0.23, 0.22, 0), # Nose bridge & Eyes
+        (1.76, 0.22, 0.21, 0), # Brow & Forehead
+        (1.82, 0.18, 0.18, 0), # Cranium top
+        (1.86, 0.08, 0.08, 0), # Crown
+    ]
+    prev_head = None
+    head_rings = []
+    for z, rx, ry, m_idx in head_slices:
+        current_ring = []
+        for i in range(16):
+            angle = 2.0 * math.pi * i / 16
+            vx = math.cos(angle) * rx
+            vy = math.sin(angle) * ry
+            # Forward protrusion for nose / chin at front (negative Y)
+            if angle > math.pi * 1.25 and angle < math.pi * 1.75:
+                if 1.62 <= z <= 1.72:
+                    vy -= 0.04 # Nose protrusion
+                elif z < 1.62:
+                    vy -= 0.025 # Chin protrusion
+            vert = bm.verts.new((vx, vy, z))
+            current_ring.append(vert)
+        if prev_head:
+            for i in range(16):
+                ni = (i + 1) % 16
+                f = bm.faces.new([prev_head[i], prev_head[ni], current_ring[ni], current_ring[i]])
+                f.material_index = m_idx
+        prev_head = current_ring
+        head_rings.append(current_ring)
+        
+    # Top head cap
+    top_center = bm.verts.new((0, 0, 1.88))
+    last_head_ring = head_rings[-1]
+    for i in range(len(last_head_ring)):
+        ni = (i + 1) % len(last_head_ring)
+        f = bm.faces.new([last_head_ring[i], last_head_ring[ni], top_center])
+        f.material_index = 0
+        
+    # 4. Voluminous Curly Hair Mass
+    hair_slices = [
+        (1.72, 0.26, 0.25, 3),
+        (1.78, 0.29, 0.28, 3),
+        (1.84, 0.30, 0.29, 3),
+        (1.90, 0.26, 0.25, 3),
+        (1.94, 0.14, 0.14, 3),
+    ]
+    prev_hair = None
+    hair_rings = []
+    for z, rx, ry, m_idx in hair_slices:
+        current_ring = []
+        for i in range(16):
+            angle = 2.0 * math.pi * i / 16
+            vx = math.cos(angle) * rx
+            vy = math.sin(angle) * ry + 0.05
+            if angle < math.pi * 1.2 or angle > math.pi * 1.8:
+                vx *= 1.15
+                vy *= 1.20
+            vert = bm.verts.new((vx, vy, z))
+            current_ring.append(vert)
+        if prev_hair:
+            for i in range(16):
+                ni = (i + 1) % 16
+                f = bm.faces.new([prev_hair[i], prev_hair[ni], current_ring[ni], current_ring[i]])
+                f.material_index = m_idx
+        prev_hair = current_ring
+        hair_rings.append(current_ring)
+        
+    hair_top = bm.verts.new((0, 0.05, 1.96))
+    last_hair_ring = hair_rings[-1]
+    for i in range(len(last_hair_ring)):
+        ni = (i + 1) % len(last_hair_ring)
+        f = bm.faces.new([last_hair_ring[i], last_hair_ring[ni], hair_top])
+        f.material_index = 3
+        
+    # 5. Arms & Hands
+    for side, sign in [("L", 1.0), ("R", -1.0)]:
+        arm_segments = [
+            (sign * 0.24, 0, 1.38, 0.13, 0), # Shoulder / Clavicle joint
+            (sign * 0.34, 0, 1.26, 0.12, 0), # Bicep
+            (sign * 0.44, 0, 1.14, 0.10, 0), # Elbow
+            (sign * 0.49, 0, 1.01, 0.09, 5), # Forearm / Wrap start
+            (sign * 0.54, 0, 0.88, 0.08, 5), # Wrist wrap
+            (sign * 0.56, 0, 0.80, 0.07, 0), # Knuckles / Palm
+            (sign * 0.58, 0, 0.74, 0.04, 0), # Finger tips
+        ]
+        prev_arm = None
+        arm_rings = []
+        for ax, ay, az, rad, m_idx in arm_segments:
+            current_ring = []
+            for i in range(8):
+                angle = 2.0 * math.pi * i / 8
+                vx = ax + math.sin(angle) * rad * 0.7
+                vy = ay + math.cos(angle) * rad
+                vz = az + math.sin(angle) * rad * 0.7
+                vert = bm.verts.new((vx, vy, vz))
+                current_ring.append(vert)
+            if prev_arm:
+                for i in range(8):
+                    ni = (i + 1) % 8
+                    f = bm.faces.new([prev_arm[i], prev_arm[ni], current_ring[ni], current_ring[i]])
+                    f.material_index = m_idx
+            prev_arm = current_ring
+            arm_rings.append(current_ring)
+            
+        hand_tip = bm.verts.new((sign * 0.58, 0, 0.72))
+        last_arm_ring = arm_rings[-1]
+        for i in range(len(last_arm_ring)):
+            ni = (i + 1) % len(last_arm_ring)
+            f = bm.faces.new([last_arm_ring[i], last_arm_ring[ni], hand_tip])
+            f.material_index = 0
+
+    # 6. Legs & Boots
+    for side, sign in [("L", 1.0), ("R", -1.0)]:
+        leg_segments = [
+            (sign * 0.18, 0, 0.86, 0.16, 1), # Upper thigh (singlet leg)
+            (sign * 0.18, 0, 0.72, 0.15, 1), # Mid thigh
+            (sign * 0.18, 0, 0.58, 0.14, 0), # Lower thigh (skin)
+            (sign * 0.18, 0, 0.50, 0.13, 0), # Knee
+            (sign * 0.18, 0, 0.38, 0.12, 0), # Upper calf (skin)
+            (sign * 0.18, 0, 0.30, 0.13, 4), # Boot collar
+            (sign * 0.18, 0, 0.16, 0.11, 4), # Ankle
+            (sign * 0.18, -0.04, 0.06, 0.11, 4), # Heel / Instep
+        ]
+        prev_leg = None
+        leg_rings = []
+        for lx, ly, lz, rad, m_idx in leg_segments:
+            current_ring = []
+            for i in range(10):
+                angle = 2.0 * math.pi * i / 10
+                vx = lx + math.cos(angle) * rad
+                vy = ly + math.sin(angle) * rad
+                vz = lz
+                vert = bm.verts.new((vx, vy, vz))
+                current_ring.append(vert)
+            if prev_leg:
+                for i in range(10):
+                    ni = (i + 1) % 10
+                    f = bm.faces.new([prev_leg[i], prev_leg[ni], current_ring[ni], current_ring[i]])
+                    f.material_index = m_idx
+            prev_leg = current_ring
+            leg_rings.append(current_ring)
+            
+        # Sole bottom cap
+        sole_center = bm.verts.new((sign * 0.18, -0.04, 0.02))
+        last_leg_ring = leg_rings[-1]
+        for i in range(len(last_leg_ring)):
+            ni = (i + 1) % len(last_leg_ring)
+            f = bm.faces.new([sole_center, last_leg_ring[ni], last_leg_ring[i]])
+            f.material_index = 4
+
+    bm.to_mesh(mesh_data)
+    bm.free()
+    
+    # Setup Vertex Groups & Assign Skin Weights
+    vg_map = {}
+    for bone_name in [
+        "Root", "Hips", "Spine", "Chest", "Neck", "Head",
+        "Clavicle.L", "Clavicle.R", "UpperArm.L", "UpperArm.R",
+        "Forearm.L", "Forearm.R", "Hand.L", "Hand.R",
+        "Thigh.L", "Thigh.R", "Shin.L", "Shin.R",
+        "Foot.L", "Foot.R", "Toe.L", "Toe.R"
+    ]:
+        vg_map[bone_name] = mesh_obj.vertex_groups.new(name=bone_name)
+        
+    for v in mesh_obj.data.vertices:
+        x, y, z = v.co.x, v.co.y, v.co.z
+        
+        # Head & Neck
+        if z >= 1.54:
+            vg_map["Head"].add([v.index], 1.0, 'REPLACE')
+        elif z >= 1.45:
+            t = (z - 1.45) / (1.54 - 1.45)
+            vg_map["Neck"].add([v.index], 1.0 - t, 'REPLACE')
+            vg_map["Head"].add([v.index], t, 'REPLACE')
+        # Arms
+        elif abs(x) >= 0.22 and z >= 0.70:
+            side = "L" if x > 0 else "R"
+            dist_along_arm = (abs(x) - 0.22) / 0.36
+            if dist_along_arm < 0.25:
+                vg_map[f"Clavicle.{side}"].add([v.index], 0.7, 'REPLACE')
+                vg_map[f"UpperArm.{side}"].add([v.index], 0.3, 'REPLACE')
+            elif dist_along_arm < 0.60:
+                vg_map[f"UpperArm.{side}"].add([v.index], 0.8, 'REPLACE')
+                vg_map[f"Forearm.{side}"].add([v.index], 0.2, 'REPLACE')
+            elif dist_along_arm < 0.85:
+                vg_map[f"Forearm.{side}"].add([v.index], 0.8, 'REPLACE')
+                vg_map[f"Hand.{side}"].add([v.index], 0.2, 'REPLACE')
+            else:
+                vg_map[f"Hand.{side}"].add([v.index], 1.0, 'REPLACE')
+        # Torso
+        elif z >= 1.24:
+            vg_map["Chest"].add([v.index], 1.0, 'REPLACE')
+        elif z >= 1.04:
+            t = (z - 1.04) / (1.24 - 1.04)
+            vg_map["Spine"].add([v.index], 1.0 - t, 'REPLACE')
+            vg_map["Chest"].add([v.index], t, 'REPLACE')
+        elif z >= 0.86:
+            t = (z - 0.86) / (1.04 - 0.86)
+            vg_map["Hips"].add([v.index], 1.0 - t, 'REPLACE')
+            vg_map["Spine"].add([v.index], t, 'REPLACE')
+        # Legs
+        else:
+            side = "L" if x > 0 else "R"
+            if z >= 0.50:
+                vg_map[f"Thigh.{side}"].add([v.index], 1.0, 'REPLACE')
+            elif z >= 0.16:
+                t = (z - 0.16) / (0.50 - 0.16)
+                vg_map[f"Shin.{side}"].add([v.index], 1.0 - t, 'REPLACE')
+                vg_map[f"Thigh.{side}"].add([v.index], t, 'REPLACE')
+            elif z >= 0.05:
+                vg_map[f"Foot.{side}"].add([v.index], 1.0, 'REPLACE')
+            else:
+                vg_map[f"Toe.{side}"].add([v.index], 1.0, 'REPLACE')
+
+    # Armature modifier
+    mod = mesh_obj.modifiers.new("Armature", 'ARMATURE')
+    mod.object = arm_obj
+    mesh_obj.parent = arm_obj
+    
+    return mesh_obj
+
+def add_bone_keyframe(arm_obj, bone_name, prop, value, frame):
+    pb = arm_obj.pose.bones[bone_name]
+    pb.rotation_mode = 'XYZ'
+    setattr(pb, prop, value)
+    pb.keyframe_insert(data_path=prop, frame=frame)
+
+def author_animations(arm_obj):
+    if not arm_obj.animation_data:
+        arm_obj.animation_data_create()
+        
+    def create_clip(name):
+        act = bpy.data.actions.new(name=name)
+        arm_obj.animation_data.action = act
+        return act
+        
+    def push_to_nla(act, name):
+        track = arm_obj.animation_data.nla_tracks.new()
+        track.name = name
+        track.strips.new(name, 1, act)
+
+    # -------------------------------------------------------------
+    # 1. IDLE (60f loop): Heavyweight ready stance with weight shift
+    # -------------------------------------------------------------
+    act_idle = create_clip("idle")
+    for f, hip_rot_y, hip_pos_z, chest_rot_x in [
+        (1, 0.0, 0.0, 0.05),
+        (15, 0.03, -0.02, 0.02),
+        (30, 0.0, 0.0, 0.06),
+        (45, -0.03, -0.02, 0.02),
+        (60, 0.0, 0.0, 0.05)
+    ]:
+        add_bone_keyframe(arm_obj, "Hips", "location", (0, 0, hip_pos_z), f)
+        add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (0.05, hip_rot_y, 0), f)
+        add_bone_keyframe(arm_obj, "Chest", "rotation_euler", (chest_rot_x, 0, 0), f)
+        add_bone_keyframe(arm_obj, "UpperArm.L", "rotation_euler", (0.5, 0.2, 0.3), f)
+        add_bone_keyframe(arm_obj, "UpperArm.R", "rotation_euler", (0.5, -0.2, -0.3), f)
+        add_bone_keyframe(arm_obj, "Forearm.L", "rotation_euler", (-0.9, 0, 0), f)
+        add_bone_keyframe(arm_obj, "Forearm.R", "rotation_euler", (-0.9, 0, 0), f)
+        add_bone_keyframe(arm_obj, "Thigh.L", "rotation_euler", (-0.15, 0, 0.05), f)
+        add_bone_keyframe(arm_obj, "Thigh.R", "rotation_euler", (-0.15, 0, -0.05), f)
+        add_bone_keyframe(arm_obj, "Shin.L", "rotation_euler", (0.25, 0, 0), f)
+        add_bone_keyframe(arm_obj, "Shin.R", "rotation_euler", (0.25, 0, 0), f)
+    push_to_nla(act_idle, "idle")
+
+    # -------------------------------------------------------------
+    # 2. WALK (40f loop): Grounded heavyweight stride
+    # -------------------------------------------------------------
+    act_walk = create_clip("walk")
+    for f, r_leg, l_leg, r_arm, l_arm in [
+        (1, -0.35, 0.25, 0.4, -0.4),
+        (10, -0.10, -0.10, 0.0, 0.0),
+        (20, 0.25, -0.35, -0.4, 0.4),
+        (30, -0.10, -0.10, 0.0, 0.0),
+        (40, -0.35, 0.25, 0.4, -0.4)
+    ]:
+        add_bone_keyframe(arm_obj, "Thigh.R", "rotation_euler", (r_leg, 0, 0), f)
+        add_bone_keyframe(arm_obj, "Thigh.L", "rotation_euler", (l_leg, 0, 0), f)
+        add_bone_keyframe(arm_obj, "UpperArm.R", "rotation_euler", (r_arm, 0, 0), f)
+        add_bone_keyframe(arm_obj, "UpperArm.L", "rotation_euler", (l_arm, 0, 0), f)
+        add_bone_keyframe(arm_obj, "Forearm.R", "rotation_euler", (-0.5, 0, 0), f)
+        add_bone_keyframe(arm_obj, "Forearm.L", "rotation_euler", (-0.5, 0, 0), f)
+        add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (0.05, 0.05 if r_leg > 0 else -0.05, 0), f)
+    push_to_nla(act_walk, "walk")
+
+    # -------------------------------------------------------------
+    # 3. STRIKE (30f one-shot): Heavy overhand blow with hip commitment
+    # -------------------------------------------------------------
+    act_strike = create_clip("strike")
+    # F1: Stance
+    add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (0, 0, 0), 1)
+    add_bone_keyframe(arm_obj, "Chest", "rotation_euler", (0, 0, 0), 1)
+    add_bone_keyframe(arm_obj, "UpperArm.R", "rotation_euler", (0.4, 0, 0), 1)
+    add_bone_keyframe(arm_obj, "Forearm.R", "rotation_euler", (-0.8, 0, 0), 1)
+    # F6: Windup / Cocking back
+    add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (0, -0.25, 0), 6)
+    add_bone_keyframe(arm_obj, "Chest", "rotation_euler", (0, -0.30, 0), 6)
+    add_bone_keyframe(arm_obj, "UpperArm.R", "rotation_euler", (0.7, 0.4, -0.5), 6)
+    add_bone_keyframe(arm_obj, "Forearm.R", "rotation_euler", (-1.4, 0, 0), 6)
+    # F14: Explosive Overhand Delivery (Matches strike active window)
+    add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (0.15, 0.50, 0), 14)
+    add_bone_keyframe(arm_obj, "Chest", "rotation_euler", (0.20, 0.55, 0), 14)
+    add_bone_keyframe(arm_obj, "UpperArm.R", "rotation_euler", (1.3, -0.4, 0.2), 14)
+    add_bone_keyframe(arm_obj, "Forearm.R", "rotation_euler", (-0.2, 0, 0), 14)
+    # F22: Follow-through
+    add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (0.10, 0.35, 0), 22)
+    add_bone_keyframe(arm_obj, "Chest", "rotation_euler", (0.15, 0.40, 0), 22)
+    # F30: Recovery
+    add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (0, 0, 0), 30)
+    add_bone_keyframe(arm_obj, "Chest", "rotation_euler", (0, 0, 0), 30)
+    add_bone_keyframe(arm_obj, "UpperArm.R", "rotation_euler", (0.5, -0.2, -0.3), 30)
+    add_bone_keyframe(arm_obj, "Forearm.R", "rotation_euler", (-0.9, 0, 0), 30)
+    push_to_nla(act_strike, "strike")
+
+    # -------------------------------------------------------------
+    # 4. KNOCKDOWN (45f): Fall backward and impact canvas flat
+    # -------------------------------------------------------------
+    act_kd = create_clip("knockdown")
+    # F1: Impact reel
+    add_bone_keyframe(arm_obj, "Hips", "location", (0, 0, 0), 1)
+    add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (0, 0, 0), 1)
+    add_bone_keyframe(arm_obj, "Chest", "rotation_euler", (-0.3, 0, 0), 1)
+    add_bone_keyframe(arm_obj, "Head", "rotation_euler", (-0.5, 0, 0), 1)
+    # F15: Falling back
+    add_bone_keyframe(arm_obj, "Hips", "location", (0, 0.4, -0.5), 15)
+    add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (-0.9, 0, 0), 15)
+    # F24: Canvas mat impact
+    add_bone_keyframe(arm_obj, "Hips", "location", (0, 0.8, -0.80), 24)
+    add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (-math.pi / 2.0, 0, 0), 24)
+    add_bone_keyframe(arm_obj, "Chest", "rotation_euler", (0, 0, 0), 24)
+    add_bone_keyframe(arm_obj, "UpperArm.L", "rotation_euler", (0, 0, 1.2), 24)
+    add_bone_keyframe(arm_obj, "UpperArm.R", "rotation_euler", (0, 0, -1.2), 24)
+    add_bone_keyframe(arm_obj, "Thigh.L", "rotation_euler", (0.3, 0, 0), 24)
+    add_bone_keyframe(arm_obj, "Thigh.R", "rotation_euler", (0.3, 0, 0), 24)
+    # F45: Settle flat on canvas
+    add_bone_keyframe(arm_obj, "Hips", "location", (0, 0.8, -0.80), 45)
+    add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (-math.pi / 2.0, 0, 0), 45)
+    push_to_nla(act_kd, "knockdown")
+
+    # -------------------------------------------------------------
+    # 5. GETUP (60f): Supported get-up through elbow, hand, knee, foot
+    # -------------------------------------------------------------
+    act_gu = create_clip("getup")
+    # F1: Flat on back
+    add_bone_keyframe(arm_obj, "Hips", "location", (0, 0.8, -0.80), 1)
+    add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (-math.pi / 2.0, 0, 0), 1)
+    # F15: Roll to left hip, plant left elbow & right foot
+    add_bone_keyframe(arm_obj, "Hips", "location", (0, 0.6, -0.65), 15)
+    add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (-1.2, 0, 0.6), 15)
+    add_bone_keyframe(arm_obj, "UpperArm.L", "rotation_euler", (0.4, 0, 0.8), 15)
+    add_bone_keyframe(arm_obj, "Forearm.L", "rotation_euler", (-1.2, 0, 0), 15)
+    add_bone_keyframe(arm_obj, "Thigh.R", "rotation_euler", (0.8, 0, 0), 15)
+    add_bone_keyframe(arm_obj, "Shin.R", "rotation_euler", (1.2, 0, 0), 15)
+    # F30: Push up onto left hand, rise onto left knee, elevate hips
+    add_bone_keyframe(arm_obj, "Hips", "location", (0, 0.3, -0.35), 30)
+    add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (-0.5, 0, 0.3), 30)
+    add_bone_keyframe(arm_obj, "UpperArm.L", "rotation_euler", (0.2, 0, 0.4), 30)
+    add_bone_keyframe(arm_obj, "Forearm.L", "rotation_euler", (-0.3, 0, 0), 30)
+    # F45: Bring right leg forward into lunge/squat, push off thighs
+    add_bone_keyframe(arm_obj, "Hips", "location", (0, 0.1, -0.15), 45)
+    add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (-0.2, 0, 0), 45)
+    add_bone_keyframe(arm_obj, "Chest", "rotation_euler", (0.2, 0, 0), 45)
+    # F60: Rise fully to feet, return to ready idle stance
+    add_bone_keyframe(arm_obj, "Hips", "location", (0, 0, 0), 60)
+    add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (0.05, 0, 0), 60)
+    add_bone_keyframe(arm_obj, "Chest", "rotation_euler", (0.05, 0, 0), 60)
+    add_bone_keyframe(arm_obj, "UpperArm.L", "rotation_euler", (0.5, 0.2, 0.3), 60)
+    add_bone_keyframe(arm_obj, "UpperArm.R", "rotation_euler", (0.5, -0.2, -0.3), 60)
+    push_to_nla(act_gu, "getup")
+
+    # -------------------------------------------------------------
+    # 6. Safety & Baseline Gameplay Clips
+    # -------------------------------------------------------------
+    # Block
+    act_blk = create_clip("block")
+    for f in [1, 30]:
+        add_bone_keyframe(arm_obj, "UpperArm.L", "rotation_euler", (1.2, 0.3, -0.3), f)
+        add_bone_keyframe(arm_obj, "UpperArm.R", "rotation_euler", (1.2, -0.3, 0.3), f)
+        add_bone_keyframe(arm_obj, "Forearm.L", "rotation_euler", (-1.5, 0, 0), f)
+        add_bone_keyframe(arm_obj, "Forearm.R", "rotation_euler", (-1.5, 0, 0), f)
+    push_to_nla(act_blk, "block")
+
+    # Reversal
+    act_rev = create_clip("reversal")
+    for f in [1, 30]:
+        add_bone_keyframe(arm_obj, "UpperArm.L", "rotation_euler", (0.8, 0.5, 0.2), f)
+        add_bone_keyframe(arm_obj, "UpperArm.R", "rotation_euler", (0.8, -0.5, -0.2), f)
+    push_to_nla(act_rev, "reversal")
+
+    # Grapple Startup
+    act_grp = create_clip("grapple")
+    for f in [1, 30]:
+        add_bone_keyframe(arm_obj, "UpperArm.L", "rotation_euler", (1.4, 0.1, 0.1), f)
+        add_bone_keyframe(arm_obj, "UpperArm.R", "rotation_euler", (1.4, -0.1, -0.1), f)
+        add_bone_keyframe(arm_obj, "Forearm.L", "rotation_euler", (-0.2, 0, 0), f)
+        add_bone_keyframe(arm_obj, "Forearm.R", "rotation_euler", (-0.2, 0, 0), f)
+    push_to_nla(act_grp, "grapple")
+
+    # Throw Attacker
+    act_ta = create_clip("throw_attacker")
+    for f, arm_x in [(1, 0.5), (20, 1.8), (35, 0.2), (45, 0.5)]:
+        add_bone_keyframe(arm_obj, "UpperArm.L", "rotation_euler", (arm_x, 0.2, 0), f)
+        add_bone_keyframe(arm_obj, "UpperArm.R", "rotation_euler", (arm_x, -0.2, 0), f)
+    push_to_nla(act_ta, "throw_attacker")
+
+    # Throw Defender
+    act_td = create_clip("throw_defender")
+    for f, rot_x, loc_z in [(1, 0, 0), (20, -1.5, 0.8), (35, -3.14, 0), (45, -3.14, 0)]:
+        add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (rot_x, 0, 0), f)
+        add_bone_keyframe(arm_obj, "Hips", "location", (0, 0, loc_z), f)
+    push_to_nla(act_td, "throw_defender")
+
+    # Pinning (Cover)
+    act_pinn = create_clip("pinning")
+    for f in [1, 40]:
+        add_bone_keyframe(arm_obj, "Hips", "location", (0, 0, -0.6), f)
+        add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (0.8, 0, 0), f)
+        add_bone_keyframe(arm_obj, "UpperArm.R", "rotation_euler", (1.2, 0, 0), f)
+    push_to_nla(act_pinn, "pinning")
+
+    # Pinned (Grounded Struggle)
+    act_pind = create_clip("pinned")
+    for f in [1, 20, 40]:
+        add_bone_keyframe(arm_obj, "Hips", "location", (0, 0, -0.8), f)
+        add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (-math.pi / 2.0, 0, 0), f)
+        add_bone_keyframe(arm_obj, "Thigh.L", "rotation_euler", (0.4 if f == 20 else 0.1, 0, 0), f)
+    push_to_nla(act_pind, "pinned")
+
+    # Submission Attacker
+    act_sa = create_clip("submission_attacker")
+    for f in [1, 40]:
+        add_bone_keyframe(arm_obj, "Hips", "location", (0, 0, -0.4), f)
+        add_bone_keyframe(arm_obj, "UpperArm.L", "rotation_euler", (1.1, 0.2, 0), f)
+        add_bone_keyframe(arm_obj, "UpperArm.R", "rotation_euler", (1.1, -0.2, 0), f)
+    push_to_nla(act_sa, "submission_attacker")
+
+    # Submission Defender
+    act_sd = create_clip("submission_defender")
+    for f in [1, 40]:
+        add_bone_keyframe(arm_obj, "Hips", "location", (0, 0, -0.7), f)
+        add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (-1.2, 0, 0), f)
+    push_to_nla(act_sd, "submission_defender")
+
+    # Victory
+    act_vic = create_clip("victory")
+    for f, arm_z in [(1, 0.5), (30, 2.2), (60, 2.0)]:
+        add_bone_keyframe(arm_obj, "UpperArm.L", "rotation_euler", (arm_z, 0, 0.6), f)
+        add_bone_keyframe(arm_obj, "UpperArm.R", "rotation_euler", (arm_z, 0, -0.6), f)
+    push_to_nla(act_vic, "victory")
+
+    # Defeated
+    act_def = create_clip("defeated")
+    for f in [1, 40]:
+        add_bone_keyframe(arm_obj, "Hips", "location", (0, 0.8, -0.80), f)
+        add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (-math.pi / 2.0, 0, 0), f)
+    push_to_nla(act_def, "defeated")
+
+def main():
+    clear_scene()
+    print("Building Tophiachu Armature...")
+    arm_obj = build_humanoid_armature()
+    print("Building Tophiachu Skinned Mesh...")
+    mesh_obj = build_character_mesh(arm_obj)
+    print("Authoring Tophiachu Animations...")
+    author_animations(arm_obj)
+    
+    output_path = "assets/models/tophiachu.glb"
+    print(f"Exporting Tophiachu to {output_path}...")
+    bpy.ops.export_scene.gltf(
+        filepath=output_path,
+        export_format='GLB',
+        export_animations=True,
+        export_skins=True,
+        export_morph=False
+    )
+    print("Export Complete!")
+
+if __name__ == "__main__":
+    main()
+
+```
+

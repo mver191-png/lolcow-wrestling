@@ -1,32 +1,45 @@
-# Next Implementation Tasks: Pass B (64-Matchup Scene Validation & Skeletal Animation Pipeline)
+# Next Implementation Tasks: Visual & Animation Overhaul (Phase 2 & 3)
 
-## Pass A Status: 100% Complete & Verified
-All critical combat repairs mandated by source code review have been implemented, verified, and confirmed passing across 517 automated tests (391 unit/mechanics tests + 126 full scene physics integration tests with 0 failures, 0 warnings, 0 ObjectDB leaks):
-1. **Exclusive Terminal Outcome Ownership & Priority Scheduling**: Complete elimination of competing outcome resolution between `Fighter` and `MatchManager`. `MatchManager` has exclusive authority over terminal outcome evaluation (`_process_submission_watch()`, `_process_pin_countdown()`, `_resolve_pin_kick_out()`, `_resolve_submission_escape()`, `_resolve_submission_tap_out()`). Priority scheduling (`Fighter` = 0, `MatchManager` = 10) ensures all resistance and mechanics are fully updated before outcome evaluation. Symmetrical hold pointer cleanup and immutable terminal states (`VICTORY`, `DEFEATED`) prevent late callback state corruption.
-2. **Pin-Balance Acceptance**: 4-mode empirical validation (CPU, 10 Hz Mash, Hold-on-Entry, Pre-Held), explicit move metadata impact classification (ordinary heavy impact vs genuine finisher disorientation), and tick 198 (3.30s) kickout/rope break preemptive priority over 3-count.
-3. **Boundary-Safe Paired Throws**: Pre-throw spatial trajectory validation and inward pair adjustment ($d_{\text{slam}} \le 3.50\text{m}$) preventing defender out-of-bounds clipping through ring ropes ($|x| > 3.65\text{m}$).
-4. **Directional Contact & Grapple Startup**: Forward contact cone ($\cos(60^\circ) = 0.50$, $120^\circ$ cone) in strike windows, measurable `GRAPPLE_STARTUP` window ($0.18\text{s}$ duration, $0.25\text{s}$ whiff recovery), strike interruption, reversal counter, and tactical CPU reaction.
-5. **Simultaneous Submission Outcome Ordering & Centralized Hold Cleanup**: Authoritative simultaneous priority policy (`ESCAPE_BREAKS` vs `TAPOUT_WINS`) in `MatchManager`, 1.0 HP clutch survival on buzzer-beater breakouts, and symmetrical pointer clearing (`synchronized_partner = null`) across all breakout, rope break, and tap-out pathways.
+## Current Status: Phase 1 Complete (Tophiachu Production Asset & Presentation Architecture)
+Tophiachu has been overhauled with a production-grade 22-bone humanoid armature, customized anatomical mesh, and 16 keyframed skeletal animation clips exported to `assets/models/tophiachu.glb`. `FighterPresentation` coordinates model loading, skeletal detection, locomotion stride synchronization, and backward-compatible fallbacks for unmigrated fighters. All 530 automated tests (404 unit/presentation tests + 126 scene physics tests) pass 100%.
 
 ---
 
-## Pass B Roadmap & Priorities
+## Next Immediate Milestones: Phase 2 & Phase 3
 
-### Priority 1: Scene Integration & Visual Verification Across All 64 Matchups
-- Run headless automated matchup validation across all 8 x 8 = 64 fighter combinations.
-- Verify scene loading, mesh attachment, stat scaling, signature move execution, and win/loss resolution for every roster pairing.
-- Note: Headless execution remains standard; visual inspections and manual playtests remain designated according to code review protocol.
+### Phase 2: Cyraxx Production Asset & Rapid Striker Animation Set
+1. **Model & Skeleton Generation**:
+   - Extend `blender/build_skinned_character.py` (or create `build_skinned_cyraxx.py`) to build Cyraxx with the identical 22-bone humanoid armature hierarchy.
+   - Proportions: Frail, lightweight cruiserweight frame, sunken cheeks, defined nasal bridge, black beanie silhouette, olive tank top, dark joggers, and wrestling boots.
+   - Distinct PBR material assignments for skin, clothing, beanie, and footwear.
+2. **Author Unique Animation Set (16 clips)**:
+   - Dynamic, twitchy cruiserweight idle loop.
+   - Rapid-tempo walking cycle.
+   - Rapid double-jab / flurry strike clip.
+   - Unique synchronized throw attacker/defender clips.
+   - Getting up, knockdown, submission struggle, victory/defeat.
+3. **Integration & Automated Verification**:
+   - Export to `assets/models/cyraxx.glb`.
+   - Update `tests/test_visual_presentation.gd` and `tests/test_suite.gd` to verify Cyraxx has `has_skeletal_rig == true` and 16 valid clips.
+   - Run Tophiachu vs Cyraxx full match in `test_pin_balance_scene.gd` with both fighters rigged.
 
-### Priority 2: Skeletal Animation Rigging & Authored Animation Pipeline
-- Establish glTF/GLB skeletal armature pipeline in Blender for all 8 fighter archetypes.
-- Replace procedural geometric tweening with authored skeletal animation clips:
-  - Idles, walk cycles, guard stance, strike animations (punches, kicks, backfists).
-  - Synchronized throw animations (powerslams, suplexes, trips, takedowns).
-  - Ground states (knockdown, ground struggle, pinfall hold, getting up).
-  - Submission holds (armbars, chokes, Boston crabs, figure-fours).
-- Implement Godot `AnimationTree` state machines for smooth blending and root motion support.
+### Phase 3: KingCobraJFS Neutral Referee Rig & Permanent Memorial Halo
+1. **Armature & Visual Model**:
+   - Humanoid armature for KingCobraJFS with custom referee polo/vest, iconic glasses, and bowler hat.
+   - Permanent, glowing golden memorial halo (1991–2025) securely parented to the `Head` bone with pulsing emissive shader/material.
+2. **Referee Animation Set**:
+   - Upright officiating idle with observational head glances.
+   - Fast, decisive floor drop for pin counts (dropping to chest, hitting the mat for counts 1, 2, 3).
+   - Standing wave-off animation for kick-outs and rope breaks.
+   - Authoritative pointing gesture to designate match winner.
+3. **Integration & Verification**:
+   - Export to `assets/models/referee_cobra.glb`.
+   - Verify referee remains neutral, untargetable, with halo visible throughout all match phases.
 
-### Priority 3: Tournament & Spectator Modes (Post-Combat Acceptance)
-- Tournament bracket generator (single-elimination 8-fighter tournament).
-- Spectator / CPU vs CPU exhibition mode with broadcast camera director transitions.
-- Victory screens, championship trophy presentation, and match statistics recap.
+### Phase 4: Remaining 6 Fighters in Roster Pipeline
+- `novaonline`: Athletic heavyweight frame, fiery red/gold attire, powerful striking stance.
+- `candy_rooks`: Broad kitchen-sink powerhouse brute, pink apron aesthetic, wrist wraps.
+- `andy_ditch`: Sturdy territory anchor, padded denim blue wrestling singlet.
+- `jupiter_the_hybrid`: Slender celestial martial artist, violet/silver attire.
+- `anacondasin`: Flexible submission technician, serpentine emerald/gold tights.
+- `daniel_larson`: Erratic, lanky scrapper, bright orange jacket silhouette.

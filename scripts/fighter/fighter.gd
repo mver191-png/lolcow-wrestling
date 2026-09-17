@@ -43,10 +43,14 @@ enum State {
 
 # Visual nodes
 @export var visual_root: Node3D
-@export var body_mesh: MeshInstance3D
 @export var left_arm: Node3D
 @export var right_arm: Node3D
+const FighterPresentationScript = preload("res://scripts/fighter/fighter_presentation.gd")
 var anim_player: AnimationPlayer = null
+var presentation = null
+
+func is_rigged() -> bool:
+	return presentation != null and presentation.has_skeletal_rig
 
 # Internal attributes scaled from RosterData
 var char_name: String = "Fighter"
@@ -111,7 +115,9 @@ func _init() -> void:
 func _ready() -> void:
 	load_character_data()
 
-func load_character_data() -> void:
+func load_character_data(p_character_id: String = "") -> void:
+	if p_character_id != "":
+		character_id = p_character_id
 	var data: Dictionary = RosterData.get_character(character_id)
 	if data.is_empty():
 		return
@@ -142,17 +148,13 @@ func load_character_data() -> void:
 	hype_changed.emit(hype, MatchRules.MAX_HYPE)
 
 	if visual_root:
-		for child in visual_root.get_children():
-			child.queue_free()
-		anim_player = null
-		var model_path: String = "res://assets/models/" + character_id + ".glb"
-		if ResourceLoader.exists(model_path):
-			var model_res = load(model_path)
-			if model_res is PackedScene:
-				var inst: Node = model_res.instantiate()
-				visual_root.add_child(inst)
-				anim_player = inst.find_child("AnimationPlayer", true, false) as AnimationPlayer
-				_play_state_animation(current_state)
+		if presentation == null:
+			presentation = FighterPresentationScript.new()
+			presentation.name = "FighterPresentation"
+			add_child(presentation)
+			presentation.setup(self, visual_root)
+		presentation.load_model(character_id)
+		anim_player = presentation.anim_player
 	
 	character_loaded.emit(self)
 
@@ -167,6 +169,8 @@ func _physics_process(delta: float) -> void:
 	
 	_tick_stamina(delta)
 	_update_state_machine(delta)
+	if presentation:
+		presentation.update_locomotion_stride()
 	_clamp_within_ring()
 	_clear_consumed_pulse_inputs()
 
@@ -256,7 +260,7 @@ func _update_state_machine(delta: float) -> void:
 			
 		State.KNOCKED_DOWN:
 			velocity = Vector3.ZERO
-			if visual_root:
+			if visual_root and not is_rigged():
 				visual_root.rotation.x = deg_to_rad(-90.0)
 				visual_root.position.y = 0.15
 			if state_timer >= knockdown_duration:
@@ -264,7 +268,7 @@ func _update_state_machine(delta: float) -> void:
 				
 		State.GETTING_UP:
 			velocity = Vector3.ZERO
-			if visual_root:
+			if visual_root and not is_rigged():
 				var t: float = clamp(state_timer / 0.6, 0.0, 1.0)
 				visual_root.rotation.x = lerp(deg_to_rad(-90.0), 0.0, t)
 				visual_root.position.y = lerp(0.15, 0.0, t)
@@ -276,25 +280,25 @@ func _update_state_machine(delta: float) -> void:
 				
 		State.PINNING:
 			velocity = Vector3.ZERO
-			if visual_root:
+			if visual_root and not is_rigged():
 				visual_root.position.y = -0.3
 				
 		State.PINNED:
 			velocity = Vector3.ZERO
-			if visual_root:
+			if visual_root and not is_rigged():
 				visual_root.rotation.x = deg_to_rad(-90.0)
 				visual_root.position.y = 0.1
 			_process_pin_escape(delta)
 			
 		State.SUBMISSION_ATTACKER:
 			velocity = Vector3.ZERO
-			if visual_root:
+			if visual_root and not is_rigged():
 				visual_root.position.y = -0.25
 			_process_submission_attacker(delta)
 			
 		State.SUBMISSION_DEFENDER:
 			velocity = Vector3.ZERO
-			if visual_root:
+			if visual_root and not is_rigged():
 				visual_root.rotation.x = deg_to_rad(-90.0)
 				visual_root.position.y = 0.1
 			_process_submission_defender(delta)
@@ -307,7 +311,7 @@ func _update_state_machine(delta: float) -> void:
 				
 		State.DEFEATED:
 			velocity = Vector3.ZERO
-			if visual_root:
+			if visual_root and not is_rigged():
 				visual_root.rotation.x = deg_to_rad(-90.0)
 				visual_root.position.y = 0.1
 
@@ -390,7 +394,7 @@ func _start_strike() -> void:
 	_set_state(State.STRIKING)
 	
 	# Arm punch animation
-	if right_arm:
+	if right_arm and not is_rigged():
 		var tween: Tween = create_tween()
 		tween.tween_property(right_arm, "position:z", -0.8, 0.15)
 		tween.tween_property(right_arm, "position:z", 0.0, 0.25)
@@ -478,7 +482,7 @@ func _attempt_grapple(is_finisher: bool = false) -> void:
 	_set_state(State.GRAPPLE_STARTUP)
 	
 	# Procedural reaching visual feedback
-	if left_arm and right_arm:
+	if left_arm and right_arm and not is_rigged():
 		var tween: Tween = create_tween().set_parallel(true)
 		tween.tween_property(left_arm, "position:z", -0.5, 0.12)
 		tween.tween_property(right_arm, "position:z", -0.5, 0.12)
@@ -494,7 +498,7 @@ func _process_grapple_startup(_delta: float) -> void:
 				var target: Fighter = grapple_target
 				grapple_target = null
 				
-				if left_arm and right_arm:
+				if left_arm and right_arm and not is_rigged():
 					left_arm.position.z = 0.0
 					right_arm.position.z = 0.0
 				
@@ -510,7 +514,7 @@ func _process_grapple_startup(_delta: float) -> void:
 		# Target moved away, was knocked down, or missed: wait for whiff recovery
 		grapple_target = null
 		if state_timer >= MatchRules.GRAPPLE_WHIFF_DURATION:
-			if left_arm and right_arm:
+			if left_arm and right_arm and not is_rigged():
 				left_arm.position.z = 0.0
 				right_arm.position.z = 0.0
 			_set_state(State.IDLE)
@@ -974,28 +978,29 @@ func _set_state(new_state: State) -> void:
 	state_changed.emit(old_state, new_state)
 
 func _play_state_animation(st: State) -> void:
-	if not is_instance_valid(anim_player):
-		return
-	var anim_name: String = ""
-	match st:
-		State.IDLE: anim_name = "idle"
-		State.MOVING: anim_name = "walk"
-		State.STRIKING: anim_name = "strike"
-		State.BLOCKING: anim_name = "block"
-		State.REVERSAL_STANCE: anim_name = "reversal"
-		State.GRAPPLE_STARTUP: anim_name = "grapple"
-		State.GRAPPLING_ATTACKER: anim_name = "throw_attacker"
-		State.GRAPPLING_DEFENDER: anim_name = "throw_defender"
-		State.KNOCKED_DOWN: anim_name = "knockdown"
-		State.GETTING_UP: anim_name = "getup"
-		State.PINNING: anim_name = "pinning"
-		State.PINNED: anim_name = "pinned"
-		State.SUBMISSION_ATTACKER: anim_name = "submission_attacker"
-		State.SUBMISSION_DEFENDER: anim_name = "submission_defender"
-		State.VICTORY: anim_name = "victory"
-		State.DEFEATED: anim_name = "defeated"
-	if anim_name != "" and anim_player.has_animation(anim_name):
-		anim_player.play(anim_name)
+	if presentation:
+		presentation.play_state_animation(st)
+	elif is_instance_valid(anim_player):
+		var anim_name: String = ""
+		match st:
+			State.IDLE: anim_name = "idle"
+			State.MOVING: anim_name = "walk"
+			State.STRIKING: anim_name = "strike"
+			State.BLOCKING: anim_name = "block"
+			State.REVERSAL_STANCE: anim_name = "reversal"
+			State.GRAPPLE_STARTUP: anim_name = "grapple"
+			State.GRAPPLING_ATTACKER: anim_name = "throw_attacker"
+			State.GRAPPLING_DEFENDER: anim_name = "throw_defender"
+			State.KNOCKED_DOWN: anim_name = "knockdown"
+			State.GETTING_UP: anim_name = "getup"
+			State.PINNING: anim_name = "pinning"
+			State.PINNED: anim_name = "pinned"
+			State.SUBMISSION_ATTACKER: anim_name = "submission_attacker"
+			State.SUBMISSION_DEFENDER: anim_name = "submission_defender"
+			State.VICTORY: anim_name = "victory"
+			State.DEFEATED: anim_name = "defeated"
+		if anim_name != "" and anim_player.has_animation(anim_name):
+			anim_player.play(anim_name)
 
 func _clamp_within_ring() -> void:
 	# Single authoritative ownership: attacker solely controls defender's position during throws

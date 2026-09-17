@@ -36,6 +36,7 @@ func _init() -> void:
 	test_pass_a_simultaneous_submission_ordering()
 	test_pass_a_callback_state_overwrite_resilience()
 	test_pass_a_final_count_escape_crossing()
+	test_visual_presentation_and_skeletal_rig()
 	
 	print("==================================================")
 	print("TEST RESULTS: %d Passed, %d Failed, %d Total" % [passed_tests, failed_tests, total_tests])
@@ -1530,5 +1531,66 @@ func test_pass_a_final_count_escape_crossing() -> void:
 		manager.free()
 		pinner.free()
 		pinned.free()
+
+func test_visual_presentation_and_skeletal_rig() -> void:
+	var fighter_scene = load("res://scenes/fighter/fighter.tscn")
+	assert_true(fighter_scene != null, "Presentation Test: fighter.tscn loaded")
+	
+	var fighter = fighter_scene.instantiate()
+	root.add_child(fighter)
+	fighter.load_character_data("tophiachu")
+	
+	assert_true(fighter.presentation != null, "Presentation Test: FighterPresentation instantiated")
+	assert_true(fighter.presentation.has_skeletal_rig == true, "Presentation Test: Tophiachu has_skeletal_rig is true")
+	assert_true(fighter.is_rigged() == true, "Presentation Test: Tophiachu is_rigged() reports true")
+	assert_true(is_instance_valid(fighter.presentation.skeleton), "Presentation Test: Skeleton3D valid")
+	assert_true(is_instance_valid(fighter.presentation.anim_player), "Presentation Test: AnimationPlayer valid")
+	
+	var skel: Skeleton3D = fighter.presentation.skeleton
+	var expected_bones = [
+		"Root", "Hips", "Spine", "Chest", "Neck", "Head",
+		"Clavicle.L", "Clavicle.R", "UpperArm.L", "UpperArm.R",
+		"Forearm.L", "Forearm.R", "Hand.L", "Hand.R",
+		"Thigh.L", "Thigh.R", "Shin.L", "Shin.R",
+		"Foot.L", "Foot.R", "Toe.L", "Toe.R"
+	]
+	var all_bones: bool = true
+	for b in expected_bones:
+		if skel.find_bone(b) == -1:
+			all_bones = false
+	assert_true(all_bones, "Presentation Test: All 22 canonical humanoid bones verified")
+	
+	var ap: AnimationPlayer = fighter.presentation.anim_player
+	var expected_anims = [
+		"idle", "walk", "strike", "knockdown", "getup",
+		"block", "reversal", "grapple", "throw_attacker", "throw_defender",
+		"pinning", "pinned", "submission_attacker", "submission_defender",
+		"victory", "defeated"
+	]
+	var all_anims: bool = true
+	for a in expected_anims:
+		if not ap.has_animation(a):
+			all_anims = false
+	assert_true(all_anims, "Presentation Test: All 16 keyframed clips present in AnimationPlayer")
+	
+	# Verify looping
+	assert_true(ap.get_animation("idle").loop_mode == Animation.LOOP_LINEAR, "Presentation Test: 'idle' loops linearly")
+	assert_true(ap.get_animation("walk").loop_mode == Animation.LOOP_LINEAR, "Presentation Test: 'walk' loops linearly")
+	
+	# Verify visual_root guard
+	fighter.current_state = Fighter.State.KNOCKED_DOWN
+	fighter._play_state_animation(Fighter.State.KNOCKED_DOWN)
+	assert_true(fighter.visual_root.rotation.x == 0.0, "Presentation Test: visual_root.rotation.x remains 0 on rigged fighter")
+	
+	# Verify unmigrated fallback
+	var unmigrated = fighter_scene.instantiate()
+	root.add_child(unmigrated)
+	unmigrated.load_character_data("cyraxx")
+	assert_true(unmigrated.presentation != null, "Presentation Test: Presentation exists for unmigrated fighter")
+	assert_true(unmigrated.is_rigged() == false, "Presentation Test: Unmigrated fighter is_rigged() is false")
+	
+	fighter.queue_free()
+	unmigrated.queue_free()
+
 
 
