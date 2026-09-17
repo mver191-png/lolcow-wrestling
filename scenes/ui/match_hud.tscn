@@ -1,0 +1,272 @@
+[gd_scene format=3 uid="uid://dmhud001"]
+
+[ext_resource type="Script" path="res://scripts/ui/match_hud.gd" id="1_script"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_p1_hp"]
+bg_color = Color(0.85, 0.15, 0.2, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_p1_sta"]
+bg_color = Color(0.2, 0.75, 0.35, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hype"]
+bg_color = Color(0.85, 0.65, 0.1, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
+bg_color = Color(0.1, 0.1, 0.12, 0.8)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.05, 0.05, 0.07, 0.88)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.9, 0.75, 0.2, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="MatchHUD" type="Control" node_paths=PackedStringArray("p1_name_label", "p1_title_label", "p1_vitality_bar", "p1_stamina_bar", "p1_hype_bar", "p1_state_label", "p2_name_label", "p2_title_label", "p2_vitality_bar", "p2_stamina_bar", "p2_hype_bar", "p2_state_label", "center_announcement", "pin_escape_container", "pin_escape_bar", "victory_panel", "victory_label")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+p1_name_label = NodePath("P1_Container/Name")
+p1_title_label = NodePath("P1_Container/Title")
+p1_vitality_bar = NodePath("P1_Container/VitalityBar")
+p1_stamina_bar = NodePath("P1_Container/StaminaBar")
+p1_hype_bar = NodePath("P1_Container/HypeBar")
+p1_state_label = NodePath("P1_Container/State")
+p2_name_label = NodePath("P2_Container/Name")
+p2_title_label = NodePath("P2_Container/Title")
+p2_vitality_bar = NodePath("P2_Container/VitalityBar")
+p2_stamina_bar = NodePath("P2_Container/StaminaBar")
+p2_hype_bar = NodePath("P2_Container/HypeBar")
+p2_state_label = NodePath("P2_Container/State")
+center_announcement = NodePath("CenterAnnouncement")
+pin_escape_container = NodePath("PinEscapeContainer")
+pin_escape_bar = NodePath("PinEscapeContainer/ProgressBar")
+victory_panel = NodePath("VictoryPanel")
+victory_label = NodePath("VictoryPanel/Label")
+
+[node name="P1_Container" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_left = 40.0
+offset_top = 30.0
+offset_right = 460.0
+offset_bottom = 160.0
+
+[node name="Name" type="Label" parent="P1_Container"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+text = "TOPHIACHU"
+
+[node name="Title" type="Label" parent="P1_Container"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_font_sizes/font_size = 14
+text = "Live & Unfiltered"
+
+[node name="VitalityBar" type="ProgressBar" parent="P1_Container"]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_p1_hp")
+value = 100.0
+show_percentage = false
+
+[node name="StaminaBar" type="ProgressBar" parent="P1_Container"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_p1_sta")
+value = 100.0
+show_percentage = false
+
+[node name="HypeBar" type="ProgressBar" parent="P1_Container"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_hype")
+value = 0.0
+show_percentage = false
+
+[node name="State" type="Label" parent="P1_Container"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.7, 0.2, 1)
+theme_override_font_sizes/font_size = 14
+text = "IDLE"
+
+[node name="P2_Container" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -460.0
+offset_top = 30.0
+offset_right = -40.0
+offset_bottom = 160.0
+grow_horizontal = 0
+
+[node name="Name" type="Label" parent="P2_Container"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+text = "CYRAXX"
+horizontal_alignment = 2
+
+[node name="Title" type="Label" parent="P2_Container"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_font_sizes/font_size = 14
+text = "Feedback Frenzy"
+horizontal_alignment = 2
+
+[node name="VitalityBar" type="ProgressBar" parent="P2_Container"]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_p1_hp")
+value = 100.0
+fill_mode = 1
+show_percentage = false
+
+[node name="StaminaBar" type="ProgressBar" parent="P2_Container"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_p1_sta")
+value = 100.0
+fill_mode = 1
+show_percentage = false
+
+[node name="HypeBar" type="ProgressBar" parent="P2_Container"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_hype")
+value = 0.0
+fill_mode = 1
+show_percentage = false
+
+[node name="State" type="Label" parent="P2_Container"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.7, 0.2, 1)
+theme_override_font_sizes/font_size = 14
+text = "IDLE"
+horizontal_alignment = 2
+
+[node name="CenterAnnouncement" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -120.0
+offset_right = 300.0
+offset_bottom = -40.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.2, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 12
+theme_override_font_sizes/font_size = 48
+text = "COUNT: 1!"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PinEscapeContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = 20.0
+offset_right = 250.0
+offset_bottom = 90.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="PinEscapeContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 20
+text = "TAP [SPACE] / [NUM0] TO KICK OUT!"
+horizontal_alignment = 1
+
+[node name="ProgressBar" type="ProgressBar" parent="PinEscapeContainer"]
+custom_minimum_size = Vector2(0, 22)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_p1_sta")
+value = 0.0
+show_percentage = true
+
+[node name="ControlsReminder" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -45.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.85, 0.85, 0.9, 0.9)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 14
+text = "P1: WASD=Move | J=Strike | K=Grapple | L=Block | U=Reversal | SPACE=Pin  ||  P2: Arrows=Move | Num1=Strike | Num2=Grapple | Num3=Block | Num4=Reversal | Num0=Pin  ||  [R] Restart"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="VictoryPanel" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -350.0
+offset_top = -140.0
+offset_right = 350.0
+offset_bottom = 140.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Label" type="Label" parent="VictoryPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.3, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 10
+theme_override_font_sizes/font_size = 36
+text = "TOPHIACHU WINS!
+[PINFALL 3-COUNT]
+
+Press [R] to Restart Match"
+horizontal_alignment = 1
+vertical_alignment = 1

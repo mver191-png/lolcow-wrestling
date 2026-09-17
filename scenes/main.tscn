@@ -1,0 +1,84 @@
+[gd_scene format=3 uid="uid://dmainscene01"]
+
+[ext_resource type="Script" path="res://scripts/core/main_scene.gd" id="1_main"]
+[ext_resource type="PackedScene" path="res://scenes/arena/ring_arena.tscn" id="2_arena"]
+[ext_resource type="PackedScene" path="res://scenes/fighter/fighter.tscn" id="3_fighter"]
+[ext_resource type="PackedScene" path="res://scenes/referee/referee.tscn" id="4_referee"]
+[ext_resource type="Script" path="res://scripts/core/match_manager.gd" id="5_match"]
+[ext_resource type="Script" path="res://scripts/ring/broadcast_camera.gd" id="6_cam"]
+[ext_resource type="Script" path="res://scripts/ai/cpu_controller.gd" id="7_cpu"]
+[ext_resource type="PackedScene" path="res://scenes/ui/match_hud.tscn" id="8_hud"]
+
+[sub_resource type="Environment" id="Environment_arena"]
+background_mode = 1
+background_color = Color(0.04, 0.04, 0.05, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.25, 0.25, 0.3, 1)
+tonemap_mode = 2
+glow_enabled = true
+glow_intensity = 0.8
+glow_bloom = 0.25
+
+[node name="Main" type="Node3D" node_paths=PackedStringArray("fighter_1", "fighter_2", "cpu_controller_p2", "match_manager")]
+script = ExtResource("1_main")
+fighter_1 = NodePath("Tophiachu")
+fighter_2 = NodePath("Cyraxx")
+cpu_controller_p2 = NodePath("CPUController_P2")
+match_manager = NodePath("MatchManager")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_arena")
+
+[node name="SpotLight_Center" type="SpotLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 9, 0)
+light_color = Color(1, 0.98, 0.9, 1)
+light_energy = 8.0
+spot_range = 16.0
+spot_angle = 45.0
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 5, 8, 5)
+light_color = Color(0.9, 0.9, 0.95, 1)
+light_energy = 1.2
+shadow_enabled = true
+
+[node name="RingArena" parent="." instance=ExtResource("2_arena")]
+
+[node name="Tophiachu" parent="." instance=ExtResource("3_fighter")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.8, 0, 0)
+character_id = "tophiachu"
+player_index = 1
+is_cpu = false
+
+[node name="Cyraxx" parent="." instance=ExtResource("3_fighter")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.8, 0, 0)
+character_id = "cyraxx"
+player_index = 2
+is_cpu = true
+
+[node name="CPUController_P2" type="Node" parent="." node_paths=PackedStringArray("fighter")]
+script = ExtResource("7_cpu")
+fighter = NodePath("../Cyraxx")
+
+[node name="Referee" parent="." instance=ExtResource("4_referee")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -2.4)
+
+[node name="MatchManager" type="Node" parent="." node_paths=PackedStringArray("fighter_1", "fighter_2", "referee", "hud")]
+script = ExtResource("5_match")
+fighter_1 = NodePath("../Tophiachu")
+fighter_2 = NodePath("../Cyraxx")
+referee = NodePath("../Referee")
+hud = NodePath("../CanvasLayer/MatchHUD")
+
+[node name="BroadcastCamera" type="Camera3D" parent="." node_paths=PackedStringArray("target_1", "target_2")]
+transform = Transform3D(1, 0, 0, 0, 0.866025, 0.5, 0, -0.5, 0.866025, 0, 4.8, 9)
+current = true
+fov = 55.0
+script = ExtResource("6_cam")
+target_1 = NodePath("../Tophiachu")
+target_2 = NodePath("../Cyraxx")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="MatchHUD" parent="CanvasLayer" node_paths=PackedStringArray("match_manager") instance=ExtResource("8_hud")]
+match_manager = NodePath("../../MatchManager")
