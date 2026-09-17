@@ -24,8 +24,11 @@ func _physics_process(delta: float) -> void:
 	# Active escape mashing during PINNED or SUBMISSION_DEFENDER
 	if fighter.current_state in [Fighter.State.PINNED, Fighter.State.SUBMISSION_DEFENDER]:
 		escape_timer += delta
-		# Mashing cadence scales with reversal stat (higher reversal = faster mash)
-		var effective_interval: float = escape_mash_interval * (1.2 - (fighter.stat_reversal * 0.04))
+		var vit_ratio: float = clamp(fighter.vitality / fighter.max_vitality, 0.0, 1.0)
+		var stam_ratio: float = clamp(fighter.stamina / fighter.max_stamina, 0.0, 1.0)
+		var fatigue: float = 1.0 - (0.6 * vit_ratio + 0.4 * stam_ratio)
+		# Mashing cadence scales with reversal stat and physical fatigue (exhausted CPU struggles at ~6-7 Hz, fresh at 10 Hz)
+		var effective_interval: float = (escape_mash_interval + 0.04 * fatigue) * (1.2 - (fighter.stat_reversal * 0.04))
 		if escape_timer >= effective_interval:
 			escape_timer = 0.0
 			fighter.input_pin = true

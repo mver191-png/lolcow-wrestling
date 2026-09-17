@@ -89,6 +89,7 @@ var initial_defender_local_pos: Vector3 = Vector3.ZERO
 # Pin escape tracking
 var pin_escape_progress: float = 0.0
 var knockdown_duration: float = 2.5
+var recent_finisher_impact_timer: float = 0.0
 
 # Input buffer
 var input_dir: Vector2 = Vector2.ZERO
@@ -99,6 +100,7 @@ var input_reversal: bool = false
 var input_pin: bool = false
 var input_finisher: bool = false
 var input_hold_pin: bool = false
+var prev_pin_held: bool = false
 
 func _ready() -> void:
 	load_character_data()
@@ -149,6 +151,9 @@ func load_character_data() -> void:
 	character_loaded.emit(self)
 
 func _physics_process(delta: float) -> void:
+	if recent_finisher_impact_timer > 0.0:
+		recent_finisher_impact_timer = max(0.0, recent_finisher_impact_timer - delta)
+		
 	if not is_cpu:
 		_gather_player_inputs()
 	
@@ -175,9 +180,11 @@ func _gather_player_inputs() -> void:
 	input_grapple = Input.is_action_just_pressed(prefix + "grapple")
 	input_block = Input.is_action_pressed(prefix + "block")
 	input_reversal = Input.is_action_just_pressed(prefix + "reversal")
-	input_pin = Input.is_action_just_pressed(prefix + "pin")
+	var pin_down: bool = Input.is_action_pressed(prefix + "pin")
+	input_pin = pin_down and not prev_pin_held
+	input_hold_pin = pin_down and prev_pin_held
+	prev_pin_held = pin_down
 	input_finisher = Input.is_action_just_pressed(prefix + "finisher")
-	input_hold_pin = Input.is_action_pressed(prefix + "pin")
 
 func _clear_consumed_pulse_inputs() -> void:
 	input_strike = false
@@ -496,7 +503,7 @@ func _process_synchronized_attacker() -> void:
 			if is_finisher_attack:
 				throw_damage *= 1.6
 				
-			synchronized_partner.receive_damage(throw_damage, self, false)
+			synchronized_partner.receive_damage(throw_damage, self, false, is_finisher_attack)
 			gain_hype(MatchRules.HYPE_GAIN_ON_HIT * 1.8)
 			throw_impact.emit(self, synchronized_partner)
 			
@@ -626,7 +633,12 @@ func _execute_submission_escape() -> void:
 		visual_root.position = Vector3.ZERO
 	_set_state(State.GETTING_UP)
 	
-	if is_instance_valid(opponent) and opponent.current_state == State.SUBMISSION_ATTACKER:
+	var partner: Fighter = synchronized_partner
+	synchronized_partner = null
+	
+	if is_instance_valid(partner) and partner.current_state == State.SUBMISSION_ATTACKER:
+		partner.on_submission_broken_by_escape()
+	elif is_instance_valid(opponent) and opponent.current_state == State.SUBMISSION_ATTACKER:
 		opponent.on_submission_broken_by_escape()
 
 func on_submission_broken_by_escape() -> void:
@@ -694,17 +706,33 @@ func on_pinned(attacker: Fighter) -> void:
 	_set_state(State.PINNED)
 
 func _process_pin_escape(delta: float) -> void:
-	# Accumulate escape progress via button presses or hold using unified fighter command interface
-	var escape_gain: float = 0.0
+	var has_mash_input: bool = (input_pin or input_strike or input_grapple)
+	var has_hold_input: bool = input_hold_pin
 	
-	if input_pin or input_strike or input_grapple:
-		escape_gain += 16.0
-	elif input_hold_pin: # Accessibility hold-to-resist
-		escape_gain += MatchRules.PIN_ESCAPE_BASE_RATE * delta
+	var vit_ratio: float = clamp(vitality / max_vitality, 0.0, 1.0)
+	var stam_ratio: float = clamp(stamina / max_stamina, 0.0, 1.0)
+	var rev_ratio: float = clamp(stat_reversal / 10.0, 0.1, 1.0)
 	
-	# Scale with remaining stamina & vitality
-	var stamina_factor: float = 0.5 + 0.5 * (stamina / max_stamina)
-	pin_escape_progress += escape_gain * stamina_factor
+	# Quadratic vitality weighting ensures high HP defenders kick out swiftly (<1.2s),
+	# while exhausted/damaged defenders (<15% HP) suffer realistic 3-count pinfall defeats.
+	var health_factor: float = 0.06 + 0.64 * (vit_ratio * vit_ratio) + 0.30 * stam_ratio
+	var rev_mult: float = 0.85 + 0.30 * rev_ratio
+	var finisher_mult: float = MatchRules.PIN_ESCAPE_FINISHER_PENALTY if recent_finisher_impact_timer > 0.0 else 1.0
+	var total_mult: float = health_factor * rev_mult * finisher_mult
+	
+	if has_mash_input:
+		var mash_gain: float = MatchRules.PIN_ESCAPE_MASH_BASE * total_mult
+		pin_escape_progress += mash_gain
+		stamina = max(0.0, stamina - 0.5)
+		stamina_changed.emit(stamina, max_stamina)
+	elif has_hold_input:
+		var hold_gain: float = MatchRules.PIN_ESCAPE_BASE_RATE * total_mult * delta
+		pin_escape_progress += hold_gain
+		stamina = max(0.0, stamina - 2.0 * delta)
+		stamina_changed.emit(stamina, max_stamina)
+	else:
+		# Passive decay when unresisted (simulates pin weight & pinning arm pressure)
+		pin_escape_progress = max(0.0, pin_escape_progress - MatchRules.PIN_ESCAPE_DECAY_RATE * delta)
 	
 	if pin_escape_progress >= 100.0:
 		_execute_kick_out()
@@ -738,9 +766,12 @@ func break_pin_rope_break() -> void:
 			visual_root.position = Vector3.ZERO
 		_set_state(State.IDLE)
 
-func receive_damage(amount: float, from_fighter: Fighter, was_blocked: bool) -> void:
+func receive_damage(amount: float, from_fighter: Fighter, was_blocked: bool, is_finisher: bool = false) -> void:
 	vitality = max(0.0, vitality - amount)
 	vitality_changed.emit(vitality, max_vitality)
+	
+	if is_finisher or amount >= 100.0:
+		recent_finisher_impact_timer = 6.0
 	
 	# Knockdown on heavy damage or low health
 	if not was_blocked and vitality <= 0.0 and current_state != State.KNOCKED_DOWN and current_state != State.PINNED:

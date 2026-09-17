@@ -28,6 +28,7 @@ func _init() -> void:
 	test_pass_a_cpu_escape_mechanisms()
 	test_pass_a_throw_height_and_ownership()
 	test_pass_a_slot_inversions_and_facing_vectors()
+	test_pass_a_resource_aware_pinfall_balance()
 	
 	print("==================================================")
 	print("TEST RESULTS: %d Passed, %d Failed, %d Total" % [passed_tests, failed_tests, total_tests])
@@ -545,3 +546,425 @@ func test_pass_a_slot_inversions_and_facing_vectors() -> void:
 		
 		atk.free()
 		def.free()
+
+func test_pass_a_resource_aware_pinfall_balance() -> void:
+	# 1. Fresh CPU escaping an ordinary pin
+	var mm_fresh: MatchManager = MatchManager.new()
+	var p1_fresh: Fighter = Fighter.new()
+	var p2_fresh: Fighter = Fighter.new()
+	var cpu_fresh: CPUController = CPUController.new()
+	root.add_child(mm_fresh)
+	root.add_child(p1_fresh)
+	root.add_child(p2_fresh)
+	root.add_child(cpu_fresh)
+	
+	p1_fresh.character_id = "tophiachu"
+	p2_fresh.character_id = "cyraxx"
+	p1_fresh.load_character_data()
+	p2_fresh.load_character_data()
+	p2_fresh.is_cpu = true
+	cpu_fresh.fighter = p2_fresh
+	p2_fresh.vitality = p2_fresh.max_vitality
+	p2_fresh.stamina = p2_fresh.max_stamina
+	p1_fresh.position = Vector3.ZERO
+	p2_fresh.position = Vector3.ZERO
+	mm_fresh.fighter_1 = p1_fresh
+	mm_fresh.fighter_2 = p2_fresh
+	mm_fresh._setup_match()
+	
+	p1_fresh._start_pin(p2_fresh)
+	var fresh_outcome: Array = ["NONE"]
+	var fresh_count_at_break: Array = [0]
+	mm_fresh.pin_broken.connect(func(reason):
+		fresh_outcome[0] = reason
+		fresh_count_at_break[0] = mm_fresh.current_count
+	)
+	
+	for frame in range(240):
+		cpu_fresh._physics_process(1.0 / 60.0)
+		p1_fresh._physics_process(1.0 / 60.0)
+		p2_fresh._physics_process(1.0 / 60.0)
+		mm_fresh._physics_process(1.0 / 60.0)
+		if fresh_outcome[0] != "NONE":
+			break
+			
+	assert_true(fresh_outcome[0] == "KICKOUT", "Pass A Pinfall: Fresh CPU defender kicks out of pin (Reason: %s)" % fresh_outcome[0])
+	assert_true(fresh_count_at_break[0] <= 2, "Pass A Pinfall: Fresh CPU kicks out before referee 3-count (Count: %d)" % fresh_count_at_break[0])
+	
+	mm_fresh.free()
+	p1_fresh.free()
+	p2_fresh.free()
+	cpu_fresh.free()
+	
+	# 2. Sufficiently weakened CPU losing a valid pin (15% vitality, 10% stamina)
+	var mm_weak: MatchManager = MatchManager.new()
+	var p1_weak: Fighter = Fighter.new()
+	var p2_weak: Fighter = Fighter.new()
+	var cpu_weak: CPUController = CPUController.new()
+	root.add_child(mm_weak)
+	root.add_child(p1_weak)
+	root.add_child(p2_weak)
+	root.add_child(cpu_weak)
+	
+	p1_weak.character_id = "tophiachu"
+	p2_weak.character_id = "cyraxx"
+	p1_weak.load_character_data()
+	p2_weak.load_character_data()
+	p2_weak.is_cpu = true
+	cpu_weak.fighter = p2_weak
+	p2_weak.vitality = p2_weak.max_vitality * 0.15
+	p2_weak.stamina = p2_weak.max_stamina * 0.10
+	p1_weak.position = Vector3.ZERO
+	p2_weak.position = Vector3.ZERO
+	mm_weak.fighter_1 = p1_weak
+	mm_weak.fighter_2 = p2_weak
+	mm_weak._setup_match()
+	
+	p1_weak._start_pin(p2_weak)
+	var weak_outcome: Array = ["NONE"]
+	var weak_winner: Array = [null]
+	mm_weak.match_ended.connect(func(winner, method):
+		weak_outcome[0] = method
+		weak_winner[0] = winner
+	)
+	
+	for frame in range(240):
+		cpu_weak._physics_process(1.0 / 60.0)
+		p1_weak._physics_process(1.0 / 60.0)
+		p2_weak._physics_process(1.0 / 60.0)
+		mm_weak._physics_process(1.0 / 60.0)
+		if weak_outcome[0] != "NONE":
+			break
+			
+	assert_true(weak_outcome[0] == "PINFALL (3-COUNT)", "Pass A Pinfall: Weakened CPU loses by 3-count pinfall (Outcome: %s)" % weak_outcome[0])
+	assert_true(weak_winner[0] == p1_weak, "Pass A Pinfall: Attacker P1 declared match winner over weakened CPU")
+	
+	mm_weak.free()
+	p1_weak.free()
+	p2_weak.free()
+	cpu_weak.free()
+	
+	# 3. Exhausted CPU losing a valid pin (0% vitality, 0% stamina)
+	var mm_exh: MatchManager = MatchManager.new()
+	var p1_exh: Fighter = Fighter.new()
+	var p2_exh: Fighter = Fighter.new()
+	var cpu_exh: CPUController = CPUController.new()
+	root.add_child(mm_exh)
+	root.add_child(p1_exh)
+	root.add_child(p2_exh)
+	root.add_child(cpu_exh)
+	
+	p1_exh.character_id = "tophiachu"
+	p2_exh.character_id = "cyraxx"
+	p1_exh.load_character_data()
+	p2_exh.load_character_data()
+	p2_exh.is_cpu = true
+	cpu_exh.fighter = p2_exh
+	p2_exh.vitality = 0.0
+	p2_exh.stamina = 0.0
+	p1_exh.position = Vector3.ZERO
+	p2_exh.position = Vector3.ZERO
+	mm_exh.fighter_1 = p1_exh
+	mm_exh.fighter_2 = p2_exh
+	mm_exh._setup_match()
+	
+	p1_exh._start_pin(p2_exh)
+	var exh_outcome: Array = ["NONE"]
+	mm_exh.match_ended.connect(func(_winner, method):
+		exh_outcome[0] = method
+	)
+	
+	for frame in range(240):
+		cpu_exh._physics_process(1.0 / 60.0)
+		p1_exh._physics_process(1.0 / 60.0)
+		p2_exh._physics_process(1.0 / 60.0)
+		mm_exh._physics_process(1.0 / 60.0)
+		if exh_outcome[0] != "NONE":
+			break
+			
+	assert_true(exh_outcome[0] == "PINFALL (3-COUNT)", "Pass A Pinfall: Exhausted CPU (0 HP) loses by 3-count pinfall")
+	
+	mm_exh.free()
+	p1_exh.free()
+	p2_exh.free()
+	cpu_exh.free()
+	
+	# 4. Human Input Modes: Hold-to-Resist and Active Mash
+	# A) Fresh Human Hold-to-Resist
+	var mm_hum_fresh: MatchManager = MatchManager.new()
+	var p1_hum_atk: Fighter = Fighter.new()
+	var p2_hum_def: Fighter = Fighter.new()
+	root.add_child(mm_hum_fresh)
+	root.add_child(p1_hum_atk)
+	root.add_child(p2_hum_def)
+	
+	p1_hum_atk.character_id = "tophiachu"
+	p2_hum_def.character_id = "cyraxx"
+	p1_hum_atk.player_index = 1
+	p2_hum_def.player_index = 2
+	p1_hum_atk.load_character_data()
+	p2_hum_def.load_character_data()
+	p2_hum_def.is_cpu = false
+	p2_hum_def.vitality = p2_hum_def.max_vitality
+	p2_hum_def.stamina = p2_hum_def.max_stamina
+	mm_hum_fresh.fighter_1 = p1_hum_atk
+	mm_hum_fresh.fighter_2 = p2_hum_def
+	mm_hum_fresh._setup_match()
+	
+	p1_hum_atk._start_pin(p2_hum_def)
+	
+	# Simulate human hold via Input action press
+	Input.action_press("p2_pin")
+	for frame in range(60):
+		p1_hum_atk._physics_process(1.0 / 60.0)
+		p2_hum_def._physics_process(1.0 / 60.0)
+		mm_hum_fresh._physics_process(1.0 / 60.0)
+	Input.action_release("p2_pin")
+		
+	assert_true(p2_hum_def.pin_escape_progress > 20.0, "Pass A Pinfall: Fresh human hold-to-resist accumulates escape progress (Observed: %.1f)" % p2_hum_def.pin_escape_progress)
+	
+	mm_hum_fresh.free()
+	p1_hum_atk.free()
+	p2_hum_def.free()
+	
+	# B) Exhausted Human Hold-to-Resist suffers 3-count pinfall
+	var mm_hum_exh: MatchManager = MatchManager.new()
+	var p1_hum_atk2: Fighter = Fighter.new()
+	var p2_hum_def2: Fighter = Fighter.new()
+	root.add_child(mm_hum_exh)
+	root.add_child(p1_hum_atk2)
+	root.add_child(p2_hum_def2)
+	
+	p1_hum_atk2.character_id = "tophiachu"
+	p2_hum_def2.character_id = "cyraxx"
+	p1_hum_atk2.player_index = 1
+	p2_hum_def2.player_index = 2
+	p1_hum_atk2.load_character_data()
+	p2_hum_def2.load_character_data()
+	p2_hum_def2.is_cpu = false
+	p2_hum_def2.vitality = 0.0
+	p2_hum_def2.stamina = 0.0
+	mm_hum_exh.fighter_1 = p1_hum_atk2
+	mm_hum_exh.fighter_2 = p2_hum_def2
+	mm_hum_exh._setup_match()
+	
+	p1_hum_atk2._start_pin(p2_hum_def2)
+	var hum_exh_outcome: Array = ["NONE"]
+	mm_hum_exh.match_ended.connect(func(_w, m): hum_exh_outcome[0] = m)
+	
+	Input.action_press("p2_pin")
+	for frame in range(240):
+		p1_hum_atk2._physics_process(1.0 / 60.0)
+		p2_hum_def2._physics_process(1.0 / 60.0)
+		mm_hum_exh._physics_process(1.0 / 60.0)
+		if hum_exh_outcome[0] != "NONE":
+			break
+	Input.action_release("p2_pin")
+			
+	assert_true(hum_exh_outcome[0] == "PINFALL (3-COUNT)", "Pass A Pinfall: Exhausted human holding pin button loses by 3-count pinfall")
+	
+	mm_hum_exh.free()
+	p1_hum_atk2.free()
+	p2_hum_def2.free()
+	
+	# C) Fresh Human Mashing Input kicks out
+	var mm_mash_fresh: MatchManager = MatchManager.new()
+	var p1_mash_atk: Fighter = Fighter.new()
+	var p2_mash_def: Fighter = Fighter.new()
+	root.add_child(mm_mash_fresh)
+	root.add_child(p1_mash_atk)
+	root.add_child(p2_mash_def)
+	p1_mash_atk.character_id = "tophiachu"
+	p2_mash_def.character_id = "cyraxx"
+	p1_mash_atk.player_index = 1
+	p2_mash_def.player_index = 2
+	p1_mash_atk.load_character_data()
+	p2_mash_def.load_character_data()
+	p2_mash_def.is_cpu = false
+	p2_mash_def.vitality = p2_mash_def.max_vitality
+	p2_mash_def.stamina = p2_mash_def.max_stamina
+	mm_mash_fresh.fighter_1 = p1_mash_atk
+	mm_mash_fresh.fighter_2 = p2_mash_def
+	mm_mash_fresh._setup_match()
+	p1_mash_atk._start_pin(p2_mash_def)
+	var mash_fresh_outcome: Array = ["NONE"]
+	mm_mash_fresh.pin_broken.connect(func(r): mash_fresh_outcome[0] = r)
+	for frame in range(240):
+		if frame % 6 == 0:
+			Input.action_press("p2_pin")
+		else:
+			Input.action_release("p2_pin")
+		p1_mash_atk._physics_process(1.0 / 60.0)
+		p2_mash_def._physics_process(1.0 / 60.0)
+		mm_mash_fresh._physics_process(1.0 / 60.0)
+		if mash_fresh_outcome[0] != "NONE":
+			break
+	Input.action_release("p2_pin")
+	assert_true(mash_fresh_outcome[0] == "KICKOUT", "Pass A Pinfall: Fresh human mashing kicks out of pin")
+	mm_mash_fresh.free()
+	p1_mash_atk.free()
+	p2_mash_def.free()
+	
+	# D) Exhausted Human Mashing Input (0% HP) loses by pinfall despite mashing
+	var mm_mash_exh: MatchManager = MatchManager.new()
+	var p1_mash_atk2: Fighter = Fighter.new()
+	var p2_mash_def2: Fighter = Fighter.new()
+	root.add_child(mm_mash_exh)
+	root.add_child(p1_mash_atk2)
+	root.add_child(p2_mash_def2)
+	p1_mash_atk2.character_id = "tophiachu"
+	p2_mash_def2.character_id = "cyraxx"
+	p1_mash_atk2.player_index = 1
+	p2_mash_def2.player_index = 2
+	p1_mash_atk2.load_character_data()
+	p2_mash_def2.load_character_data()
+	p2_mash_def2.is_cpu = false
+	p2_mash_def2.vitality = 0.0
+	p2_mash_def2.stamina = 0.0
+	mm_mash_exh.fighter_1 = p1_mash_atk2
+	mm_mash_exh.fighter_2 = p2_mash_def2
+	mm_mash_exh._setup_match()
+	p1_mash_atk2._start_pin(p2_mash_def2)
+	var mash_exh_outcome: Array = ["NONE"]
+	mm_mash_exh.match_ended.connect(func(_w, m): mash_exh_outcome[0] = m)
+	for frame in range(240):
+		if frame % 6 == 0:
+			Input.action_press("p2_pin")
+		else:
+			Input.action_release("p2_pin")
+		p1_mash_atk2._physics_process(1.0 / 60.0)
+		p2_mash_def2._physics_process(1.0 / 60.0)
+		mm_mash_exh._physics_process(1.0 / 60.0)
+		if mash_exh_outcome[0] != "NONE":
+			break
+	Input.action_release("p2_pin")
+	assert_true(mash_exh_outcome[0] == "PINFALL (3-COUNT)", "Pass A Pinfall: Exhausted human mashing at 10 Hz still loses by 3-count pinfall")
+	mm_mash_exh.free()
+	p1_mash_atk2.free()
+	p2_mash_def2.free()
+	
+	# 5. Slot Inversion (P2 Attacker vs P1 CPU Defender)
+	var mm_inv: MatchManager = MatchManager.new()
+	var p1_inv: Fighter = Fighter.new()
+	var p2_inv: Fighter = Fighter.new()
+	var cpu_inv: CPUController = CPUController.new()
+	root.add_child(mm_inv)
+	root.add_child(p2_inv)
+	root.add_child(p1_inv)
+	root.add_child(cpu_inv)
+	
+	p1_inv.character_id = "cyraxx"
+	p2_inv.character_id = "tophiachu"
+	p1_inv.player_index = 1
+	p2_inv.player_index = 2
+	p1_inv.load_character_data()
+	p2_inv.load_character_data()
+	p1_inv.is_cpu = true
+	cpu_inv.fighter = p1_inv
+	p1_inv.vitality = 0.0
+	p1_inv.stamina = 0.0
+	mm_inv.fighter_1 = p1_inv
+	mm_inv.fighter_2 = p2_inv
+	mm_inv._setup_match()
+	
+	p2_inv._start_pin(p1_inv)
+	var inv_winner: Array = [null]
+	var inv_outcome: Array = ["NONE"]
+	mm_inv.match_ended.connect(func(w, m):
+		inv_winner[0] = w
+		inv_outcome[0] = m
+	)
+	
+	for frame in range(240):
+		cpu_inv._physics_process(1.0 / 60.0)
+		p2_inv._physics_process(1.0 / 60.0)
+		p1_inv._physics_process(1.0 / 60.0)
+		mm_inv._physics_process(1.0 / 60.0)
+		if inv_outcome[0] != "NONE":
+			break
+			
+	assert_true(inv_outcome[0] == "PINFALL (3-COUNT)" and inv_winner[0] == p2_inv, "Pass A Pinfall: Slot Inversion (P2 Attacker wins over P1 CPU Defender)")
+	
+	mm_inv.free()
+	p1_inv.free()
+	p2_inv.free()
+	cpu_inv.free()
+	
+	# 6. Tree Processing Order Inversion (Defender added before Attacker)
+	var mm_order: MatchManager = MatchManager.new()
+	var p1_ord: Fighter = Fighter.new()
+	var p2_ord: Fighter = Fighter.new()
+	var cpu_ord: CPUController = CPUController.new()
+	root.add_child(mm_order)
+	root.add_child(p2_ord)
+	root.add_child(p1_ord)
+	root.add_child(cpu_ord)
+	
+	p1_ord.character_id = "tophiachu"
+	p2_ord.character_id = "cyraxx"
+	p1_ord.load_character_data()
+	p2_ord.load_character_data()
+	p2_ord.is_cpu = true
+	cpu_ord.fighter = p2_ord
+	p2_ord.vitality = 0.0
+	p2_ord.stamina = 0.0
+	mm_order.fighter_1 = p1_ord
+	mm_order.fighter_2 = p2_ord
+	mm_order._setup_match()
+	
+	p1_ord._start_pin(p2_ord)
+	var ord_outcome: Array = ["NONE"]
+	mm_order.match_ended.connect(func(_w, m): ord_outcome[0] = m)
+	
+	for frame in range(240):
+		p2_ord._physics_process(1.0 / 60.0)
+		cpu_ord._physics_process(1.0 / 60.0)
+		p1_ord._physics_process(1.0 / 60.0)
+		mm_order._physics_process(1.0 / 60.0)
+		if ord_outcome[0] != "NONE":
+			break
+			
+	assert_true(ord_outcome[0] == "PINFALL (3-COUNT)", "Pass A Pinfall: Tree processing order inversion resolves deterministic 3-count pinfall")
+	
+	mm_order.free()
+	p1_ord.free()
+	p2_ord.free()
+	cpu_ord.free()
+	
+	# 7. Rope Break Priority competing with Pin Count
+	var mm_rope: MatchManager = MatchManager.new()
+	var p1_rope: Fighter = Fighter.new()
+	var p2_rope: Fighter = Fighter.new()
+	root.add_child(mm_rope)
+	root.add_child(p1_rope)
+	root.add_child(p2_rope)
+	
+	p1_rope.character_id = "tophiachu"
+	p2_rope.character_id = "cyraxx"
+	p1_rope.load_character_data()
+	p2_rope.load_character_data()
+	p2_rope.vitality = 0.0
+	p2_rope.stamina = 0.0
+	p1_rope.position = Vector3(3.3, 0, 0)
+	p2_rope.position = Vector3(3.3, 0, 0)
+	mm_rope.fighter_1 = p1_rope
+	mm_rope.fighter_2 = p2_rope
+	mm_rope._setup_match()
+	
+	var rope_break_called: Array = [false]
+	mm_rope.rope_break_called.connect(func(): rope_break_called[0] = true)
+	
+	p1_rope._start_pin(p2_rope)
+	
+	for frame in range(10):
+		p1_rope._physics_process(1.0 / 60.0)
+		p2_rope._physics_process(1.0 / 60.0)
+		mm_rope._physics_process(1.0 / 60.0)
+		
+	assert_true(rope_break_called[0], "Pass A Pinfall: Pin near ropes immediately triggers rope break alert")
+	assert_true(mm_rope.current_state == MatchManager.MatchState.IN_PROGRESS, "Pass A Pinfall: Match state returns to IN_PROGRESS on rope break")
+	assert_true(mm_rope.current_count == 0, "Pass A Pinfall: Pin count aborted at 0 on rope break")
+	
+	mm_rope.free()
+	p1_rope.free()
+	p2_rope.free()

@@ -93,7 +93,7 @@ Run tests headlessly:
 `ash
 godot_console --headless -s tests/test_suite.gd
 `
-**Current Status**: 136 / 136 Passed (100% Pass, 0 Failures, 0 Warnings).
+**Current Status**: 150 / 150 Passed (100% Pass, 0 Failures, 0 Warnings).
 
 ---
 
@@ -115,7 +115,7 @@ godot_console --headless -s tests/test_suite.gd
 │   ├── referee/           # KingCobraJFS ring positioning and 3-count officiating
 │   ├── ring/              # Ring boundary and broadcast camera shake
 │   └── ui/                # UI controllers
-├── tests/                 # 136-case headless automated test suite
+├── tests/                 # 150-case headless automated test suite
 ├── project.godot          # Engine configuration & input mappings
 └── START_GAME.bat         # Direct Windows standalone launcher
 ```

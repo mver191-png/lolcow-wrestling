@@ -11,6 +11,7 @@
 
 ## 2. Git Commit History
 `	ext
+7c0697a fix(combat): complete Pass A codebase repair (escape inputs, throw height, forward facing)
 b8247d9 docs: add CODEBASE_FOR_GPT_PRO markdown digest and update gitignore
 41a525f docs: add comprehensive project README with architecture, roster, and controls
 d58c46a fix(launcher): resolve batch path escaping, update window overrides and docs
@@ -123,33 +124,59 @@ test_out.txt
 
 ### File: KNOWN_ISSUES.md
 `markdown
-# Known Issues & Observable Defects: LOLCOW WRESTLING: OFFLINE MAYHEM
+## Active Open Issues & Defects Under Repair
 
-## Resolved in M2 & M3
-1. **Procedural vs Skeletal Animation (Resolved for M3 Baseline)**:
-   - Synchronized state-machine locking and deformation offsets guarantee rock-solid throws and submissions.
-2. **Asymmetric Grapple Lift Offsets (Resolved in M2)**:
-   - Implemented weight-class and leverage ratio throw trajectory scaling (low-angle trips vs overhead slams).
-3. **Sound Effects & Foley (Resolved in M2/M3)**:
-   - Integrated procedural 16-bit PCM synthesized audio manager with ring bell, impacts, power chords, fanfares, and referee counts.
-4. **Desktop Launcher Script Trailing Quote Bug (Resolved in M3 Polish)**:
-   - Fixed `%~dp0` trailing backslash in `START_GAME.bat` which previously caused Godot to abort due to escaped quote in arguments.
-   - Created direct Windows Desktop shortcut at `C:\Users\mauri\Desktop\LOLCOW WRESTLING.lnk`.
+1. **Boundary Safety During Throws (High Priority - Open)**:
+   - `_clamp_within_ring()` skips clamping during `GRAPPLING_DEFENDER` to allow vertical lifting without clipping to the floor. However, an attacker facing outward near the ropes (e.g. $x = 3.0\text{m}$, defender at $x = 3.6\text{m}$) can slam the defender outside the physical ring bounds ($x = 4.1\text{m}$ vs $3.65\text{m}$ ring limit).
+   - *Required Fix*: Implement pre-throw spatial boundary validation that repositions the pair inwards, reorients the throw, or breaks/deflects off ropes rather than placing the defender outside before snap-back.
+
+2. **Directional Attack Contact & Grapple Startup (High Priority - Open)**:
+   - `_handle_strike_active_window()` evaluates distance between fighter origins without verifying a forward directional cone, allowing strikes to hit opponents behind the attacker.
+   - `_attempt_grapple()` immediately initiates the throw rather than pausing in `GRAPPLE_STARTUP` for a measurable vulnerability/counter window.
+   - *Required Fix*: Add forward directional dot-product gating to strike resolution and enforce a distinct startup window on grapples allowing interruptions and reversals.
+
+3. **Simultaneous Submission Outcome Ordering (Medium Priority - Open)**:
+   - While partner references are now cleared on both sides during escapes, a frame in which vitality depletes to 0 simultaneously with escape progress reaching 100 depends on node processing order (attacker update vs defender update).
+   - *Required Fix*: Establish an explicit authoritative priority policy in `MatchManager` for simultaneous tap-out vs escape frames.
+
+4. **Skeletal Animation Pipeline & Unique Moveset Data (Open)**:
+   - 3D character models are composed of procedural primitive geometries without bones or skeletal clips. Throws and strikes utilize parameterized programmatic tweening rather than distinct motion-captured or keyframed animation clips.
+
+---
+
+## Resolved in Pass A & Prior Milestones
+
+1. **CPU Pinfall Guarantee Defect (Resolved in Pass A Pinfall Balance)**:
+   - Replaced flat-rate escape formula with a resource-aware model factoring in quadratic vitality, stamina, reversal stats, and finisher impact disorientation.
+   - CPU and human players now legitimately kick out when fresh (< Count 2) and legitimately lose by 3-count pinfall when exhausted or hit with finishers.
+2. **CPU Pin & Submission Escape Command Disconnection (Resolved in Pass A)**:
+   - Unified all escape checks to consume the `Fighter` command interface (`input_pin`, `input_hold_pin`, `input_strike`, `input_grapple`, `input_block`) rather than polling global hardware keys during combat physics.
+3. **Conflicting Throw Height Ownership (Resolved in Pass A Baseline)**:
+   - Removed canvas grounding conflicts in central ring throws so overhead powerslams reach full 1.55m vertical peak before canvas impact.
+4. **Forward-Axis Facing Vector Standardization (Resolved in Pass A)**:
+   - Standardized all locomotion, stationary facing, and synchronized throw vectors to Godot's `-basis.z` forward convention (`atan2(-dx, -dz)`).
+5. **Canonical Finisher Names Alignment (Resolved in Pass A)**:
+   - Synchronized `README.md` to canonical names in `scripts/core/roster_data.gd`.
+6. **Desktop Launcher Script Trailing Quote Bug (Resolved in M3 Polish)**:
+   - Fixed `%~dp0` trailing backslash CRT escaping issue in `START_GAME.bat`.
 
 
 `
 
 ### File: NEXT_TASK.md
 `markdown
-# Next Implementation Task: Pass B (Combat Reliability & Edge Cases)
+# Next Implementation Task: Pass A Priority 2 (Boundary-Safe Paired Throws)
 
-## Next Implementation Task
-**Pass B: Combat Reliability & Edge Case Hardening**:
-1. Implement corner bounce and rope spring physics during running collisions.
-2. Polish turnbuckle collision and climbing state transitions.
-3. Harden multi-frame reversal windows with stat-scaled timing leniency.
-4. Verify edge-of-ring grapple positioning so throws near ropes naturally interact or trigger rope breaks without ring clipping.
-5. Expand test suite to validate edge-case combat scenarios before proceeding to M4 Tournament Mode.
+## Immediate Next Task
+**Priority 2: Boundary-Safe Paired Throws**:
+1. Implement shared pre-throw spatial and trajectory validation in `Fighter._attempt_grapple()` and `_start_synchronized_throw()`.
+2. When a throw is initiated near ropes ($|x| > 2.8\text{m}$ or $|z| > 2.8\text{m}$), automatically adjust the attacker-defender pair inwards, reorient facing inward toward the ring center, or trigger a rope collision/break rather than writing defender coordinates outside ring boundary ($|x| > 3.65\text{m}$) during slam arcs.
+3. Validate complete throw cycles near all 4 ring edges and 4 corners in both scene tree processing orders (P1/P2 and P2/P1) without defender clipping or snap-back.
+
+## Subsequent Backlog (In Strict Priority Order)
+- **Priority 3**: Directional hit cones (`_handle_strike_active_window`) and distinct grapple startup vulnerability window (`GRAPPLE_STARTUP`).
+- **Priority 4**: Centralized hold cleanup and deterministic outcome priority for simultaneous tap-out vs escape frames in `MatchManager`.
+- **Priority 5**: Scene integration and visual verification across all 64 matchups.
 
 `
 
@@ -250,7 +277,7 @@ Run tests headlessly:
 `ash
 godot_console --headless -s tests/test_suite.gd
 `
-**Current Status**: 136 / 136 Passed (100% Pass, 0 Failures, 0 Warnings).
+**Current Status**: 150 / 150 Passed (100% Pass, 0 Failures, 0 Warnings).
 
 ---
 
@@ -272,7 +299,7 @@ godot_console --headless -s tests/test_suite.gd
 │   ├── referee/           # KingCobraJFS ring positioning and 3-count officiating
 │   ├── ring/              # Ring boundary and broadcast camera shake
 │   └── ui/                # UI controllers
-├── tests/                 # 136-case headless automated test suite
+├── tests/                 # 150-case headless automated test suite
 ├── project.godot          # Engine configuration & input mappings
 └── START_GAME.bat         # Direct Windows standalone launcher
 ```
@@ -301,24 +328,35 @@ exit /b 0
 `markdown
 # Project State: LOLCOW WRESTLING: OFFLINE MAYHEM
 
-## Milestone Status: M0-M3 Complete -> Pass A Codebase Repair (Complete & Verified)
+## Milestone Status: M0-M1 Functional -> Pass A Repairs (In Progress - Pinfall Balance Verified)
 - **Engine**: Godot 4.7.2 (stable official, Windows x64) - Installed & Verified.
 - **3D DCC Pipeline**: Blender 5.0.1 (headless Python automation) - Verified.
 - **Target**: 1080p @ 60 FPS, Windows standalone.
-- **Authoritative Combat Loop**: Verified with 136 automated headless unit tests (0 failures, 0 warnings).
+- **Authoritative Combat Loop**: Verified with 150 automated headless unit tests (0 failures, 0 warnings).
+- **M2/M3 Status**: Functional baseline established (Character Select, 16-bit procedural audio synthesis, 8-character 3D meshes, parameterized weight scaling). Skeletal animation rigging and authored unique animation clips remain pending/unverified per code review.
 
-### Pass A Codebase Repairs (Verified):
-1. **Unified Command Interface for Escapes**:
+### Pass A Codebase Repairs & Verifications:
+1. **Resource-Aware Pin Escape & CPU Pinfall Balance (Verified)**:
+   - Repaired critical defect where CPU escaped all pins in 1.28s regardless of vitality.
+   - Built a unified, resource-aware escape model scaling with quadratic vitality, remaining stamina, reversal rating, and recent finisher impact penalties.
+   - Verified that fresh CPU/human defenders kick out cleanly (< Count 2) while exhausted/weakened defenders legitimately lose by 3-count pinfall.
+   - Tested across both player slots (P1/P2), tree processing orders, active mashing, hold-to-resist, and rope breaks (150 tests passing).
+2. **Unified Command Interface for Escapes (Verified)**:
    - `Fighter` escape logic consumes command inputs (`input_pin`, `input_strike`, `input_grapple`, `input_block`, `input_hold_pin`) rather than polling `Input.is_action_*` during physics process.
-   - CPU controller pulses escape inputs at cadenced intervals based on `stat_reversal`, enabling CPU to kick out of pins and escape submissions autonomously.
-2. **Throw Height Ownership**:
-   - `_clamp_within_ring` skips vertical clamping during `GRAPPLING_DEFENDER`, granting attacker sole authority over lift height (1.55m peak verified).
+   - CPU controller pulses escape inputs at cadenced intervals based on `stat_reversal` and physical fatigue.
+3. **Throw Height Ownership (Verified in Center Ring)**:
+   - `_clamp_within_ring` skips vertical clamping during `GRAPPLING_DEFENDER`, granting attacker sole authority over lift height (1.55m peak verified in center).
    - Canvas grounding enforced at `y = 0.0` on transition to `KNOCKED_DOWN`.
-3. **Standardized Forward-Axis Conventions**:
+4. **Standardized Forward-Axis Conventions (Verified)**:
    - Synchronized throws and locomotion unified on standard Godot convention `atan2(-dx, -dz)`.
    - Verified attacker `-basis.z` strictly faces defender and defender faces attacker (dot product = 1.000) across all slot inversions (P1/P2) and cardinal directions.
-4. **Documentation Alignment**:
+5. **Documentation Alignment (Verified)**:
    - `README.md` canonical move names and archetypes synced with `scripts/core/roster_data.gd`.
+
+### Active Open Items from Code Review (In Priority Order):
+1. **Boundary-Safe Throws**: Prevent attacker throws near ropes from placing defender out of ring bounds ($x > 3.65\text{m}$) before snap-back.
+2. **Directional Contact & Grapple Startup**: Replace omnidirectional distance strike checks with forward cone checks; enforce a real startup window on grapples.
+3. **Submission Simultaneous Outcome Resolution**: Formalize authoritative priority in `MatchManager` when tap-out and escape coincide on the same physics tick.
 
 ## Verification Summary
 - **M0 Foundation**:
@@ -2054,8 +2092,11 @@ func _physics_process(delta: float) -> void:
 	# Active escape mashing during PINNED or SUBMISSION_DEFENDER
 	if fighter.current_state in [Fighter.State.PINNED, Fighter.State.SUBMISSION_DEFENDER]:
 		escape_timer += delta
-		# Mashing cadence scales with reversal stat (higher reversal = faster mash)
-		var effective_interval: float = escape_mash_interval * (1.2 - (fighter.stat_reversal * 0.04))
+		var vit_ratio: float = clamp(fighter.vitality / fighter.max_vitality, 0.0, 1.0)
+		var stam_ratio: float = clamp(fighter.stamina / fighter.max_stamina, 0.0, 1.0)
+		var fatigue: float = 1.0 - (0.6 * vit_ratio + 0.4 * stam_ratio)
+		# Mashing cadence scales with reversal stat and physical fatigue (exhausted CPU struggles at ~6-7 Hz, fresh at 10 Hz)
+		var effective_interval: float = (escape_mash_interval + 0.04 * fatigue) * (1.2 - (fighter.stat_reversal * 0.04))
 		if escape_timer >= effective_interval:
 			escape_timer = 0.0
 			fighter.input_pin = true
@@ -2866,7 +2907,10 @@ extends RefCounted
 const RING_MAT_RADIUS: float = 4.0 # Distance from center (0,0) to ropes in meters
 const ROPE_BREAK_DISTANCE: float = 0.85 # Distance from rope threshold to trigger rope break
 const PIN_COUNT_INTERVAL: float = 1.1 # Seconds per referee count
-const PIN_ESCAPE_BASE_RATE: float = 28.0 # Percent escape per second base
+const PIN_ESCAPE_BASE_RATE: float = 30.0 # Percent escape per second base (hold-to-resist)
+const PIN_ESCAPE_MASH_BASE: float = 16.0 # Base progress gained per active mash pulse
+const PIN_ESCAPE_DECAY_RATE: float = 8.0 # Passive escape progress decay per second when unresisted
+const PIN_ESCAPE_FINISHER_PENALTY: float = 0.55 # Multiplier on escape rate following a finisher impact
 const MAX_HYPE: float = 100.0
 const HYPE_GAIN_ON_HIT: float = 12.0
 const HYPE_GAIN_ON_COUNTER: float = 20.0
@@ -3241,6 +3285,7 @@ var initial_defender_local_pos: Vector3 = Vector3.ZERO
 # Pin escape tracking
 var pin_escape_progress: float = 0.0
 var knockdown_duration: float = 2.5
+var recent_finisher_impact_timer: float = 0.0
 
 # Input buffer
 var input_dir: Vector2 = Vector2.ZERO
@@ -3251,6 +3296,7 @@ var input_reversal: bool = false
 var input_pin: bool = false
 var input_finisher: bool = false
 var input_hold_pin: bool = false
+var prev_pin_held: bool = false
 
 func _ready() -> void:
 	load_character_data()
@@ -3301,6 +3347,9 @@ func load_character_data() -> void:
 	character_loaded.emit(self)
 
 func _physics_process(delta: float) -> void:
+	if recent_finisher_impact_timer > 0.0:
+		recent_finisher_impact_timer = max(0.0, recent_finisher_impact_timer - delta)
+		
 	if not is_cpu:
 		_gather_player_inputs()
 	
@@ -3327,9 +3376,11 @@ func _gather_player_inputs() -> void:
 	input_grapple = Input.is_action_just_pressed(prefix + "grapple")
 	input_block = Input.is_action_pressed(prefix + "block")
 	input_reversal = Input.is_action_just_pressed(prefix + "reversal")
-	input_pin = Input.is_action_just_pressed(prefix + "pin")
+	var pin_down: bool = Input.is_action_pressed(prefix + "pin")
+	input_pin = pin_down and not prev_pin_held
+	input_hold_pin = pin_down and prev_pin_held
+	prev_pin_held = pin_down
 	input_finisher = Input.is_action_just_pressed(prefix + "finisher")
-	input_hold_pin = Input.is_action_pressed(prefix + "pin")
 
 func _clear_consumed_pulse_inputs() -> void:
 	input_strike = false
@@ -3648,7 +3699,7 @@ func _process_synchronized_attacker() -> void:
 			if is_finisher_attack:
 				throw_damage *= 1.6
 				
-			synchronized_partner.receive_damage(throw_damage, self, false)
+			synchronized_partner.receive_damage(throw_damage, self, false, is_finisher_attack)
 			gain_hype(MatchRules.HYPE_GAIN_ON_HIT * 1.8)
 			throw_impact.emit(self, synchronized_partner)
 			
@@ -3778,7 +3829,12 @@ func _execute_submission_escape() -> void:
 		visual_root.position = Vector3.ZERO
 	_set_state(State.GETTING_UP)
 	
-	if is_instance_valid(opponent) and opponent.current_state == State.SUBMISSION_ATTACKER:
+	var partner: Fighter = synchronized_partner
+	synchronized_partner = null
+	
+	if is_instance_valid(partner) and partner.current_state == State.SUBMISSION_ATTACKER:
+		partner.on_submission_broken_by_escape()
+	elif is_instance_valid(opponent) and opponent.current_state == State.SUBMISSION_ATTACKER:
 		opponent.on_submission_broken_by_escape()
 
 func on_submission_broken_by_escape() -> void:
@@ -3846,17 +3902,33 @@ func on_pinned(attacker: Fighter) -> void:
 	_set_state(State.PINNED)
 
 func _process_pin_escape(delta: float) -> void:
-	# Accumulate escape progress via button presses or hold using unified fighter command interface
-	var escape_gain: float = 0.0
+	var has_mash_input: bool = (input_pin or input_strike or input_grapple)
+	var has_hold_input: bool = input_hold_pin
 	
-	if input_pin or input_strike or input_grapple:
-		escape_gain += 16.0
-	elif input_hold_pin: # Accessibility hold-to-resist
-		escape_gain += MatchRules.PIN_ESCAPE_BASE_RATE * delta
+	var vit_ratio: float = clamp(vitality / max_vitality, 0.0, 1.0)
+	var stam_ratio: float = clamp(stamina / max_stamina, 0.0, 1.0)
+	var rev_ratio: float = clamp(stat_reversal / 10.0, 0.1, 1.0)
 	
-	# Scale with remaining stamina & vitality
-	var stamina_factor: float = 0.5 + 0.5 * (stamina / max_stamina)
-	pin_escape_progress += escape_gain * stamina_factor
+	# Quadratic vitality weighting ensures high HP defenders kick out swiftly (<1.2s),
+	# while exhausted/damaged defenders (<15% HP) suffer realistic 3-count pinfall defeats.
+	var health_factor: float = 0.06 + 0.64 * (vit_ratio * vit_ratio) + 0.30 * stam_ratio
+	var rev_mult: float = 0.85 + 0.30 * rev_ratio
+	var finisher_mult: float = MatchRules.PIN_ESCAPE_FINISHER_PENALTY if recent_finisher_impact_timer > 0.0 else 1.0
+	var total_mult: float = health_factor * rev_mult * finisher_mult
+	
+	if has_mash_input:
+		var mash_gain: float = MatchRules.PIN_ESCAPE_MASH_BASE * total_mult
+		pin_escape_progress += mash_gain
+		stamina = max(0.0, stamina - 0.5)
+		stamina_changed.emit(stamina, max_stamina)
+	elif has_hold_input:
+		var hold_gain: float = MatchRules.PIN_ESCAPE_BASE_RATE * total_mult * delta
+		pin_escape_progress += hold_gain
+		stamina = max(0.0, stamina - 2.0 * delta)
+		stamina_changed.emit(stamina, max_stamina)
+	else:
+		# Passive decay when unresisted (simulates pin weight & pinning arm pressure)
+		pin_escape_progress = max(0.0, pin_escape_progress - MatchRules.PIN_ESCAPE_DECAY_RATE * delta)
 	
 	if pin_escape_progress >= 100.0:
 		_execute_kick_out()
@@ -3890,9 +3962,12 @@ func break_pin_rope_break() -> void:
 			visual_root.position = Vector3.ZERO
 		_set_state(State.IDLE)
 
-func receive_damage(amount: float, from_fighter: Fighter, was_blocked: bool) -> void:
+func receive_damage(amount: float, from_fighter: Fighter, was_blocked: bool, is_finisher: bool = false) -> void:
 	vitality = max(0.0, vitality - amount)
 	vitality_changed.emit(vitality, max_vitality)
+	
+	if is_finisher or amount >= 100.0:
+		recent_finisher_impact_timer = 6.0
 	
 	# Knockdown on heavy damage or low health
 	if not was_blocked and vitality <= 0.0 and current_state != State.KNOCKED_DOWN and current_state != State.PINNED:
@@ -4754,6 +4829,7 @@ func _init() -> void:
 	test_pass_a_cpu_escape_mechanisms()
 	test_pass_a_throw_height_and_ownership()
 	test_pass_a_slot_inversions_and_facing_vectors()
+	test_pass_a_resource_aware_pinfall_balance()
 	
 	print("==================================================")
 	print("TEST RESULTS: %d Passed, %d Failed, %d Total" % [passed_tests, failed_tests, total_tests])
@@ -5271,6 +5347,428 @@ func test_pass_a_slot_inversions_and_facing_vectors() -> void:
 		
 		atk.free()
 		def.free()
+
+func test_pass_a_resource_aware_pinfall_balance() -> void:
+	# 1. Fresh CPU escaping an ordinary pin
+	var mm_fresh: MatchManager = MatchManager.new()
+	var p1_fresh: Fighter = Fighter.new()
+	var p2_fresh: Fighter = Fighter.new()
+	var cpu_fresh: CPUController = CPUController.new()
+	root.add_child(mm_fresh)
+	root.add_child(p1_fresh)
+	root.add_child(p2_fresh)
+	root.add_child(cpu_fresh)
+	
+	p1_fresh.character_id = "tophiachu"
+	p2_fresh.character_id = "cyraxx"
+	p1_fresh.load_character_data()
+	p2_fresh.load_character_data()
+	p2_fresh.is_cpu = true
+	cpu_fresh.fighter = p2_fresh
+	p2_fresh.vitality = p2_fresh.max_vitality
+	p2_fresh.stamina = p2_fresh.max_stamina
+	p1_fresh.position = Vector3.ZERO
+	p2_fresh.position = Vector3.ZERO
+	mm_fresh.fighter_1 = p1_fresh
+	mm_fresh.fighter_2 = p2_fresh
+	mm_fresh._setup_match()
+	
+	p1_fresh._start_pin(p2_fresh)
+	var fresh_outcome: Array = ["NONE"]
+	var fresh_count_at_break: Array = [0]
+	mm_fresh.pin_broken.connect(func(reason):
+		fresh_outcome[0] = reason
+		fresh_count_at_break[0] = mm_fresh.current_count
+	)
+	
+	for frame in range(240):
+		cpu_fresh._physics_process(1.0 / 60.0)
+		p1_fresh._physics_process(1.0 / 60.0)
+		p2_fresh._physics_process(1.0 / 60.0)
+		mm_fresh._physics_process(1.0 / 60.0)
+		if fresh_outcome[0] != "NONE":
+			break
+			
+	assert_true(fresh_outcome[0] == "KICKOUT", "Pass A Pinfall: Fresh CPU defender kicks out of pin (Reason: %s)" % fresh_outcome[0])
+	assert_true(fresh_count_at_break[0] <= 2, "Pass A Pinfall: Fresh CPU kicks out before referee 3-count (Count: %d)" % fresh_count_at_break[0])
+	
+	mm_fresh.free()
+	p1_fresh.free()
+	p2_fresh.free()
+	cpu_fresh.free()
+	
+	# 2. Sufficiently weakened CPU losing a valid pin (15% vitality, 10% stamina)
+	var mm_weak: MatchManager = MatchManager.new()
+	var p1_weak: Fighter = Fighter.new()
+	var p2_weak: Fighter = Fighter.new()
+	var cpu_weak: CPUController = CPUController.new()
+	root.add_child(mm_weak)
+	root.add_child(p1_weak)
+	root.add_child(p2_weak)
+	root.add_child(cpu_weak)
+	
+	p1_weak.character_id = "tophiachu"
+	p2_weak.character_id = "cyraxx"
+	p1_weak.load_character_data()
+	p2_weak.load_character_data()
+	p2_weak.is_cpu = true
+	cpu_weak.fighter = p2_weak
+	p2_weak.vitality = p2_weak.max_vitality * 0.15
+	p2_weak.stamina = p2_weak.max_stamina * 0.10
+	p1_weak.position = Vector3.ZERO
+	p2_weak.position = Vector3.ZERO
+	mm_weak.fighter_1 = p1_weak
+	mm_weak.fighter_2 = p2_weak
+	mm_weak._setup_match()
+	
+	p1_weak._start_pin(p2_weak)
+	var weak_outcome: Array = ["NONE"]
+	var weak_winner: Array = [null]
+	mm_weak.match_ended.connect(func(winner, method):
+		weak_outcome[0] = method
+		weak_winner[0] = winner
+	)
+	
+	for frame in range(240):
+		cpu_weak._physics_process(1.0 / 60.0)
+		p1_weak._physics_process(1.0 / 60.0)
+		p2_weak._physics_process(1.0 / 60.0)
+		mm_weak._physics_process(1.0 / 60.0)
+		if weak_outcome[0] != "NONE":
+			break
+			
+	assert_true(weak_outcome[0] == "PINFALL (3-COUNT)", "Pass A Pinfall: Weakened CPU loses by 3-count pinfall (Outcome: %s)" % weak_outcome[0])
+	assert_true(weak_winner[0] == p1_weak, "Pass A Pinfall: Attacker P1 declared match winner over weakened CPU")
+	
+	mm_weak.free()
+	p1_weak.free()
+	p2_weak.free()
+	cpu_weak.free()
+	
+	# 3. Exhausted CPU losing a valid pin (0% vitality, 0% stamina)
+	var mm_exh: MatchManager = MatchManager.new()
+	var p1_exh: Fighter = Fighter.new()
+	var p2_exh: Fighter = Fighter.new()
+	var cpu_exh: CPUController = CPUController.new()
+	root.add_child(mm_exh)
+	root.add_child(p1_exh)
+	root.add_child(p2_exh)
+	root.add_child(cpu_exh)
+	
+	p1_exh.character_id = "tophiachu"
+	p2_exh.character_id = "cyraxx"
+	p1_exh.load_character_data()
+	p2_exh.load_character_data()
+	p2_exh.is_cpu = true
+	cpu_exh.fighter = p2_exh
+	p2_exh.vitality = 0.0
+	p2_exh.stamina = 0.0
+	p1_exh.position = Vector3.ZERO
+	p2_exh.position = Vector3.ZERO
+	mm_exh.fighter_1 = p1_exh
+	mm_exh.fighter_2 = p2_exh
+	mm_exh._setup_match()
+	
+	p1_exh._start_pin(p2_exh)
+	var exh_outcome: Array = ["NONE"]
+	mm_exh.match_ended.connect(func(_winner, method):
+		exh_outcome[0] = method
+	)
+	
+	for frame in range(240):
+		cpu_exh._physics_process(1.0 / 60.0)
+		p1_exh._physics_process(1.0 / 60.0)
+		p2_exh._physics_process(1.0 / 60.0)
+		mm_exh._physics_process(1.0 / 60.0)
+		if exh_outcome[0] != "NONE":
+			break
+			
+	assert_true(exh_outcome[0] == "PINFALL (3-COUNT)", "Pass A Pinfall: Exhausted CPU (0 HP) loses by 3-count pinfall")
+	
+	mm_exh.free()
+	p1_exh.free()
+	p2_exh.free()
+	cpu_exh.free()
+	
+	# 4. Human Input Modes: Hold-to-Resist and Active Mash
+	# A) Fresh Human Hold-to-Resist
+	var mm_hum_fresh: MatchManager = MatchManager.new()
+	var p1_hum_atk: Fighter = Fighter.new()
+	var p2_hum_def: Fighter = Fighter.new()
+	root.add_child(mm_hum_fresh)
+	root.add_child(p1_hum_atk)
+	root.add_child(p2_hum_def)
+	
+	p1_hum_atk.character_id = "tophiachu"
+	p2_hum_def.character_id = "cyraxx"
+	p1_hum_atk.player_index = 1
+	p2_hum_def.player_index = 2
+	p1_hum_atk.load_character_data()
+	p2_hum_def.load_character_data()
+	p2_hum_def.is_cpu = false
+	p2_hum_def.vitality = p2_hum_def.max_vitality
+	p2_hum_def.stamina = p2_hum_def.max_stamina
+	mm_hum_fresh.fighter_1 = p1_hum_atk
+	mm_hum_fresh.fighter_2 = p2_hum_def
+	mm_hum_fresh._setup_match()
+	
+	p1_hum_atk._start_pin(p2_hum_def)
+	
+	# Simulate human hold via Input action press
+	Input.action_press("p2_pin")
+	for frame in range(60):
+		p1_hum_atk._physics_process(1.0 / 60.0)
+		p2_hum_def._physics_process(1.0 / 60.0)
+		mm_hum_fresh._physics_process(1.0 / 60.0)
+	Input.action_release("p2_pin")
+		
+	assert_true(p2_hum_def.pin_escape_progress > 20.0, "Pass A Pinfall: Fresh human hold-to-resist accumulates escape progress (Observed: %.1f)" % p2_hum_def.pin_escape_progress)
+	
+	mm_hum_fresh.free()
+	p1_hum_atk.free()
+	p2_hum_def.free()
+	
+	# B) Exhausted Human Hold-to-Resist suffers 3-count pinfall
+	var mm_hum_exh: MatchManager = MatchManager.new()
+	var p1_hum_atk2: Fighter = Fighter.new()
+	var p2_hum_def2: Fighter = Fighter.new()
+	root.add_child(mm_hum_exh)
+	root.add_child(p1_hum_atk2)
+	root.add_child(p2_hum_def2)
+	
+	p1_hum_atk2.character_id = "tophiachu"
+	p2_hum_def2.character_id = "cyraxx"
+	p1_hum_atk2.player_index = 1
+	p2_hum_def2.player_index = 2
+	p1_hum_atk2.load_character_data()
+	p2_hum_def2.load_character_data()
+	p2_hum_def2.is_cpu = false
+	p2_hum_def2.vitality = 0.0
+	p2_hum_def2.stamina = 0.0
+	mm_hum_exh.fighter_1 = p1_hum_atk2
+	mm_hum_exh.fighter_2 = p2_hum_def2
+	mm_hum_exh._setup_match()
+	
+	p1_hum_atk2._start_pin(p2_hum_def2)
+	var hum_exh_outcome: Array = ["NONE"]
+	mm_hum_exh.match_ended.connect(func(_w, m): hum_exh_outcome[0] = m)
+	
+	Input.action_press("p2_pin")
+	for frame in range(240):
+		p1_hum_atk2._physics_process(1.0 / 60.0)
+		p2_hum_def2._physics_process(1.0 / 60.0)
+		mm_hum_exh._physics_process(1.0 / 60.0)
+		if hum_exh_outcome[0] != "NONE":
+			break
+	Input.action_release("p2_pin")
+			
+	assert_true(hum_exh_outcome[0] == "PINFALL (3-COUNT)", "Pass A Pinfall: Exhausted human holding pin button loses by 3-count pinfall")
+	
+	mm_hum_exh.free()
+	p1_hum_atk2.free()
+	p2_hum_def2.free()
+	
+	# C) Fresh Human Mashing Input kicks out
+	var mm_mash_fresh: MatchManager = MatchManager.new()
+	var p1_mash_atk: Fighter = Fighter.new()
+	var p2_mash_def: Fighter = Fighter.new()
+	root.add_child(mm_mash_fresh)
+	root.add_child(p1_mash_atk)
+	root.add_child(p2_mash_def)
+	p1_mash_atk.character_id = "tophiachu"
+	p2_mash_def.character_id = "cyraxx"
+	p1_mash_atk.player_index = 1
+	p2_mash_def.player_index = 2
+	p1_mash_atk.load_character_data()
+	p2_mash_def.load_character_data()
+	p2_mash_def.is_cpu = false
+	p2_mash_def.vitality = p2_mash_def.max_vitality
+	p2_mash_def.stamina = p2_mash_def.max_stamina
+	mm_mash_fresh.fighter_1 = p1_mash_atk
+	mm_mash_fresh.fighter_2 = p2_mash_def
+	mm_mash_fresh._setup_match()
+	p1_mash_atk._start_pin(p2_mash_def)
+	var mash_fresh_outcome: Array = ["NONE"]
+	mm_mash_fresh.pin_broken.connect(func(r): mash_fresh_outcome[0] = r)
+	for frame in range(240):
+		if frame % 6 == 0:
+			Input.action_press("p2_pin")
+		else:
+			Input.action_release("p2_pin")
+		p1_mash_atk._physics_process(1.0 / 60.0)
+		p2_mash_def._physics_process(1.0 / 60.0)
+		mm_mash_fresh._physics_process(1.0 / 60.0)
+		if mash_fresh_outcome[0] != "NONE":
+			break
+	Input.action_release("p2_pin")
+	assert_true(mash_fresh_outcome[0] == "KICKOUT", "Pass A Pinfall: Fresh human mashing kicks out of pin")
+	mm_mash_fresh.free()
+	p1_mash_atk.free()
+	p2_mash_def.free()
+	
+	# D) Exhausted Human Mashing Input (0% HP) loses by pinfall despite mashing
+	var mm_mash_exh: MatchManager = MatchManager.new()
+	var p1_mash_atk2: Fighter = Fighter.new()
+	var p2_mash_def2: Fighter = Fighter.new()
+	root.add_child(mm_mash_exh)
+	root.add_child(p1_mash_atk2)
+	root.add_child(p2_mash_def2)
+	p1_mash_atk2.character_id = "tophiachu"
+	p2_mash_def2.character_id = "cyraxx"
+	p1_mash_atk2.player_index = 1
+	p2_mash_def2.player_index = 2
+	p1_mash_atk2.load_character_data()
+	p2_mash_def2.load_character_data()
+	p2_mash_def2.is_cpu = false
+	p2_mash_def2.vitality = 0.0
+	p2_mash_def2.stamina = 0.0
+	mm_mash_exh.fighter_1 = p1_mash_atk2
+	mm_mash_exh.fighter_2 = p2_mash_def2
+	mm_mash_exh._setup_match()
+	p1_mash_atk2._start_pin(p2_mash_def2)
+	var mash_exh_outcome: Array = ["NONE"]
+	mm_mash_exh.match_ended.connect(func(_w, m): mash_exh_outcome[0] = m)
+	for frame in range(240):
+		if frame % 6 == 0:
+			Input.action_press("p2_pin")
+		else:
+			Input.action_release("p2_pin")
+		p1_mash_atk2._physics_process(1.0 / 60.0)
+		p2_mash_def2._physics_process(1.0 / 60.0)
+		mm_mash_exh._physics_process(1.0 / 60.0)
+		if mash_exh_outcome[0] != "NONE":
+			break
+	Input.action_release("p2_pin")
+	assert_true(mash_exh_outcome[0] == "PINFALL (3-COUNT)", "Pass A Pinfall: Exhausted human mashing at 10 Hz still loses by 3-count pinfall")
+	mm_mash_exh.free()
+	p1_mash_atk2.free()
+	p2_mash_def2.free()
+	
+	# 5. Slot Inversion (P2 Attacker vs P1 CPU Defender)
+	var mm_inv: MatchManager = MatchManager.new()
+	var p1_inv: Fighter = Fighter.new()
+	var p2_inv: Fighter = Fighter.new()
+	var cpu_inv: CPUController = CPUController.new()
+	root.add_child(mm_inv)
+	root.add_child(p2_inv)
+	root.add_child(p1_inv)
+	root.add_child(cpu_inv)
+	
+	p1_inv.character_id = "cyraxx"
+	p2_inv.character_id = "tophiachu"
+	p1_inv.player_index = 1
+	p2_inv.player_index = 2
+	p1_inv.load_character_data()
+	p2_inv.load_character_data()
+	p1_inv.is_cpu = true
+	cpu_inv.fighter = p1_inv
+	p1_inv.vitality = 0.0
+	p1_inv.stamina = 0.0
+	mm_inv.fighter_1 = p1_inv
+	mm_inv.fighter_2 = p2_inv
+	mm_inv._setup_match()
+	
+	p2_inv._start_pin(p1_inv)
+	var inv_winner: Array = [null]
+	var inv_outcome: Array = ["NONE"]
+	mm_inv.match_ended.connect(func(w, m):
+		inv_winner[0] = w
+		inv_outcome[0] = m
+	)
+	
+	for frame in range(240):
+		cpu_inv._physics_process(1.0 / 60.0)
+		p2_inv._physics_process(1.0 / 60.0)
+		p1_inv._physics_process(1.0 / 60.0)
+		mm_inv._physics_process(1.0 / 60.0)
+		if inv_outcome[0] != "NONE":
+			break
+			
+	assert_true(inv_outcome[0] == "PINFALL (3-COUNT)" and inv_winner[0] == p2_inv, "Pass A Pinfall: Slot Inversion (P2 Attacker wins over P1 CPU Defender)")
+	
+	mm_inv.free()
+	p1_inv.free()
+	p2_inv.free()
+	cpu_inv.free()
+	
+	# 6. Tree Processing Order Inversion (Defender added before Attacker)
+	var mm_order: MatchManager = MatchManager.new()
+	var p1_ord: Fighter = Fighter.new()
+	var p2_ord: Fighter = Fighter.new()
+	var cpu_ord: CPUController = CPUController.new()
+	root.add_child(mm_order)
+	root.add_child(p2_ord)
+	root.add_child(p1_ord)
+	root.add_child(cpu_ord)
+	
+	p1_ord.character_id = "tophiachu"
+	p2_ord.character_id = "cyraxx"
+	p1_ord.load_character_data()
+	p2_ord.load_character_data()
+	p2_ord.is_cpu = true
+	cpu_ord.fighter = p2_ord
+	p2_ord.vitality = 0.0
+	p2_ord.stamina = 0.0
+	mm_order.fighter_1 = p1_ord
+	mm_order.fighter_2 = p2_ord
+	mm_order._setup_match()
+	
+	p1_ord._start_pin(p2_ord)
+	var ord_outcome: Array = ["NONE"]
+	mm_order.match_ended.connect(func(_w, m): ord_outcome[0] = m)
+	
+	for frame in range(240):
+		p2_ord._physics_process(1.0 / 60.0)
+		cpu_ord._physics_process(1.0 / 60.0)
+		p1_ord._physics_process(1.0 / 60.0)
+		mm_order._physics_process(1.0 / 60.0)
+		if ord_outcome[0] != "NONE":
+			break
+			
+	assert_true(ord_outcome[0] == "PINFALL (3-COUNT)", "Pass A Pinfall: Tree processing order inversion resolves deterministic 3-count pinfall")
+	
+	mm_order.free()
+	p1_ord.free()
+	p2_ord.free()
+	cpu_ord.free()
+	
+	# 7. Rope Break Priority competing with Pin Count
+	var mm_rope: MatchManager = MatchManager.new()
+	var p1_rope: Fighter = Fighter.new()
+	var p2_rope: Fighter = Fighter.new()
+	root.add_child(mm_rope)
+	root.add_child(p1_rope)
+	root.add_child(p2_rope)
+	
+	p1_rope.character_id = "tophiachu"
+	p2_rope.character_id = "cyraxx"
+	p1_rope.load_character_data()
+	p2_rope.load_character_data()
+	p2_rope.vitality = 0.0
+	p2_rope.stamina = 0.0
+	p1_rope.position = Vector3(3.3, 0, 0)
+	p2_rope.position = Vector3(3.3, 0, 0)
+	mm_rope.fighter_1 = p1_rope
+	mm_rope.fighter_2 = p2_rope
+	mm_rope._setup_match()
+	
+	var rope_break_called: Array = [false]
+	mm_rope.rope_break_called.connect(func(): rope_break_called[0] = true)
+	
+	p1_rope._start_pin(p2_rope)
+	
+	for frame in range(10):
+		p1_rope._physics_process(1.0 / 60.0)
+		p2_rope._physics_process(1.0 / 60.0)
+		mm_rope._physics_process(1.0 / 60.0)
+		
+	assert_true(rope_break_called[0], "Pass A Pinfall: Pin near ropes immediately triggers rope break alert")
+	assert_true(mm_rope.current_state == MatchManager.MatchState.IN_PROGRESS, "Pass A Pinfall: Match state returns to IN_PROGRESS on rope break")
+	assert_true(mm_rope.current_count == 0, "Pass A Pinfall: Pin count aborted at 0 on rope break")
+	
+	mm_rope.free()
+	p1_rope.free()
+	p2_rope.free()
 
 `
 
