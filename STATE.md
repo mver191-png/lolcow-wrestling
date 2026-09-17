@@ -1,19 +1,9 @@
 # Current review-branch state
 
-The roster/venue overhaul remains available on `astra/character-animation-overhaul`.
-The paired-contact continuation adds rotation-only grip correction, supported
-lateral covers, kneeling wrist control, bounded downed-body support, smooth contact
-release, and referee hand-to-mat correction. Gameplay authority remains unchanged.
+The roster/venue overhaul and paired-contact pass remain on `astra/character-animation-overhaul`; `main` is unchanged. The contact pass has rotation-only grip correction, supported lateral covers, kneeling wrist control, bounded downed support, eased release and referee hand-to-mat correction.
 
-Local Godot 4.7.2 validation: 408 mechanics, 126 scene integration, 35 presentation,
-305 prior overhaul and 1,941 contact assertions passed with zero failures.
-Three Python asset-compiler tests passed. Counts overlap.
+A new animation-polish layer is IMPLEMENTED and VALIDATION PENDING in the current head. It adds articulated finger curls during strikes/holds, low-amplitude secondary breathing/body motion, stamina-responsive ring-body language, and bounded hand/foot IK support during get-up. Imported surface materials are duplicated per instance and receive conservative skin/hair/cloth/boot roughness tuning. These are fictional presentation choices driven by game state/stats, not claims about the real people represented.
 
-All 64 ordered pairings were exercised in both slot/insertion orders for the
-contact pass. Baseline-disabled versus enabled gameplay traces matched exactly in
-the tested 90-tick throw scenario. These results do not prove final art quality.
+Last fully validated predecessor: 408 mechanics, 126 scene integration, 35 presentation, 305 overhaul and 1,941 contact assertions passed with zero failures; three Python asset-compiler tests passed. Counts overlap. The CI workflow now includes `tests/test_animation_polish.gd`; do not promote the new layer to validated until that run succeeds.
 
-See `docs/CONTACT_PASS.md` for tolerances, capture commands and limitations.
-See `REVIEW.md` for the original overhaul scope. PR remains a draft; main is not
-merged. Windows packaging, target-hardware performance and a full human playtest
-remain unverified.
+See `docs/CONTACT_PASS.md` for contact tolerances and capture commands. PR remains a draft. Windows packaging, target-hardware performance and a complete human playtest remain unverified.
