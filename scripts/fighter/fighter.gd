@@ -103,6 +103,11 @@ var input_finisher: bool = false
 var input_hold_pin: bool = false
 var prev_pin_held: bool = false
 
+func _init() -> void:
+	# Priority 0 ensures fighters update movement, mechanics, and input processing
+	# before MatchManager (priority 10) resolves match rules and terminal outcomes.
+	process_physics_priority = 0
+
 func _ready() -> void:
 	load_character_data()
 
@@ -168,26 +173,32 @@ func _physics_process(delta: float) -> void:
 func _gather_player_inputs() -> void:
 	var prefix: String = "p" + str(player_index) + "_"
 	
-	input_dir = Vector2.ZERO
+	var dir: Vector2 = Vector2.ZERO
 	if Input.is_action_pressed(prefix + "up"):
-		input_dir.y -= 1.0
+		dir.y -= 1.0
 	if Input.is_action_pressed(prefix + "down"):
-		input_dir.y += 1.0
+		dir.y += 1.0
 	if Input.is_action_pressed(prefix + "left"):
-		input_dir.x -= 1.0
+		dir.x -= 1.0
 	if Input.is_action_pressed(prefix + "right"):
-		input_dir.x += 1.0
-	input_dir = input_dir.normalized()
+		dir.x += 1.0
+	if dir != Vector2.ZERO or input_dir == Vector2.ZERO:
+		input_dir = dir.normalized()
 	
-	input_strike = Input.is_action_just_pressed(prefix + "strike")
-	input_grapple = Input.is_action_just_pressed(prefix + "grapple")
-	input_block = Input.is_action_pressed(prefix + "block")
-	input_reversal = Input.is_action_just_pressed(prefix + "reversal")
+	if not input_strike:
+		input_strike = Input.is_action_just_pressed(prefix + "strike")
+	if not input_grapple:
+		input_grapple = Input.is_action_just_pressed(prefix + "grapple")
+	if not input_block:
+		input_block = Input.is_action_pressed(prefix + "block")
+	if not input_reversal:
+		input_reversal = Input.is_action_just_pressed(prefix + "reversal")
 	var pin_down: bool = Input.is_action_pressed(prefix + "pin")
-	input_pin = pin_down and not prev_pin_held
-	input_hold_pin = pin_down and prev_pin_held
+	input_pin = input_pin or (pin_down and not prev_pin_held)
+	input_hold_pin = input_hold_pin or (pin_down and prev_pin_held)
 	prev_pin_held = pin_down
-	input_finisher = Input.is_action_just_pressed(prefix + "finisher")
+	if not input_finisher:
+		input_finisher = Input.is_action_just_pressed(prefix + "finisher")
 
 func _clear_consumed_pulse_inputs() -> void:
 	input_strike = false
@@ -727,11 +738,14 @@ func _process_submission_attacker(delta: float) -> void:
 		synchronized_partner.stamina = max(0.0, synchronized_partner.stamina - 15.0)
 		synchronized_partner.stamina_changed.emit(synchronized_partner.stamina, synchronized_partner.max_stamina)
 		
-		if synchronized_partner.vitality <= 0.0:
-			var defender: Fighter = synchronized_partner
-			synchronized_partner = null
-			_set_state(State.VICTORY)
-			defender.on_tap_out()
+		# In active match, MatchManager._process_submission_watch() has exclusive authority.
+		# For isolated standalone node tests without a MatchManager:
+		if MatchManager.instance == null or MatchManager.instance.current_state != MatchManager.MatchState.SUBMISSION_ATTEMPT:
+			if synchronized_partner.vitality <= 0.0:
+				var defender: Fighter = synchronized_partner
+				synchronized_partner = null
+				_set_state(State.VICTORY)
+				defender.on_tap_out()
 
 func _process_submission_defender(delta: float) -> void:
 	var escape_gain: float = 0.0
@@ -745,11 +759,19 @@ func _process_submission_defender(delta: float) -> void:
 	var stamina_factor: float = 0.4 + 0.6 * (stamina / max_stamina)
 	pin_escape_progress += escape_gain * stamina_factor
 	
-	if pin_escape_progress >= 100.0:
-		_execute_submission_escape()
+	# In active match, MatchManager._process_submission_watch() has exclusive authority.
+	# For isolated standalone node tests without a MatchManager:
+	if MatchManager.instance == null or MatchManager.instance.current_state != MatchManager.MatchState.SUBMISSION_ATTEMPT:
+		if pin_escape_progress >= 100.0:
+			_execute_submission_escape()
 
 func _execute_submission_escape() -> void:
+	if current_state in [State.DEFEATED, State.VICTORY]:
+		return
 	submission_escaped.emit(self)
+	# Guard: If manager intervened during signal handling and finalized outcome, do NOT overwrite!
+	if current_state in [State.DEFEATED, State.VICTORY, State.GETTING_UP, State.IDLE]:
+		return
 	if visual_root:
 		visual_root.rotation = Vector3.ZERO
 		visual_root.position = Vector3.ZERO
@@ -764,6 +786,8 @@ func _execute_submission_escape() -> void:
 		opponent.on_submission_broken_by_escape()
 
 func on_submission_broken_by_escape() -> void:
+	if current_state in [State.DEFEATED, State.VICTORY]:
+		return
 	if visual_root:
 		visual_root.position = Vector3.ZERO
 	# Push backward away from opponent
@@ -778,7 +802,12 @@ func on_submission_broken_by_escape() -> void:
 		AudioManager.instance.play_crowd_gasp()
 
 func on_tap_out() -> void:
+	if current_state in [State.DEFEATED, State.VICTORY]:
+		return
 	tap_out_submitted.emit(self)
+	# Guard: If manager intervened during signal handling (e.g. clutch escape), do NOT overwrite!
+	if current_state in [State.GETTING_UP, State.IDLE, State.DEFEATED, State.VICTORY]:
+		return
 	if visual_root:
 		visual_root.rotation.x = deg_to_rad(-90.0)
 		visual_root.position.y = 0.1
@@ -857,13 +886,19 @@ func _process_pin_escape(delta: float) -> void:
 		# Passive decay when unresisted (simulates pin weight & pinning arm pressure)
 		pin_escape_progress = max(0.0, pin_escape_progress - MatchRules.PIN_ESCAPE_DECAY_RATE * delta)
 	
-	if pin_escape_progress >= 100.0:
-		_execute_kick_out()
+	# In active match, MatchManager._process_pin_countdown() has exclusive authority.
+	# For isolated standalone node tests without a MatchManager:
+	if MatchManager.instance == null or MatchManager.instance.current_state != MatchManager.MatchState.PIN_ATTEMPT:
+		if pin_escape_progress >= 100.0:
+			_execute_kick_out()
 
 func _execute_kick_out() -> void:
 	if current_state != State.PINNED:
 		return
 	kick_out_succeeded.emit(self)
+	# Guard: If manager already finalized outcome, do NOT overwrite!
+	if current_state in [State.DEFEATED, State.VICTORY, State.GETTING_UP, State.IDLE]:
+		return
 	if visual_root:
 		visual_root.rotation = Vector3.ZERO
 		visual_root.position = Vector3.ZERO
@@ -874,6 +909,8 @@ func _execute_kick_out() -> void:
 		opponent.on_kick_out_received()
 
 func on_kick_out_received() -> void:
+	if current_state in [State.DEFEATED, State.VICTORY]:
+		return
 	if visual_root:
 		visual_root.position = Vector3.ZERO
 	# Stumble backward away from opponent
@@ -910,8 +947,8 @@ func receive_damage(amount: float, from_fighter: Fighter, was_blocked: bool, is_
 			right_arm.position.z = 0.0
 		_set_state(State.IDLE)
 	
-	# Knockdown on heavy damage or low health
-	if not was_blocked and vitality <= 0.0 and current_state != State.KNOCKED_DOWN and current_state != State.PINNED:
+	# Knockdown on heavy damage or low health (NOT during active submissions or pins)
+	if not was_blocked and vitality <= 0.0 and current_state not in [State.KNOCKED_DOWN, State.PINNED, State.SUBMISSION_DEFENDER, State.SUBMISSION_ATTACKER]:
 		_set_state(State.KNOCKED_DOWN)
 
 func gain_hype(amount: float) -> void:
@@ -921,6 +958,9 @@ func gain_hype(amount: float) -> void:
 
 func _set_state(new_state: State) -> void:
 	if current_state == new_state:
+		return
+	# Terminal match state guard: VICTORY and DEFEATED cannot be overwritten by active gameplay states
+	if current_state in [State.VICTORY, State.DEFEATED] and new_state not in [State.VICTORY, State.DEFEATED]:
 		return
 	var old_state: State = current_state
 	if old_state == State.GRAPPLE_STARTUP:
@@ -973,7 +1013,9 @@ func _clamp_within_ring() -> void:
 		position.y = 0.0
 
 func set_victory() -> void:
+	synchronized_partner = null
 	_set_state(State.VICTORY)
 
 func set_defeated() -> void:
+	synchronized_partner = null
 	_set_state(State.DEFEATED)

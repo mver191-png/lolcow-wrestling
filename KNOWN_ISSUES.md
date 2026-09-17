@@ -2,17 +2,27 @@
 
 1. **Skeletal Animation Pipeline & Unique Moveset Data (Open)**:
    - 3D character models are composed of procedural primitive geometries without bones or skeletal clips. Throws and strikes utilize parameterized programmatic tweening rather than distinct motion-captured or keyframed animation clips.
+2. **Visual Checks & Authored Animations Status**:
+   - Visual rendering inspections and authored skeletal animations remain **NOT RUN** per code review requirements.
 
 ---
 
 ## Resolved in Pass A & Prior Milestones
 
-1. **Simultaneous Submission Outcome Ordering & Centralized Hold Cleanup (Resolved in Pass A Priority 4)**:
+1. **Exclusive Terminal Outcome Ownership & Deterministic Scheduling (Resolved in Pass A Terminal Ownership)**:
+   - Fixed competing ownership between `Fighter` and `MatchManager`: `MatchManager` has exclusive authority over terminal match outcome declarations (`_process_submission_watch()`, `_process_pin_countdown()`, `_resolve_pin_kick_out()`, `_resolve_submission_escape()`, `_resolve_submission_tap_out()`).
+   - Assigned deterministic engine priorities: `Fighter.process_physics_priority = 0` and `MatchManager.process_physics_priority = 10`, ensuring fighters fully update resistance inputs, damage, and progress before `MatchManager` evaluates rules.
+   - Symmetrically cleared `synchronized_partner = null` on both participants when entering terminal outcomes.
+   - Guarded terminal states `VICTORY` and `DEFEATED` in `_set_state()` against being overwritten by gameplay callbacks (`GETTING_UP`, `IDLE`).
+   - Guarded fighter callbacks (`_execute_submission_escape()`, `on_tap_out()`, `_execute_kick_out()`, `on_kick_out_received()`) against overwriting manager decisions.
+   - Preserved programmatic pulse inputs in `_gather_player_inputs()` so injected test/AI commands are accurately consumed.
+   - Fully tested across slot inversions and tree processing orders with real scene physics frames (126 scene tests, 391 unit tests, 0 failures).
+2. **Simultaneous Submission Outcome Ordering & Centralized Hold Cleanup (Resolved in Pass A Priority 4)**:
    - Established explicit simultaneous priority policy in `MatchManager` (`MatchRules.SUBMISSION_SIMULTANEOUS_PRIORITY = MatchRules.SubmissionPriority.ESCAPE_BREAKS`).
    - Decoupled terminal submission resolution from individual fighter update frames into `MatchManager` resolvers: `_resolve_submission_escape()` and `_resolve_submission_tap_out()`.
    - Guaranteed identical, deterministic outcomes across all 4 permutations of slot orders (P1/P2 vs P2/P1) and tree processing orders (Attacker-first vs Defender-first).
    - Enforced centralized, symmetrical hold cleanup: `synchronized_partner = null` cleared on both sides during all breakout, rope break, and tap-out transitions with zero dangling references.
-2. **Directional Attack Contact & Grapple Startup (Resolved in Pass A Priority 3)**:
+3. **Directional Attack Contact & Grapple Startup (Resolved in Pass A Priority 3)**:
    - Added forward directional dot-product gating (`STRIKE_CONE_MIN_DOT = 0.50`, 120-degree cone) to `_handle_strike_active_window()`, preventing strikes from connecting with targets on flanks or behind the attacker.
    - Enforced measurable `GRAPPLE_STARTUP` window (`GRAPPLE_STARTUP_DURATION = 0.18s`, whiff recovery 0.25s) in `_attempt_grapple()` and `_process_grapple_startup()`.
    - Verified that unblocked incoming strikes interrupt attacker out of `GRAPPLE_STARTUP` and clear target reference, preventing throw execution.

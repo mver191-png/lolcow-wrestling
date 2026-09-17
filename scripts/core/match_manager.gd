@@ -32,6 +32,19 @@ var current_pinned: Fighter = null
 var pin_timer: float = 0.0
 var current_count: int = 0
 
+static var instance: MatchManager = null
+
+func _init() -> void:
+	instance = self
+	# Priority 10 ensures MatchManager evaluates rules and terminal outcomes
+	# AFTER all fighters (priority 0) have completed mechanics and input processing for the tick.
+	process_physics_priority = 10
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		if instance == self:
+			instance = null
+
 func _ready() -> void:
 	_setup_match()
 
@@ -126,9 +139,14 @@ func _process_pin_countdown(delta: float) -> void:
 		_abort_pin("INVALID_PARTICIPANTS")
 		return
 		
-	# Check if fighters moved near ropes during pin struggle
+	# 1. Authoritative Rope Break (Highest Priority)
 	if MatchRules.is_near_ropes(get_fighter_pos(current_pinned)) or MatchRules.is_near_ropes(get_fighter_pos(current_pinner)):
 		_call_rope_break()
+		return
+		
+	# 2. Authoritative Kick-Out Check (Checks updated defender resistance)
+	if current_pinned.pin_escape_progress >= 100.0:
+		_resolve_pin_kick_out(current_pinner, current_pinned)
 		return
 		
 	pin_timer += delta
@@ -149,21 +167,48 @@ func _process_pin_countdown(delta: float) -> void:
 				_call_rope_break()
 				return
 			if is_instance_valid(current_pinned) and current_pinned.pin_escape_progress >= 100.0:
-				current_pinned._execute_kick_out()
+				_resolve_pin_kick_out(current_pinner, current_pinned)
 				return
 			_end_match(current_pinner, "PINFALL (3-COUNT)")
 
+func _resolve_pin_kick_out(pinner: Fighter, pinned: Fighter) -> void:
+	if current_state != MatchState.PIN_ATTEMPT:
+		return
+	current_state = MatchState.IN_PROGRESS
+	
+	pinned.synchronized_partner = null
+	pinner.synchronized_partner = null
+	
+	if pinned.visual_root:
+		pinned.visual_root.rotation = Vector3.ZERO
+		pinned.visual_root.position = Vector3.ZERO
+	if pinner.visual_root:
+		pinner.visual_root.position = Vector3.ZERO
+		
+	pinner._set_state(Fighter.State.IDLE)
+	pinned._set_state(Fighter.State.GETTING_UP)
+	
+	# Push pinning opponent away
+	var push_back: Vector3 = pinner.global_transform.basis.z.normalized() if pinner.is_inside_tree() else pinner.transform.basis.z.normalized()
+	if pinner.is_inside_tree():
+		pinner.global_position += push_back * 1.2
+	else:
+		pinner.position += push_back * 1.2
+		
+	current_pinner = null
+	current_pinned = null
+	
+	if referee:
+		referee.on_pin_broken()
+	if AudioManager.instance:
+		AudioManager.instance.play_crowd_gasp()
+		
+	pin_broken.emit("KICKOUT")
+	pinned.kick_out_succeeded.emit(pinned)
+
 func _on_kick_out_succeeded(fighter: Fighter) -> void:
 	if current_state == MatchState.PIN_ATTEMPT and fighter == current_pinned:
-		pin_broken.emit("KICKOUT")
-		if referee:
-			referee.on_pin_broken()
-		if AudioManager.instance:
-			AudioManager.instance.play_crowd_gasp()
-			
-		current_pinner = null
-		current_pinned = null
-		current_state = MatchState.IN_PROGRESS
+		_resolve_pin_kick_out(current_pinner, current_pinned)
 
 func _abort_pin(reason: String) -> void:
 	pin_broken.emit(reason)

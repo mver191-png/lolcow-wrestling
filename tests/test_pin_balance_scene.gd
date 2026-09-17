@@ -53,6 +53,14 @@ func _run_suite() -> void:
 	await test_final_tick_rope_break_priority(true, true)
 	await test_duplicate_match_end_guard()
 	
+	print("\n--- TEST GROUP 4: REAL-SCENE SIMULTANEOUS SUBMISSION & CALLBACK OVERWRITE RESILIENCE ---")
+	await test_scene_simultaneous_submission(false, false)
+	await test_scene_simultaneous_submission(true, false)
+	await test_scene_simultaneous_submission(false, true)
+	await test_scene_simultaneous_submission(true, true)
+	await test_scene_simultaneous_submission_tapout_wins()
+	await test_scene_callback_overwrite_resilience()
+	
 	print("\n==================================================")
 	print("SCENE INTEGRATION RESULTS: %d Passed, %d Failed, %d Total" % [passed_tests, failed_tests, total_tests])
 	print("==================================================")
@@ -532,3 +540,162 @@ func test_duplicate_match_end_guard() -> void:
 	assert_true(mm.current_state == MatchManager.MatchState.MATCH_OVER, "Duplicate Guard: MatchState remains MATCH_OVER")
 	
 	await _cleanup_scene(ctx)
+
+# ==============================================================================
+# Group 4: Real-Scene Simultaneous Submission & Callback Overwrite Resilience
+# ==============================================================================
+
+func test_scene_simultaneous_submission(invert_slots: bool, invert_tree: bool) -> void:
+	var ctx: Dictionary = _setup_test_scene("tophiachu", "cyraxx", invert_tree)
+	var p1: Fighter = ctx["p1"]
+	var p2: Fighter = ctx["p2"]
+	var mm: MatchManager = ctx["mm"]
+	
+	var atk: Fighter = p2 if invert_slots else p1
+	var def: Fighter = p1 if invert_slots else p2
+	var def_action: String = "p1_pin" if invert_slots else "p2_pin"
+	var tag: String = "[Slot%s/Tree%s]" % ["Inv" if invert_slots else "Norm", "Inv" if invert_tree else "Norm"]
+	
+	await physics_frame
+	
+	def.current_state = Fighter.State.KNOCKED_DOWN
+	atk.position = Vector3(0, 0, 0)
+	def.position = Vector3(0, 0, 0.5)
+	
+	atk._attempt_submission(false)
+	assert_true(mm.current_state == MatchManager.MatchState.SUBMISSION_ATTEMPT, "Scene Simul Submission: Enters SUBMISSION_ATTEMPT (%s)" % tag)
+	
+	var match_ended_called: Array = [false]
+	mm.match_ended.connect(func(_w, _m): match_ended_called[0] = true)
+	
+	# Seed legitimate below-threshold values
+	def.vitality = 5.0
+	def.pin_escape_progress = 95.0
+	atk.submission_tick_timer = 0.49
+	Input.action_press(def_action)
+	
+	await physics_frame
+	Input.action_release(def_action)
+	
+	# Under ESCAPE_BREAKS: escape waives off tap-out
+	assert_true(not match_ended_called[0], "Scene Simul Submission: match_ended NOT emitted (%s)" % tag)
+	assert_true(mm.current_state == MatchManager.MatchState.IN_PROGRESS, "Scene Simul Submission: Match returns to IN_PROGRESS (%s)" % tag)
+	assert_true(atk.current_state == Fighter.State.IDLE, "Scene Simul Submission: Attacker returns to IDLE (%s)" % tag)
+	assert_true(def.current_state == Fighter.State.GETTING_UP, "Scene Simul Submission: Defender enters GETTING_UP (%s)" % tag)
+	assert_true(def.vitality == 1.0, "Scene Simul Submission: Defender granted 1.0 HP clutch survival (%s)" % tag)
+	assert_true(atk.synchronized_partner == null, "Scene Simul Submission: Attacker partner null (%s)" % tag)
+	assert_true(def.synchronized_partner == null, "Scene Simul Submission: Defender partner null (%s)" % tag)
+	
+	# Advance 10 real physics frames to confirm state stability
+	for frame in range(10):
+		await physics_frame
+	assert_true(mm.current_state == MatchManager.MatchState.IN_PROGRESS, "Scene Simul Submission: Remains IN_PROGRESS over later frames (%s)" % tag)
+	assert_true(atk.current_state == Fighter.State.IDLE, "Scene Simul Submission: Attacker remains IDLE (%s)" % tag)
+	assert_true(def.current_state in [Fighter.State.GETTING_UP, Fighter.State.IDLE], "Scene Simul Submission: Defender remains in legal state (%s)" % tag)
+	assert_true(atk.synchronized_partner == null and def.synchronized_partner == null, "Scene Simul Submission: Pointers remain null (%s)" % tag)
+	
+	await _cleanup_scene(ctx)
+
+func test_scene_simultaneous_submission_tapout_wins() -> void:
+	MatchRules.SUBMISSION_SIMULTANEOUS_PRIORITY = MatchRules.SubmissionPriority.TAPOUT_WINS
+	
+	var ctx: Dictionary = _setup_test_scene("tophiachu", "cyraxx", false)
+	var atk: Fighter = ctx["p1"]
+	var def: Fighter = ctx["p2"]
+	var mm: MatchManager = ctx["mm"]
+	
+	await physics_frame
+	
+	def.current_state = Fighter.State.KNOCKED_DOWN
+	atk.position = Vector3(0, 0, 0)
+	def.position = Vector3(0, 0, 0.5)
+	
+	atk._attempt_submission(false)
+	
+	var tapout_winner: Array = [null]
+	mm.match_ended.connect(func(w, _m): tapout_winner[0] = w)
+	
+	def.vitality = 5.0
+	def.pin_escape_progress = 95.0
+	atk.submission_tick_timer = 0.49
+	Input.action_press("p2_pin")
+	
+	await physics_frame
+	Input.action_release("p2_pin")
+	
+	assert_true(tapout_winner[0] == atk, "Scene Simul Submission [TAPOUT_WINS]: Attacker declared winner")
+	assert_true(mm.current_state == MatchManager.MatchState.MATCH_OVER, "Scene Simul Submission [TAPOUT_WINS]: Match is MATCH_OVER")
+	assert_true(atk.current_state == Fighter.State.VICTORY, "Scene Simul Submission [TAPOUT_WINS]: Attacker is in VICTORY")
+	assert_true(def.current_state == Fighter.State.DEFEATED, "Scene Simul Submission [TAPOUT_WINS]: Defender is DEFEATED")
+	assert_true(atk.synchronized_partner == null and def.synchronized_partner == null, "Scene Simul Submission [TAPOUT_WINS]: Partners cleared")
+	
+	# Step 10 frames: ensure defender NEVER gets up
+	for frame in range(10):
+		await physics_frame
+	assert_true(mm.current_state == MatchManager.MatchState.MATCH_OVER, "Scene Simul Submission [TAPOUT_WINS]: Match remains MATCH_OVER")
+	assert_true(atk.current_state == Fighter.State.VICTORY, "Scene Simul Submission [TAPOUT_WINS]: Winner remains in VICTORY")
+	assert_true(def.current_state == Fighter.State.DEFEATED, "Scene Simul Submission [TAPOUT_WINS]: Loser strictly remains in DEFEATED")
+	assert_true(atk.synchronized_partner == null and def.synchronized_partner == null, "Scene Simul Submission [TAPOUT_WINS]: Pairing remains null")
+	
+	await _cleanup_scene(ctx)
+	MatchRules.SUBMISSION_SIMULTANEOUS_PRIORITY = MatchRules.SubmissionPriority.ESCAPE_BREAKS
+
+func test_scene_callback_overwrite_resilience() -> void:
+	# Part 1: TAPOUT_WINS with direct _execute_submission_escape() invocation
+	MatchRules.SUBMISSION_SIMULTANEOUS_PRIORITY = MatchRules.SubmissionPriority.TAPOUT_WINS
+	var ctx1: Dictionary = _setup_test_scene("tophiachu", "cyraxx", false)
+	var a1: Fighter = ctx1["p1"]
+	var d1: Fighter = ctx1["p2"]
+	var m1: MatchManager = ctx1["mm"]
+	
+	await physics_frame
+	d1.current_state = Fighter.State.KNOCKED_DOWN
+	a1.position = Vector3(0, 0, 0)
+	d1.position = Vector3(0, 0, 0.5)
+	a1._attempt_submission(false)
+	
+	d1.vitality = 0.0
+	d1.pin_escape_progress = 100.0
+	d1._execute_submission_escape()
+	
+	assert_true(m1.current_state == MatchManager.MatchState.MATCH_OVER, "Scene Callback Overwrite [TAPOUT_WINS]: Match is MATCH_OVER")
+	assert_true(a1.current_state == Fighter.State.VICTORY, "Scene Callback Overwrite [TAPOUT_WINS]: Attacker is in VICTORY")
+	assert_true(d1.current_state == Fighter.State.DEFEATED, "Scene Callback Overwrite [TAPOUT_WINS]: Defender is DEFEATED")
+	assert_true(a1.synchronized_partner == null and d1.synchronized_partner == null, "Scene Callback Overwrite [TAPOUT_WINS]: Partners cleared")
+	
+	for frame in range(10):
+		await physics_frame
+	assert_true(d1.current_state == Fighter.State.DEFEATED, "Scene Callback Overwrite [TAPOUT_WINS]: Defender strictly remains DEFEATED over later frames")
+	assert_true(m1.current_state == MatchManager.MatchState.MATCH_OVER, "Scene Callback Overwrite [TAPOUT_WINS]: Match remains MATCH_OVER")
+	
+	await _cleanup_scene(ctx1)
+	
+	# Part 2: ESCAPE_BREAKS with direct on_tap_out() invocation
+	MatchRules.SUBMISSION_SIMULTANEOUS_PRIORITY = MatchRules.SubmissionPriority.ESCAPE_BREAKS
+	var ctx2: Dictionary = _setup_test_scene("tophiachu", "cyraxx", false)
+	var a2: Fighter = ctx2["p1"]
+	var d2: Fighter = ctx2["p2"]
+	var m2: MatchManager = ctx2["mm"]
+	
+	await physics_frame
+	d2.current_state = Fighter.State.KNOCKED_DOWN
+	a2.position = Vector3(0, 0, 0)
+	d2.position = Vector3(0, 0, 0.5)
+	a2._attempt_submission(false)
+	
+	d2.vitality = 0.0
+	d2.pin_escape_progress = 100.0
+	d2.on_tap_out()
+	
+	assert_true(m2.current_state == MatchManager.MatchState.IN_PROGRESS, "Scene Callback Overwrite [ESCAPE_BREAKS]: Match remains IN_PROGRESS")
+	assert_true(a2.current_state == Fighter.State.IDLE, "Scene Callback Overwrite [ESCAPE_BREAKS]: Attacker is IDLE")
+	assert_true(d2.current_state == Fighter.State.GETTING_UP, "Scene Callback Overwrite [ESCAPE_BREAKS]: Defender is GETTING_UP")
+	assert_true(d2.vitality == 1.0, "Scene Callback Overwrite [ESCAPE_BREAKS]: Defender clutch 1.0 HP survival")
+	assert_true(a2.synchronized_partner == null and d2.synchronized_partner == null, "Scene Callback Overwrite [ESCAPE_BREAKS]: Partners cleared")
+	
+	for frame in range(10):
+		await physics_frame
+	assert_true(m2.current_state == MatchManager.MatchState.IN_PROGRESS, "Scene Callback Overwrite [ESCAPE_BREAKS]: Remains IN_PROGRESS over later frames")
+	assert_true(d2.current_state in [Fighter.State.GETTING_UP, Fighter.State.IDLE], "Scene Callback Overwrite [ESCAPE_BREAKS]: Legal recovery state")
+	
+	await _cleanup_scene(ctx2)

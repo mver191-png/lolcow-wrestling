@@ -34,6 +34,8 @@ func _init() -> void:
 	test_pass_a_strike_directional_cone()
 	test_pass_a_grapple_startup_and_interruption()
 	test_pass_a_simultaneous_submission_ordering()
+	test_pass_a_callback_state_overwrite_resilience()
+	test_pass_a_final_count_escape_crossing()
 	
 	print("==================================================")
 	print("TEST RESULTS: %d Passed, %d Failed, %d Total" % [passed_tests, failed_tests, total_tests])
@@ -227,9 +229,9 @@ func test_pin_count_and_rope_break_priority() -> void:
 	assert_true(pin_broken_called[0], "Kick-out breaks pin before count 3")
 	assert_true(manager.current_state == MatchManager.MatchState.IN_PROGRESS, "Match returns to IN_PROGRESS on kickout")
 	
-	manager.queue_free()
-	f1.queue_free()
-	f2.queue_free()
+	manager.free()
+	f1.free()
+	f2.free()
 
 func test_roster_pair_matrix_compatibility() -> void:
 	var ids: Array = RosterData.get_all_ids()
@@ -332,12 +334,13 @@ func test_submission_and_tap_out() -> void:
 			tap_out_called[0] = true
 	)
 	f1._process_submission_attacker(0.6) # Depletes remaining 5.0 HP
+	manager._physics_process(1.0 / 60.0) # Authoritative manager evaluates submission outcome
 	assert_true(tap_out_called[0], "Depleting vitality during submission results in SUBMISSION (TAP OUT) victory")
 	assert_true(manager.current_state == MatchManager.MatchState.MATCH_OVER, "Match terminates with MATCH_OVER on tap-out")
 	
-	manager.queue_free()
-	f1.queue_free()
-	f2.queue_free()
+	manager.free()
+	f1.free()
+	f2.free()
 
 func test_audio_and_trauma_shake() -> void:
 	# 1. Test AudioManager synthesis
@@ -1271,9 +1274,11 @@ func test_pass_a_simultaneous_submission_ordering() -> void:
 			var match_ended_called: Array = [false]
 			manager.match_ended.connect(func(_w, _m): match_ended_called[0] = true)
 			
-			# Induce simultaneous conditions: vitality 0 AND escape progress 100 on exact same frame
-			def.vitality = 0.0
-			def.pin_escape_progress = 100.0
+			# Seed legitimate below-threshold resources: vitality > 0, escape progress < 100, pressure tick due
+			def.vitality = 5.0
+			def.pin_escape_progress = 95.0
+			atk.submission_tick_timer = 0.49 # Tick occurs at 0.50 (due on 1/60s frame)
+			def.input_pin = true # Valid mash input adding 15.0 to escape progress
 			
 			# Process frame according to tree order
 			if invert_tree:
@@ -1293,11 +1298,21 @@ func test_pass_a_simultaneous_submission_ordering() -> void:
 			assert_true(atk.synchronized_partner == null, "Simultaneous Submission: Attacker synchronized_partner null (%s)" % tag)
 			assert_true(def.synchronized_partner == null, "Simultaneous Submission: Defender synchronized_partner null (%s)" % tag)
 			
+			# Assert post-result stability across subsequent ticks
+			for _f in range(10):
+				p1._physics_process(1.0 / 60.0)
+				p2._physics_process(1.0 / 60.0)
+				manager._physics_process(1.0 / 60.0)
+			assert_true(manager.current_state == MatchManager.MatchState.IN_PROGRESS, "Simultaneous Submission: Match remains IN_PROGRESS over later ticks (%s)" % tag)
+			assert_true(atk.current_state == Fighter.State.IDLE, "Simultaneous Submission: Attacker remains IDLE (%s)" % tag)
+			assert_true(def.current_state in [Fighter.State.GETTING_UP, Fighter.State.IDLE], "Simultaneous Submission: Defender remains in legal state (%s)" % tag)
+			assert_true(atk.synchronized_partner == null and def.synchronized_partner == null, "Simultaneous Submission: Pairing remains null over later ticks (%s)" % tag)
+			
 			manager.free()
 			p1.free()
 			p2.free()
 
-	# Test alternate policy: TAPOUT_WINS
+	# Test alternate policy: TAPOUT_WINS with legitimate below-threshold crossing
 	MatchRules.SUBMISSION_SIMULTANEOUS_PRIORITY = MatchRules.SubmissionPriority.TAPOUT_WINS
 	var man_tap: MatchManager = MatchManager.new()
 	var f1: Fighter = Fighter.new()
@@ -1323,8 +1338,10 @@ func test_pass_a_simultaneous_submission_ordering() -> void:
 	var tapout_winner: Array = [null]
 	man_tap.match_ended.connect(func(w, _m): tapout_winner[0] = w)
 	
-	f2.vitality = 0.0
-	f2.pin_escape_progress = 100.0
+	f2.vitality = 5.0
+	f2.pin_escape_progress = 95.0
+	f1.submission_tick_timer = 0.49
+	f2.input_pin = true
 	
 	f1._physics_process(1.0 / 60.0)
 	f2._physics_process(1.0 / 60.0)
@@ -1332,7 +1349,19 @@ func test_pass_a_simultaneous_submission_ordering() -> void:
 	
 	assert_true(tapout_winner[0] == f1, "Simultaneous Submission [TAPOUT_WINS]: Attacker declared winner on simultaneous frame")
 	assert_true(man_tap.current_state == MatchManager.MatchState.MATCH_OVER, "Simultaneous Submission [TAPOUT_WINS]: Match state is MATCH_OVER")
+	assert_true(f1.current_state == Fighter.State.VICTORY, "Simultaneous Submission [TAPOUT_WINS]: Winner in VICTORY state")
+	assert_true(f2.current_state == Fighter.State.DEFEATED, "Simultaneous Submission [TAPOUT_WINS]: Loser in DEFEATED state")
 	assert_true(f1.synchronized_partner == null and f2.synchronized_partner == null, "Simultaneous Submission [TAPOUT_WINS]: Hold pointers cleared symmetrically")
+	
+	# Advance 10 ticks: assert winner and loser remain in terminal states and NEVER get up
+	for _f in range(10):
+		f1._physics_process(1.0 / 60.0)
+		f2._physics_process(1.0 / 60.0)
+		man_tap._physics_process(1.0 / 60.0)
+	assert_true(man_tap.current_state == MatchManager.MatchState.MATCH_OVER, "Simultaneous Submission [TAPOUT_WINS]: Match remains MATCH_OVER over later ticks")
+	assert_true(f1.current_state == Fighter.State.VICTORY, "Simultaneous Submission [TAPOUT_WINS]: Winner remains in VICTORY over later ticks")
+	assert_true(f2.current_state == Fighter.State.DEFEATED, "Simultaneous Submission [TAPOUT_WINS]: Loser strictly remains in DEFEATED over later ticks (never revives)")
+	assert_true(f1.synchronized_partner == null and f2.synchronized_partner == null, "Simultaneous Submission [TAPOUT_WINS]: Pairing remains null over later ticks")
 	
 	man_tap.free()
 	f1.free()
@@ -1340,5 +1369,166 @@ func test_pass_a_simultaneous_submission_ordering() -> void:
 	
 	# Restore default policy
 	MatchRules.SUBMISSION_SIMULTANEOUS_PRIORITY = MatchRules.SubmissionPriority.ESCAPE_BREAKS
+
+func test_pass_a_callback_state_overwrite_resilience() -> void:
+	# Test Case 1: TAPOUT_WINS policy exercised through defender._execute_submission_escape() emission path
+	MatchRules.SUBMISSION_SIMULTANEOUS_PRIORITY = MatchRules.SubmissionPriority.TAPOUT_WINS
+	var m1: MatchManager = MatchManager.new()
+	var a1: Fighter = Fighter.new()
+	var d1: Fighter = Fighter.new()
+	a1.character_id = "tophiachu"
+	d1.character_id = "cyraxx"
+	a1.load_character_data()
+	d1.load_character_data()
+	root.add_child(a1)
+	root.add_child(d1)
+	root.add_child(m1)
+	m1.fighter_1 = a1
+	m1.fighter_2 = d1
+	m1._setup_match()
+	
+	d1.current_state = Fighter.State.KNOCKED_DOWN
+	a1.position = Vector3(0, 0, 0)
+	d1.position = Vector3(0, 0, 0.5)
+	a1._attempt_submission(false)
+	
+	# Both conditions met on callback execution
+	d1.vitality = 0.0
+	d1.pin_escape_progress = 100.0
+	
+	# Directly invoke defender escape emission
+	d1._execute_submission_escape()
+	
+	# Assert manager and participants immediately after callback returns
+	assert_true(m1.current_state == MatchManager.MatchState.MATCH_OVER, "Callback Overwrite [TAPOUT_WINS]: Match is MATCH_OVER")
+	assert_true(a1.current_state == Fighter.State.VICTORY, "Callback Overwrite [TAPOUT_WINS]: Attacker is in VICTORY")
+	assert_true(d1.current_state == Fighter.State.DEFEATED, "Callback Overwrite [TAPOUT_WINS]: Defender is DEFEATED (not overwritten with GETTING_UP)")
+	assert_true(a1.synchronized_partner == null and d1.synchronized_partner == null, "Callback Overwrite [TAPOUT_WINS]: Partners cleared")
+	
+	# Step 10 ticks: ensure defender NEVER transitions out of DEFEATED
+	for _f in range(10):
+		a1._physics_process(1.0 / 60.0)
+		d1._physics_process(1.0 / 60.0)
+		m1._physics_process(1.0 / 60.0)
+	assert_true(d1.current_state == Fighter.State.DEFEATED, "Callback Overwrite [TAPOUT_WINS]: Defender remains strictly DEFEATED over later ticks")
+	assert_true(m1.current_state == MatchManager.MatchState.MATCH_OVER, "Callback Overwrite [TAPOUT_WINS]: Match state remains MATCH_OVER")
+	
+	m1.free()
+	a1.free()
+	d1.free()
+	
+	# Test Case 2: ESCAPE_BREAKS policy exercised through defender.on_tap_out() emission path
+	MatchRules.SUBMISSION_SIMULTANEOUS_PRIORITY = MatchRules.SubmissionPriority.ESCAPE_BREAKS
+	var m2: MatchManager = MatchManager.new()
+	var a2: Fighter = Fighter.new()
+	var d2: Fighter = Fighter.new()
+	a2.character_id = "tophiachu"
+	d2.character_id = "cyraxx"
+	a2.load_character_data()
+	d2.load_character_data()
+	root.add_child(a2)
+	root.add_child(d2)
+	root.add_child(m2)
+	m2.fighter_1 = a2
+	m2.fighter_2 = d2
+	m2._setup_match()
+	
+	d2.current_state = Fighter.State.KNOCKED_DOWN
+	a2.position = Vector3(0, 0, 0)
+	d2.position = Vector3(0, 0, 0.5)
+	a2._attempt_submission(false)
+	
+	# Both conditions met on callback execution
+	d2.vitality = 0.0
+	d2.pin_escape_progress = 100.0
+	
+	# Directly invoke defender tap-out emission
+	d2.on_tap_out()
+	
+	# Assert manager and participants immediately after callback returns
+	assert_true(m2.current_state == MatchManager.MatchState.IN_PROGRESS, "Callback Overwrite [ESCAPE_BREAKS]: Match remains IN_PROGRESS")
+	assert_true(a2.current_state == Fighter.State.IDLE, "Callback Overwrite [ESCAPE_BREAKS]: Attacker is in IDLE")
+	assert_true(d2.current_state == Fighter.State.GETTING_UP, "Callback Overwrite [ESCAPE_BREAKS]: Defender is in GETTING_UP (not overwritten with DEFEATED)")
+	assert_true(d2.vitality == 1.0, "Callback Overwrite [ESCAPE_BREAKS]: Defender granted 1.0 HP clutch survival")
+	assert_true(a2.synchronized_partner == null and d2.synchronized_partner == null, "Callback Overwrite [ESCAPE_BREAKS]: Partners cleared")
+	
+	# Step 10 ticks: ensure match remains in progress and defender recovers cleanly
+	for _f in range(10):
+		a2._physics_process(1.0 / 60.0)
+		d2._physics_process(1.0 / 60.0)
+		m2._physics_process(1.0 / 60.0)
+	assert_true(m2.current_state == MatchManager.MatchState.IN_PROGRESS, "Callback Overwrite [ESCAPE_BREAKS]: Match remains IN_PROGRESS over later ticks")
+	assert_true(d2.current_state in [Fighter.State.GETTING_UP, Fighter.State.IDLE], "Callback Overwrite [ESCAPE_BREAKS]: Defender in legal recovery state")
+	
+	m2.free()
+	a2.free()
+	d2.free()
+
+func test_pass_a_final_count_escape_crossing() -> void:
+	# Test real 99 -> 100+ escape threshold crossing on tick 198 (3.30s)
+	# Check both manager-first and defender-first scene arrangements
+	for manager_first in [true, false]:
+		var tag: String = "[%s]" % ["ManagerFirst" if manager_first else "DefenderFirst"]
+		
+		var manager: MatchManager = MatchManager.new()
+		var pinner: Fighter = Fighter.new()
+		var pinned: Fighter = Fighter.new()
+		pinner.character_id = "tophiachu"
+		pinned.character_id = "cyraxx"
+		pinner.load_character_data()
+		pinned.load_character_data()
+		
+		if manager_first:
+			root.add_child(manager)
+			root.add_child(pinner)
+			root.add_child(pinned)
+		else:
+			root.add_child(pinned)
+			root.add_child(pinner)
+			root.add_child(manager)
+			
+		manager.fighter_1 = pinner
+		manager.fighter_2 = pinned
+		manager._setup_match()
+		
+		pinned.current_state = Fighter.State.KNOCKED_DOWN
+		pinner.position = Vector3(0, 0, 0)
+		pinned.position = Vector3(0, 0, 0.5)
+		pinner._attempt_pin()
+		
+		# Seed exact state at count 2, timer 3.29s (tick 197 at 60Hz), progress 99.0
+		manager.current_count = 2
+		manager.pin_timer = 3.29
+		pinned.pin_escape_progress = 99.0
+		
+		var match_ended_called: Array = [false]
+		manager.match_ended.connect(func(_w, _m): match_ended_called[0] = true)
+		
+		# Valid mash command that adds ~10.0 progress across the tick
+		pinned.input_pin = true
+		
+		# Execute tick with priority order (pinned at priority 0 processes before manager at priority 10)
+		pinned._physics_process(1.0 / 60.0)
+		pinner._physics_process(1.0 / 60.0)
+		manager._physics_process(1.0 / 60.0)
+		
+		assert_true(pinned.pin_escape_progress >= 100.0, "Final-Count Escape Crossing: Progress crossed 100 on tick (%s)" % tag)
+		assert_true(not match_ended_called[0], "Final-Count Escape Crossing: match_ended was NOT emitted (%s)" % tag)
+		assert_true(manager.current_count == 2, "Final-Count Escape Crossing: Count remained 2 (preempted count 3) (%s)" % tag)
+		assert_true(manager.current_state == MatchManager.MatchState.IN_PROGRESS, "Final-Count Escape Crossing: Match returned to IN_PROGRESS (%s)" % tag)
+		assert_true(pinned.current_state == Fighter.State.GETTING_UP, "Final-Count Escape Crossing: Defender entered GETTING_UP (%s)" % tag)
+		assert_true(pinner.current_state == Fighter.State.IDLE, "Final-Count Escape Crossing: Pinner entered IDLE (%s)" % tag)
+		assert_true(pinned.synchronized_partner == null and pinner.synchronized_partner == null, "Final-Count Escape Crossing: Hold cleared (%s)" % tag)
+		
+		# Step 10 ticks: ensure match remains in progress
+		for _f in range(10):
+			pinned._physics_process(1.0 / 60.0)
+			pinner._physics_process(1.0 / 60.0)
+			manager._physics_process(1.0 / 60.0)
+		assert_true(manager.current_state == MatchManager.MatchState.IN_PROGRESS, "Final-Count Escape Crossing: Match remains IN_PROGRESS (%s)" % tag)
+		
+		manager.free()
+		pinner.free()
+		pinned.free()
 
 
