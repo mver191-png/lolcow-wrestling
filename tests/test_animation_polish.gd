@@ -14,11 +14,10 @@ func run()->void:
 func test_character(id:String)->void:
 	var f:Fighter=SCENE.instantiate();f.character_id=id;f.use_external_input=true;root.add_child(f);await tick(3)
 	check(f.presentation.polish!=null,"%s polish layer exists"%id)
-	var s:Skeleton3D=f.presentation.skeleton
-	var before:Array[Vector3]=[]
+	var s:Skeleton3D=f.presentation.skeleton;var before:Array[Vector3]=[]
 	for i in range(s.get_bone_count()):before.append(s.get_bone_pose_position(i))
 	f._set_state(Fighter.State.STRIKING);await tick(5)
-	var finger:=s.find_bone("Finger1.R");check(finger>=0 and s.get_bone_pose_rotation(finger).angle()>0.20,"%s strike closes hand"%id)
+	var finger:=s.find_bone("Finger1.R");check(finger>=0 and s.get_bone_pose_rotation(finger).get_angle()>0.20,"%s strike closes hand"%id)
 	var unchanged:=true
 	for i in range(s.get_bone_count()):
 		if s.get_bone_name(i).begins_with("Finger") and s.get_bone_pose_position(i).distance_to(before[i])>.00002:unchanged=false
