@@ -24,8 +24,13 @@ func test_character(id:String)->void:
 	check(unchanged,"%s polish never stretches finger segments"%id)
 	f._set_state(Fighter.State.GETTING_UP);f.state_timer=.22;await tick(2)
 	var support:=false
-	for d in f.presentation.polish.diagnostics:
-		if d.kind in ["getup_hand","getup_foot"]:support=true;check(d.error<.12,"%s recovery support remains bounded"%id)
+	# Dedicated recovery owns these limbs; the secondary layer must not solve
+	# them again or re-close the loaded palm after contact correction.
+	check(f.presentation.polish.diagnostics.is_empty(),"%s recovery has one IK owner"%id)
+	for d in f.presentation.contact.diagnostics:
+		if d.kind in ["recovery_palm","recovery_ankle"] and d.weight>=.999:
+			support=true
+			check(d.error<.025,"%s loaded recovery support within 2.5cm"%id)
 	check(support,"%s recovery has measured support"%id)
 	f._set_state(Fighter.State.IDLE);f.stamina=0;await tick(3)
 	check(f.visual_root.transform.is_equal_approx(Transform3D.IDENTITY),"%s secondary motion leaves gameplay visual root unchanged"%id)

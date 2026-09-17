@@ -26,7 +26,11 @@ static func _aim(skeleton: Skeleton3D, bone: int, from: Vector3, to: Vector3) ->
 
 static func solve(skeleton: Skeleton3D, upper: int, middle: int, end: int,
 		target: Vector3, pole: Vector3, weight := 1.0) -> Dictionary:
-	if skeleton == null or min(upper, min(middle, end)) < 0 or not target.is_finite():
+	if not is_instance_valid(skeleton) or min(upper, min(middle, end)) < 0 or not target.is_finite() or not pole.is_finite() or not is_finite(weight):
+		return {"valid": false}
+	if maxi(upper,maxi(middle,end)) >= skeleton.get_bone_count():
+		return {"valid": false}
+	if skeleton.get_bone_parent(middle) != upper or skeleton.get_bone_parent(end) != middle:
 		return {"valid": false}
 	skeleton.force_update_all_bone_transforms()
 	var start := point(skeleton, upper)
@@ -36,6 +40,8 @@ static func solve(skeleton: Skeleton3D, upper: int, middle: int, end: int,
 	var l2 := elbow.distance_to(endpoint)
 	if minf(l1, l2) < 0.0001:
 		return {"valid": false}
+	if weight <= 0.0:
+		return {"valid": true, "error": endpoint.distance_to(target), "unreachable": 0.0, "upper_length": l1, "lower_length": l2}
 	var requested := target
 	target = endpoint.lerp(target, clampf(weight, 0.0, 1.0))
 	var offset := target - start

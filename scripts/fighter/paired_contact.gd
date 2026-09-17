@@ -4,6 +4,9 @@ extends Node
 ## Does not modify Fighter transforms, collision shapes, clocks, resources or rules.
 const IK = preload("res://scripts/fighter/contact_ik.gd")
 const HAND_LOCAL := Vector3(0.0, -0.045, -0.012)
+const RECOVERY = preload("res://scripts/fighter/recovery_contact.gd")
+var recovery := RECOVERY.new()
+var recovery_enabled := true
 var presentation: Node
 var enabled := true
 var diagnostics: Array[Dictionary] = []
@@ -22,6 +25,7 @@ func setup(owner_presentation: Node) -> void:
 	process_physics_priority = 30
 
 func reset() -> void:
+	recovery.reset()
 	_bones.clear()
 	_last_state = -1
 	_last_model = Transform3D.IDENTITY
@@ -42,6 +46,12 @@ func begin_pose(delta: float) -> void:
 	# Authoring playback always starts from a clean model transform. Corrections
 	# cannot accumulate. Exit offsets ease out without writing the gameplay root.
 	presentation.model.transform = Transform3D.IDENTITY
+	if not enabled:
+		recovery.reset()
+		_exit_remaining = 0.0
+		_last_model = Transform3D.IDENTITY
+		_last_state = presentation.fighter.current_state
+		return
 	var st: int = presentation.fighter.current_state
 	var active := st in [Fighter.State.GRAPPLING_ATTACKER, Fighter.State.PINNING, Fighter.State.SUBMISSION_ATTACKER]
 	var previous_active := _last_state in [Fighter.State.GRAPPLING_ATTACKER, Fighter.State.PINNING, Fighter.State.SUBMISSION_ATTACKER]
@@ -102,6 +112,10 @@ func _physics_process(_delta: float) -> void:
 		_cover_contact(f, s, f.opponent)
 	elif st == Fighter.State.SUBMISSION_ATTACKER and _partner_ready(f.synchronized_partner, Fighter.State.SUBMISSION_DEFENDER):
 		_submission_contact(f, s, f.synchronized_partner)
+	if recovery_enabled:
+		recovery.apply(presentation, diagnostics)
+	else:
+		recovery.reset()
 	_last_state = st
 	_last_model = presentation.model.transform
 
