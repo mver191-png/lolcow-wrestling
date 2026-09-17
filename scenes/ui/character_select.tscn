@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://dcharselect01"]
 
 [ext_resource type="Script" path="res://scripts/ui/character_select.gd" id="1_script"]
+[ext_resource type="Script" path="res://scripts/core/audio_manager.gd" id="2_audio"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
 bg_color = Color(0.06, 0.06, 0.08, 1)
@@ -59,6 +60,9 @@ p2_finisher_label = NodePath("P2_Card/VBox/Finisher")
 p2_trait_label = NodePath("P2_Card/VBox/Trait")
 cpu_toggle_button = NodePath("CenterPanel/VBoxActions/CPUToggleBtn")
 start_match_button = NodePath("CenterPanel/VBoxActions/StartMatchBtn")
+
+[node name="AudioManager" type="Node" parent="."]
+script = ExtResource("2_audio")
 
 [node name="Background" type="Panel" parent="."]
 layout_mode = 1

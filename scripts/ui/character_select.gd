@@ -96,40 +96,34 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 		
 	# P1 controls: A / D or W / S
-	if event.keycode == KEY_A:
-		p1_index = (p1_index - 1 + num_chars) % num_chars
+	if event.keycode in [KEY_A, KEY_D, KEY_W, KEY_S]:
+		if event.keycode == KEY_A:
+			p1_index = (p1_index - 1 + num_chars) % num_chars
+		elif event.keycode == KEY_D:
+			p1_index = (p1_index + 1) % num_chars
+		elif event.keycode == KEY_W:
+			p1_index = (p1_index - 4 + num_chars) % num_chars
+		elif event.keycode == KEY_S:
+			p1_index = (p1_index + 4) % num_chars
 		_update_p1_display()
 		_update_grid_highlights()
-	elif event.keycode == KEY_D:
-		p1_index = (p1_index + 1) % num_chars
-		_update_p1_display()
-		_update_grid_highlights()
-	elif event.keycode == KEY_W:
-		p1_index = (p1_index - 4 + num_chars) % num_chars
-		_update_p1_display()
-		_update_grid_highlights()
-	elif event.keycode == KEY_S:
-		p1_index = (p1_index + 4) % num_chars
-		_update_p1_display()
-		_update_grid_highlights()
+		if AudioManager.instance:
+			AudioManager.instance.play_rope_twang()
 		
 	# P2 controls: Left / Right or Up / Down
-	elif event.keycode == KEY_LEFT:
-		p2_index = (p2_index - 1 + num_chars) % num_chars
+	elif event.keycode in [KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN]:
+		if event.keycode == KEY_LEFT:
+			p2_index = (p2_index - 1 + num_chars) % num_chars
+		elif event.keycode == KEY_RIGHT:
+			p2_index = (p2_index + 1) % num_chars
+		elif event.keycode == KEY_UP:
+			p2_index = (p2_index - 4 + num_chars) % num_chars
+		elif event.keycode == KEY_DOWN:
+			p2_index = (p2_index + 4) % num_chars
 		_update_p2_display()
 		_update_grid_highlights()
-	elif event.keycode == KEY_RIGHT:
-		p2_index = (p2_index + 1) % num_chars
-		_update_p2_display()
-		_update_grid_highlights()
-	elif event.keycode == KEY_UP:
-		p2_index = (p2_index - 4 + num_chars) % num_chars
-		_update_p2_display()
-		_update_grid_highlights()
-	elif event.keycode == KEY_DOWN:
-		p2_index = (p2_index + 4) % num_chars
-		_update_p2_display()
-		_update_grid_highlights()
+		if AudioManager.instance:
+			AudioManager.instance.play_rope_twang()
 		
 	# Toggle CPU: C
 	elif event.keycode == KEY_C:
@@ -142,6 +136,8 @@ func _unhandled_input(event: InputEvent) -> void:
 func _on_cpu_toggle_pressed() -> void:
 	p2_is_cpu = not p2_is_cpu
 	MatchConfig.p2_is_cpu = p2_is_cpu
+	if AudioManager.instance:
+		AudioManager.instance.play_strike(true)
 	_update_cpu_button_text()
 
 func _update_cpu_button_text() -> void:
@@ -254,5 +250,7 @@ func _start_match() -> void:
 	var p1_id: String = character_ids[p1_index]
 	var p2_id: String = character_ids[p2_index]
 	MatchConfig.set_match(p1_id, p2_id, p2_is_cpu)
+	if AudioManager.instance:
+		AudioManager.instance.play_ring_bell()
 	character_selected.emit(p1_id, p2_id, p2_is_cpu)
 	get_tree().change_scene_to_file("res://scenes/main.tscn")

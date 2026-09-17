@@ -26,7 +26,8 @@ var snd_rope_break: AudioStreamWAV
 var snd_counts: Array[AudioStreamWAV] = []
 
 func _ready() -> void:
-	instance = self
+	if instance == null:
+		instance = self
 	_create_audio_streams()
 	_setup_players()
 

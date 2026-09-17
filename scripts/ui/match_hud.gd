@@ -82,6 +82,16 @@ func _bind_fighter(f: Fighter, p_idx: int) -> void:
 				p1_hype_bar.max_value = max_h
 				p1_hype_bar.value = cur
 		)
+		f.character_loaded.connect(func(fighter: Fighter):
+			if p1_name_label: p1_name_label.text = fighter.char_name.to_upper()
+			if p1_title_label: p1_title_label.text = fighter.char_title
+			if p1_vitality_bar:
+				p1_vitality_bar.max_value = fighter.max_vitality
+				p1_vitality_bar.value = fighter.vitality
+			if p1_stamina_bar:
+				p1_stamina_bar.max_value = fighter.max_stamina
+				p1_stamina_bar.value = fighter.stamina
+		)
 		f.state_changed.connect(func(_old_s, new_s):
 			if p1_state_label:
 				p1_state_label.text = Fighter.State.keys()[new_s]
@@ -113,6 +123,16 @@ func _bind_fighter(f: Fighter, p_idx: int) -> void:
 			if p2_hype_bar:
 				p2_hype_bar.max_value = max_h
 				p2_hype_bar.value = cur
+		)
+		f.character_loaded.connect(func(fighter: Fighter):
+			if p2_name_label: p2_name_label.text = fighter.char_name.to_upper()
+			if p2_title_label: p2_title_label.text = fighter.char_title
+			if p2_vitality_bar:
+				p2_vitality_bar.max_value = fighter.max_vitality
+				p2_vitality_bar.value = fighter.vitality
+			if p2_stamina_bar:
+				p2_stamina_bar.max_value = fighter.max_stamina
+				p2_stamina_bar.value = fighter.stamina
 		)
 		f.state_changed.connect(func(_old_s, new_s):
 			if p2_state_label:

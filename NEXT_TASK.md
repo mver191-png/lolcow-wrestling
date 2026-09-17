@@ -1,4 +1,4 @@
-# Next Implementation Task: M2 (Polished Slice)
+# Next Implementation Task: M4 (Tournament & Spectator Modes)
 
 ## Single Next Implementation Task
-**Milestone M2 Polish Pass**: Author skeletal armature rigs and animations in Blender for Tophiachu and Cyraxx (idle, walk, punch, throw_attacker, throw_defender, knockdown, getup, pin_hold, pin_struggle) and export to Godot with `AnimationPlayer` and `AnimationTree` blending, maintaining the strict state-machine frame event synchronization established in M1.
+**Milestone M4 Pass**: Implement an 8-player single-elimination offline Tournament bracket mode and Spectator (CPU vs CPU) broadcast mode, with bracket visualization UI, match progression tracking, and championship trophy celebration with referee KingCobraJFS presenting the belt.

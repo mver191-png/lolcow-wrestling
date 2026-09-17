@@ -16,6 +16,7 @@ signal kick_out_succeeded(fighter: Fighter)
 signal submission_initiated(attacker: Fighter, defender: Fighter)
 signal submission_escaped(fighter: Fighter)
 signal tap_out_submitted(fighter: Fighter)
+signal character_loaded(fighter: Fighter)
 
 enum State {
 	IDLE,
@@ -143,6 +144,8 @@ func load_character_data() -> void:
 				visual_root.add_child(inst)
 				anim_player = inst.find_child("AnimationPlayer", true, false) as AnimationPlayer
 				_play_state_animation(current_state)
+	
+	character_loaded.emit(self)
 
 func _physics_process(delta: float) -> void:
 	if not is_cpu:
