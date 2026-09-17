@@ -657,18 +657,9 @@ def build_referee_cobra(output_path):
     print(f"Exported Referee to {output_path}")
 
 if __name__ == "__main__":
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    models_dir = os.path.join(base_dir, "assets", "models")
-    os.makedirs(models_dir, exist_ok=True)
-    
-    build_ring(os.path.join(models_dir, "ring_arena.glb"))
-    build_tophiachu(os.path.join(models_dir, "tophiachu.glb"))
-    build_novaonline(os.path.join(models_dir, "novaonline.glb"))
-    build_cyraxx(os.path.join(models_dir, "cyraxx.glb"))
-    build_candy_rooks(os.path.join(models_dir, "candy_rooks.glb"))
-    build_andy_ditch(os.path.join(models_dir, "andy_ditch.glb"))
-    build_jupiter_the_hybrid(os.path.join(models_dir, "jupiter_the_hybrid.glb"))
-    build_anacondasin(os.path.join(models_dir, "anacondasin.glb"))
-    build_daniel_larson(os.path.join(models_dir, "daniel_larson.glb"))
-    build_referee_cobra(os.path.join(models_dir, "referee_cobra.glb"))
-    print("ALL 8 ROSTER ASSETS + REFEREE GENERATED SUCCESSFULLY!")
+    # The maintained compiler owns roster outputs. Legacy builders above are archival.
+    import runpy
+    import sys
+    from pathlib import Path
+    sys.argv = ["build_roster.py"]
+    runpy.run_path(str(Path(__file__).resolve().parents[1] / "tools" / "build_roster.py"), run_name="__main__")

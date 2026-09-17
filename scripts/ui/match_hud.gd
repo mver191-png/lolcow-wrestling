@@ -25,8 +25,23 @@ extends Control
 @export var victory_label: Label
 
 var current_pinned_fighter: Fighter = null
+var _announcement_tween: Tween
+
+func _cancel_announcement_timer() -> void:
+	if is_instance_valid(_announcement_tween): _announcement_tween.kill()
+
+func _hide_announcement_after(delay: float) -> void:
+	_cancel_announcement_timer()
+	_announcement_tween = create_tween()
+	_announcement_tween.tween_interval(delay)
+	_announcement_tween.tween_callback(func():
+		if is_instance_valid(center_announcement): center_announcement.hide()
+	)
+
 
 func _ready() -> void:
+	if p1_state_label: p1_state_label.hide()
+	if p2_state_label: p2_state_label.hide()
 	if victory_panel:
 		victory_panel.visible = false
 	if pin_escape_container:
@@ -140,6 +155,7 @@ func _bind_fighter(f: Fighter, p_idx: int) -> void:
 		)
 
 func _on_pin_started(_pinner: Fighter, pinned: Fighter) -> void:
+	_cancel_announcement_timer()
 	current_pinned_fighter = pinned
 	if pin_escape_container:
 		pin_escape_container.visible = true
@@ -148,6 +164,7 @@ func _on_pin_started(_pinner: Fighter, pinned: Fighter) -> void:
 		center_announcement.visible = true
 
 func _on_pin_count(count: int) -> void:
+	_cancel_announcement_timer()
 	if center_announcement:
 		center_announcement.text = "COUNT: " + str(count) + "!"
 		center_announcement.visible = true
@@ -158,11 +175,10 @@ func _on_pin_broken(reason: String) -> void:
 		pin_escape_container.visible = false
 	if center_announcement:
 		center_announcement.text = "KICK OUT!" if reason == "KICKOUT" else "PIN BROKEN"
-		var tween: Tween = create_tween()
-		tween.tween_interval(0.8)
-		tween.tween_callback(func(): center_announcement.visible = false)
+		_hide_announcement_after(0.8)
 
 func _on_submission_started(_attacker: Fighter, defender: Fighter) -> void:
+	_cancel_announcement_timer()
 	current_pinned_fighter = defender
 	if pin_escape_container:
 		pin_escape_container.visible = true
@@ -176,9 +192,7 @@ func _on_submission_escaped() -> void:
 		pin_escape_container.visible = false
 	if center_announcement:
 		center_announcement.text = "ESCAPED!"
-		var tween: Tween = create_tween()
-		tween.tween_interval(0.8)
-		tween.tween_callback(func(): center_announcement.visible = false)
+		_hide_announcement_after(0.8)
 
 func _on_rope_break() -> void:
 	current_pinned_fighter = null
@@ -187,11 +201,10 @@ func _on_rope_break() -> void:
 	if center_announcement:
 		center_announcement.text = "ROPE BREAK!"
 		center_announcement.visible = true
-		var tween: Tween = create_tween()
-		tween.tween_interval(1.2)
-		tween.tween_callback(func(): center_announcement.visible = false)
+		_hide_announcement_after(1.2)
 
 func _on_match_ended(winner: Fighter, method: String) -> void:
+	_cancel_announcement_timer()
 	current_pinned_fighter = null
 	if pin_escape_container:
 		pin_escape_container.visible = false

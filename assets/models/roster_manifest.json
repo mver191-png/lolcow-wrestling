@@ -1,0 +1,96 @@
+{
+  "generator": "tools/build_roster.py",
+  "original_assets": true,
+  "entries": [
+    {
+      "file": "anacondasin.glb",
+      "sha256": "87b6502aaac75737fa0f07f990519f48627e8aeb73e224e1b336819f56d3212f",
+      "bones": 42,
+      "clips": 25,
+      "vertices": 8105,
+      "triangles": 15032,
+      "bytes": 1318884,
+      "visual_acceptance": "prototype; see REVIEW.md"
+    },
+    {
+      "file": "andy_ditch.glb",
+      "sha256": "2a0999de214929355036fdc1c128b6b01cfdb8ef7c220a313830825dad8e3a47",
+      "bones": 42,
+      "clips": 25,
+      "vertices": 7494,
+      "triangles": 13888,
+      "bytes": 1268112,
+      "visual_acceptance": "prototype; see REVIEW.md"
+    },
+    {
+      "file": "candy_rooks.glb",
+      "sha256": "d919e3dc24b6f5fa9d43c6174162745c9491d59b6ba449c6d1397e5f941b5ecb",
+      "bones": 42,
+      "clips": 25,
+      "vertices": 8294,
+      "triangles": 15384,
+      "bytes": 1331880,
+      "visual_acceptance": "prototype; see REVIEW.md"
+    },
+    {
+      "file": "cyraxx.glb",
+      "sha256": "ae7fec4c972f32d913ea4787a5c6dc1865e9c62bcb49e865835b070c96c37ac9",
+      "bones": 42,
+      "clips": 25,
+      "vertices": 7345,
+      "triangles": 13600,
+      "bytes": 1259824,
+      "visual_acceptance": "prototype; see REVIEW.md"
+    },
+    {
+      "file": "daniel_larson.glb",
+      "sha256": "f8bcb2d1d5e67225a139e837d87a3f39fb6fa2fe44a7513aa4a8ee452427aff3",
+      "bones": 42,
+      "clips": 25,
+      "vertices": 7494,
+      "triangles": 13888,
+      "bytes": 1254580,
+      "visual_acceptance": "prototype; see REVIEW.md"
+    },
+    {
+      "file": "jupiter_the_hybrid.glb",
+      "sha256": "a3e5387197fbf49fcac80385c6d425be9d7444aafceb0aea4e2d48a710045ed8",
+      "bones": 42,
+      "clips": 25,
+      "vertices": 8105,
+      "triangles": 15032,
+      "bytes": 1303108,
+      "visual_acceptance": "prototype; see REVIEW.md"
+    },
+    {
+      "file": "novaonline.glb",
+      "sha256": "d196690a62951e94e2426d38655f435ee91a10b1befce80cd4d51a0ef96e583b",
+      "bones": 42,
+      "clips": 25,
+      "vertices": 7494,
+      "triangles": 13888,
+      "bytes": 1270780,
+      "visual_acceptance": "prototype; see REVIEW.md"
+    },
+    {
+      "file": "referee_cobra.glb",
+      "sha256": "96a08c3ecc73db80d5df5384c20037e636b9c167c96907258038e0a4a863dd99",
+      "bones": 42,
+      "clips": 25,
+      "vertices": 9367,
+      "triangles": 17272,
+      "bytes": 1403004,
+      "visual_acceptance": "prototype; see REVIEW.md"
+    },
+    {
+      "file": "tophiachu.glb",
+      "sha256": "23dbc17fdb05d83e18b492a9586d36bb21cebfebd35dda3be627a80778a8641e",
+      "bones": 42,
+      "clips": 25,
+      "vertices": 11451,
+      "triangles": 21040,
+      "bytes": 1578032,
+      "visual_acceptance": "prototype; see REVIEW.md"
+    }
+  ]
+}

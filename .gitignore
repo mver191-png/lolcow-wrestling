@@ -1,9 +1,11 @@
-# Godot 4+ .gitignore
 .godot/
-*.translation
+.tools/
+__pycache__/
+*.pyc
 *.import
-export_presets.cfg
-test_out.txt
-*.zip
-*.bundle
+assets/models/*_woven.png
+godot-linux
+builds/
+evidence/
 *.log
+*.zip

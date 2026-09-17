@@ -1279,6 +1279,7 @@ func test_pass_a_simultaneous_submission_ordering() -> void:
 			def.vitality = 5.0
 			def.pin_escape_progress = 95.0
 			atk.submission_tick_timer = 0.49 # Tick occurs at 0.50 (due on 1/60s frame)
+			def.use_external_input = true
 			def.input_pin = true # Valid mash input adding 15.0 to escape progress
 			
 			# Process frame according to tree order
@@ -1342,6 +1343,7 @@ func test_pass_a_simultaneous_submission_ordering() -> void:
 	f2.vitality = 5.0
 	f2.pin_escape_progress = 95.0
 	f1.submission_tick_timer = 0.49
+	f2.use_external_input = true
 	f2.input_pin = true
 	
 	f1._physics_process(1.0 / 60.0)
@@ -1506,6 +1508,7 @@ func test_pass_a_final_count_escape_crossing() -> void:
 		manager.match_ended.connect(func(_w, _m): match_ended_called[0] = true)
 		
 		# Valid mash command that adds ~10.0 progress across the tick
+		pinned.use_external_input = true
 		pinned.input_pin = true
 		
 		# Execute tick with priority order (pinned at priority 0 processes before manager at priority 10)
@@ -1587,7 +1590,7 @@ func test_visual_presentation_and_skeletal_rig() -> void:
 	ap.seek(1.0, true)
 	var hips_idx = skel.find_bone("Hips")
 	var kd_hips = skel.get_bone_pose_position(hips_idx)
-	assert_true(kd_hips.y < 0.20, "Presentation Test: Knockdown settled hips height is on canvas (Y: %.2fm)" % kd_hips.y)
+	assert_true(kd_hips.y > 0.15 and kd_hips.y < 0.36, "Presentation Test: Supine pelvis has positive clearance for body thickness (Y: %.2fm)" % kd_hips.y)
 	
 	# Verify visual_root guard
 	fighter.current_state = Fighter.State.KNOCKED_DOWN
@@ -1599,7 +1602,7 @@ func test_visual_presentation_and_skeletal_rig() -> void:
 	root.add_child(unmigrated)
 	unmigrated.load_character_data("cyraxx")
 	assert_true(unmigrated.presentation != null, "Presentation Test: Presentation exists for unmigrated fighter")
-	assert_true(unmigrated.is_rigged() == false, "Presentation Test: Unmigrated fighter is_rigged() is false")
+	assert_true(unmigrated.is_rigged(), "Presentation Test: Cyraxx now uses the migrated rig")
 	
 	fighter.queue_free()
 	unmigrated.queue_free()

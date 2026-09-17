@@ -84,8 +84,8 @@ var active_frame_end: float = 0.0
 var attack_total_time: float = 0.0
 
 # Synchronized grapple parameters
-var throw_duration: float = 1.0
-var throw_impact_time: float = 0.55
+var throw_duration: float = 1.1
+var throw_impact_time: float = 0.6
 var throw_has_impacted: bool = false
 var synchronized_partner: Fighter = null
 var initial_defender_local_pos: Vector3 = Vector3.ZERO
@@ -106,6 +106,8 @@ var input_pin: bool = false
 var input_finisher: bool = false
 var input_hold_pin: bool = false
 var prev_pin_held: bool = false
+# Replay/test providers opt in explicitly. Hardware must never retain old commands.
+var use_external_input: bool = false
 
 func _init() -> void:
 	# Priority 0 ensures fighters update movement, mechanics, and input processing
@@ -164,7 +166,7 @@ func _physics_process(delta: float) -> void:
 	if recent_heavy_impact_timer > 0.0:
 		recent_heavy_impact_timer = max(0.0, recent_heavy_impact_timer - delta)
 		
-	if not is_cpu:
+	if not is_cpu and not use_external_input:
 		_gather_player_inputs()
 	
 	_tick_stamina(delta)
@@ -176,33 +178,39 @@ func _physics_process(delta: float) -> void:
 
 func _gather_player_inputs() -> void:
 	var prefix: String = "p" + str(player_index) + "_"
-	
-	var dir: Vector2 = Vector2.ZERO
-	if Input.is_action_pressed(prefix + "up"):
-		dir.y -= 1.0
-	if Input.is_action_pressed(prefix + "down"):
-		dir.y += 1.0
-	if Input.is_action_pressed(prefix + "left"):
-		dir.x -= 1.0
-	if Input.is_action_pressed(prefix + "right"):
-		dir.x += 1.0
-	if dir != Vector2.ZERO or input_dir == Vector2.ZERO:
-		input_dir = dir.normalized()
-	
-	if not input_strike:
-		input_strike = Input.is_action_just_pressed(prefix + "strike")
-	if not input_grapple:
-		input_grapple = Input.is_action_just_pressed(prefix + "grapple")
-	if not input_block:
-		input_block = Input.is_action_pressed(prefix + "block")
-	if not input_reversal:
-		input_reversal = Input.is_action_just_pressed(prefix + "reversal")
+	input_dir = Input.get_vector(prefix + "left", prefix + "right", prefix + "up", prefix + "down")
+	input_strike = Input.is_action_just_pressed(prefix + "strike")
+	input_grapple = Input.is_action_just_pressed(prefix + "grapple")
+	input_block = Input.is_action_pressed(prefix + "block")
+	input_reversal = Input.is_action_just_pressed(prefix + "reversal")
 	var pin_down: bool = Input.is_action_pressed(prefix + "pin")
-	input_pin = input_pin or (pin_down and not prev_pin_held)
-	input_hold_pin = input_hold_pin or (pin_down and prev_pin_held)
+	input_pin = pin_down and not prev_pin_held
+	input_hold_pin = pin_down
 	prev_pin_held = pin_down
-	if not input_finisher:
-		input_finisher = Input.is_action_just_pressed(prefix + "finisher")
+	input_finisher = Input.is_action_just_pressed(prefix + "finisher")
+
+func clear_inputs() -> void:
+	input_dir = Vector2.ZERO
+	input_block = false
+	input_hold_pin = false
+	prev_pin_held = false
+	_clear_consumed_pulse_inputs()
+
+func apply_command(command: Dictionary) -> void:
+	# Complete snapshot; omitted continuous fields intentionally become neutral.
+	var movement: Vector2 = command.get("move", Vector2.ZERO)
+	input_dir = movement.limit_length(1.0)
+	input_block = command.get("block", false)
+	input_hold_pin = command.get("hold_pin", false)
+	input_strike = command.get("strike", false)
+	input_grapple = command.get("grapple", false)
+	input_reversal = command.get("reversal", false)
+	input_pin = command.get("pin", false)
+	input_finisher = command.get("finisher", false)
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+		clear_inputs()
 
 func _clear_consumed_pulse_inputs() -> void:
 	input_strike = false
@@ -622,7 +630,7 @@ func _process_synchronized_attacker() -> void:
 			synchronized_partner.position = hold_pos
 		
 		# Tilt defender
-		if synchronized_partner.visual_root:
+		if synchronized_partner.visual_root and not synchronized_partner.is_rigged():
 			var tilt_angle: float = -45.0 if is_leverage else -80.0
 			synchronized_partner.visual_root.rotation.x = deg_to_rad(tilt_angle * lift_t)
 	else:
@@ -673,6 +681,8 @@ func _process_synchronized_attacker() -> void:
 
 func on_throw_released() -> void:
 	synchronized_partner = null
+	if visual_root and is_rigged():
+		visual_root.transform = Transform3D.IDENTITY
 	if is_inside_tree():
 		global_position.y = 0.0
 	else:
@@ -934,6 +944,8 @@ func break_pin_rope_break() -> void:
 
 func receive_damage(amount: float, from_fighter: Fighter, was_blocked: bool, is_finisher: bool = false) -> void:
 	vitality = max(0.0, vitality - amount)
+	if presentation and not was_blocked:
+		presentation.notify_hit(amount)
 	vitality_changed.emit(vitality, max_vitality)
 	
 	# Explicit impact classification: Finisher pressure is strictly gated by move metadata
