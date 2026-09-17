@@ -1,13 +1,17 @@
-# Next implementation task
+# Next task: authored contact and recovery polish
 
-Refine one connected heavyweight throw and its leverage counterpart in the actual
-match. Add explicit grip/support targets and bounded contact correction without
-changing authoritative damage/outcome timing or reintroducing root-motion conflicts.
+Keep the tested contact solver and simulation/presentation separation. Use the
+existing capture tool and contact metrics to evaluate changes before broadening
+scope.
 
-Use Tophiachu/Cyraxx in both directions and both mirror combinations. Capture and
-inspect normal/slow playback with full bodies visible. Measure hand-to-grip errors,
-foot drift, joint extension, and mat/rope penetration. Keep result/cleanup tests.
+1. Author Tophiachu/Cyraxx grip acquisition, finger curl and leverage-specific
+   poses using the established contact markers. Reduce extreme joint bends rather
+   than increasing reach or hiding errors with body offsets.
+2. Add full-body rope and floor-clearance sampling through complete paired and
+   recovery sequences. Add supported elbow/hand/knee recovery phases.
+3. Improve referee approach anticipation and stance transitions without delaying
+   official counts. Review first-count contact in an uninterrupted match.
+4. Run a human match and inspect multiple camera views before marking art accepted.
 
-Only mark the paired move visually accepted after inspecting its renders. Then
-continue likeness-approved meshes/materials and distinctive move/trait mechanics.
-The current bone/clip/test counts are not substitutes for those deliverables.
+Do not claim new unique finishers or tournament readiness from marker-distance
+assertions. Preserve roster stats, shared action clocks and terminal rules.
