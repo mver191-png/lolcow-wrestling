@@ -3571,6 +3571,8 @@ func _init() -> void:
 	
 	test_tophiachu_skeletal_rig_and_bones()
 	test_tophiachu_animation_library()
+	test_animation_timing_and_canonical_synchronization()
+	test_ground_animation_mat_contact_height()
 	test_state_driven_animation_routing()
 	test_visual_root_legacy_override_disabled_for_rigged()
 	test_locomotion_stride_scaling()
@@ -3657,6 +3659,58 @@ func test_tophiachu_animation_library() -> void:
 	assert_test(idle_anim.loop_mode == Animation.LOOP_LINEAR, "Tophiachu Library: 'idle' loop_mode is LOOP_LINEAR")
 	assert_test(walk_anim.loop_mode == Animation.LOOP_LINEAR, "Tophiachu Library: 'walk' loop_mode is LOOP_LINEAR")
 	assert_test(strike_anim.loop_mode == Animation.LOOP_NONE, "Tophiachu Library: 'strike' loop_mode is LOOP_NONE")
+	
+	fighter.queue_free()
+
+func test_animation_timing_and_canonical_synchronization() -> void:
+	var fighter_scene = load("res://scenes/fighter/fighter.tscn")
+	var fighter = fighter_scene.instantiate()
+	root.add_child(fighter)
+	fighter.load_character_data("tophiachu")
+	
+	var ap: AnimationPlayer = fighter.presentation.anim_player
+	
+	# Strike matches attack_total_time = 0.45s
+	var a_strike = ap.get_animation("strike")
+	assert_test(abs(a_strike.length - 0.45) < 0.01, "Timing: 'strike' length is 0.45s (actual: %.3fs)" % a_strike.length)
+	
+	# Getup matches getup duration = 0.60s
+	var a_getup = ap.get_animation("getup")
+	assert_test(abs(a_getup.length - 0.60) < 0.01, "Timing: 'getup' length is 0.60s (actual: %.3fs)" % a_getup.length)
+	
+	# Grapple startup matches MatchRules.GRAPPLE_STARTUP_DURATION = 0.18s
+	var a_grapple = ap.get_animation("grapple")
+	assert_test(abs(a_grapple.length - 0.183) < 0.01, "Timing: 'grapple' length is ~0.183s (actual: %.3fs)" % a_grapple.length)
+	
+	# Throws match throw_duration = 1.0s
+	var a_ta = ap.get_animation("throw_attacker")
+	var a_td = ap.get_animation("throw_defender")
+	assert_test(abs(a_ta.length - 1.0) < 0.01, "Timing: 'throw_attacker' length is 1.00s")
+	assert_test(abs(a_td.length - 1.0) < 0.01, "Timing: 'throw_defender' length is 1.00s")
+	
+	fighter.queue_free()
+
+func test_ground_animation_mat_contact_height() -> void:
+	var fighter_scene = load("res://scenes/fighter/fighter.tscn")
+	var fighter = fighter_scene.instantiate()
+	root.add_child(fighter)
+	fighter.load_character_data("tophiachu")
+	
+	var ap: AnimationPlayer = fighter.presentation.anim_player
+	var skel: Skeleton3D = fighter.presentation.skeleton
+	var hips_idx = skel.find_bone("Hips")
+	
+	# In knockdown at t=1.0s, hips must be down near the canvas (Y <= 0.20m), NOT floating at 1.68m
+	ap.play("knockdown")
+	ap.seek(1.0, true)
+	var kd_hips = skel.get_bone_pose_position(hips_idx)
+	assert_test(kd_hips.y < 0.20, "Ground Height: Knockdown settled hips height is near canvas (actual Y: %.2fm, must be < 0.20m)" % kd_hips.y)
+	
+	# In getup at t=0.60s, hips must return to standing height (Y >= 0.80m)
+	ap.play("getup")
+	ap.seek(0.60, true)
+	var gu_hips = skel.get_bone_pose_position(hips_idx)
+	assert_test(gu_hips.y > 0.80, "Ground Height: Getup complete hips height is upright (actual Y: %.2fm, must be > 0.80m)" % gu_hips.y)
 	
 	fighter.queue_free()
 
@@ -5340,6 +5394,18 @@ func test_visual_presentation_and_skeletal_rig() -> void:
 	assert_true(ap.get_animation("idle").loop_mode == Animation.LOOP_LINEAR, "Presentation Test: 'idle' loops linearly")
 	assert_true(ap.get_animation("walk").loop_mode == Animation.LOOP_LINEAR, "Presentation Test: 'walk' loops linearly")
 	
+	# Verify canonical timing synchronization
+	assert_true(abs(ap.get_animation("strike").length - 0.45) < 0.01, "Presentation Test: 'strike' length is 0.45s")
+	assert_true(abs(ap.get_animation("getup").length - 0.60) < 0.01, "Presentation Test: 'getup' length is 0.60s")
+	assert_true(abs(ap.get_animation("grapple").length - 0.183) < 0.01, "Presentation Test: 'grapple' length is ~0.183s")
+	
+	# Verify ground contact height (Hips on mat Y <= 0.20m, not floating 1.68m)
+	ap.play("knockdown")
+	ap.seek(1.0, true)
+	var hips_idx = skel.find_bone("Hips")
+	var kd_hips = skel.get_bone_pose_position(hips_idx)
+	assert_true(kd_hips.y < 0.20, "Presentation Test: Knockdown settled hips height is on canvas (Y: %.2fm)" % kd_hips.y)
+	
 	# Verify visual_root guard
 	fighter.current_state = Fighter.State.KNOCKED_DOWN
 	fighter._play_state_animation(Fighter.State.KNOCKED_DOWN)
@@ -6070,7 +6136,7 @@ func test_scene_callback_overwrite_resilience() -> void:
 ## File: blender/build_skinned_character.py
 
 ```python
-﻿# Blender 5.0 Skinned Character & Animation Generator for Tophiachu
+# Blender 5.0 Skinned Character & Animation Generator for Tophiachu
 # Specialized production script for LOLCOW WRESTLING: OFFLINE MAYHEM
 import bpy
 import bmesh
@@ -6495,6 +6561,7 @@ def add_bone_keyframe(arm_obj, bone_name, prop, value, frame):
     pb.keyframe_insert(data_path=prop, frame=frame)
 
 def author_animations(arm_obj):
+    bpy.context.scene.render.fps = 60
     if not arm_obj.animation_data:
         arm_obj.animation_data_create()
         
@@ -6509,17 +6576,17 @@ def author_animations(arm_obj):
         track.strips.new(name, 1, act)
 
     # -------------------------------------------------------------
-    # 1. IDLE (60f loop): Heavyweight ready stance with weight shift
+    # 1. IDLE (60f loop, 1.0s): Heavyweight ready stance with weight shift
     # -------------------------------------------------------------
     act_idle = create_clip("idle")
-    for f, hip_rot_y, hip_pos_z, chest_rot_x in [
+    for f, hip_rot_y, hip_pos_y, chest_rot_x in [
         (1, 0.0, 0.0, 0.05),
-        (15, 0.03, -0.02, 0.02),
+        (15, 0.03, -0.01, 0.02),
         (30, 0.0, 0.0, 0.06),
-        (45, -0.03, -0.02, 0.02),
+        (45, -0.03, -0.01, 0.02),
         (60, 0.0, 0.0, 0.05)
     ]:
-        add_bone_keyframe(arm_obj, "Hips", "location", (0, 0, hip_pos_z), f)
+        add_bone_keyframe(arm_obj, "Hips", "location", (0, hip_pos_y, 0), f)
         add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (0.05, hip_rot_y, 0), f)
         add_bone_keyframe(arm_obj, "Chest", "rotation_euler", (chest_rot_x, 0, 0), f)
         add_bone_keyframe(arm_obj, "UpperArm.L", "rotation_euler", (0.5, 0.2, 0.3), f)
@@ -6533,15 +6600,15 @@ def author_animations(arm_obj):
     push_to_nla(act_idle, "idle")
 
     # -------------------------------------------------------------
-    # 2. WALK (40f loop): Grounded heavyweight stride
+    # 2. WALK (60f loop, 1.0s): Grounded heavyweight stride
     # -------------------------------------------------------------
     act_walk = create_clip("walk")
     for f, r_leg, l_leg, r_arm, l_arm in [
         (1, -0.35, 0.25, 0.4, -0.4),
-        (10, -0.10, -0.10, 0.0, 0.0),
-        (20, 0.25, -0.35, -0.4, 0.4),
-        (30, -0.10, -0.10, 0.0, 0.0),
-        (40, -0.35, 0.25, 0.4, -0.4)
+        (15, -0.10, -0.10, 0.0, 0.0),
+        (30, 0.25, -0.35, -0.4, 0.4),
+        (45, -0.10, -0.10, 0.0, 0.0),
+        (60, -0.35, 0.25, 0.4, -0.4)
     ]:
         add_bone_keyframe(arm_obj, "Thigh.R", "rotation_euler", (r_leg, 0, 0), f)
         add_bone_keyframe(arm_obj, "Thigh.L", "rotation_euler", (l_leg, 0, 0), f)
@@ -6553,94 +6620,95 @@ def author_animations(arm_obj):
     push_to_nla(act_walk, "walk")
 
     # -------------------------------------------------------------
-    # 3. STRIKE (30f one-shot): Heavy overhand blow with hip commitment
+    # 3. STRIKE (27f, 0.45s): Synchronized with Godot attack_total_time = 0.45s
+    # Active window [0.12s, 0.32s] -> delivery impact at F14 (0.23s)
     # -------------------------------------------------------------
     act_strike = create_clip("strike")
-    # F1: Stance
+    # F1 (0.00s): Stance
     add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (0, 0, 0), 1)
     add_bone_keyframe(arm_obj, "Chest", "rotation_euler", (0, 0, 0), 1)
     add_bone_keyframe(arm_obj, "UpperArm.R", "rotation_euler", (0.4, 0, 0), 1)
     add_bone_keyframe(arm_obj, "Forearm.R", "rotation_euler", (-0.8, 0, 0), 1)
-    # F6: Windup / Cocking back
-    add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (0, -0.25, 0), 6)
-    add_bone_keyframe(arm_obj, "Chest", "rotation_euler", (0, -0.30, 0), 6)
-    add_bone_keyframe(arm_obj, "UpperArm.R", "rotation_euler", (0.7, 0.4, -0.5), 6)
-    add_bone_keyframe(arm_obj, "Forearm.R", "rotation_euler", (-1.4, 0, 0), 6)
-    # F14: Explosive Overhand Delivery (Matches strike active window)
+    # F7 (0.11s): Windup / Cocking back
+    add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (0, -0.25, 0), 7)
+    add_bone_keyframe(arm_obj, "Chest", "rotation_euler", (0, -0.30, 0), 7)
+    add_bone_keyframe(arm_obj, "UpperArm.R", "rotation_euler", (0.7, 0.4, -0.5), 7)
+    add_bone_keyframe(arm_obj, "Forearm.R", "rotation_euler", (-1.4, 0, 0), 7)
+    # F14 (0.23s): Explosive Overhand Delivery (Peak extension during active window)
     add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (0.15, 0.50, 0), 14)
     add_bone_keyframe(arm_obj, "Chest", "rotation_euler", (0.20, 0.55, 0), 14)
     add_bone_keyframe(arm_obj, "UpperArm.R", "rotation_euler", (1.3, -0.4, 0.2), 14)
     add_bone_keyframe(arm_obj, "Forearm.R", "rotation_euler", (-0.2, 0, 0), 14)
-    # F22: Follow-through
-    add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (0.10, 0.35, 0), 22)
-    add_bone_keyframe(arm_obj, "Chest", "rotation_euler", (0.15, 0.40, 0), 22)
-    # F30: Recovery
-    add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (0, 0, 0), 30)
-    add_bone_keyframe(arm_obj, "Chest", "rotation_euler", (0, 0, 0), 30)
-    add_bone_keyframe(arm_obj, "UpperArm.R", "rotation_euler", (0.5, -0.2, -0.3), 30)
-    add_bone_keyframe(arm_obj, "Forearm.R", "rotation_euler", (-0.9, 0, 0), 30)
+    # F20 (0.33s): Follow-through
+    add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (0.10, 0.35, 0), 20)
+    add_bone_keyframe(arm_obj, "Chest", "rotation_euler", (0.15, 0.40, 0), 20)
+    # F27 (0.45s): Recovery to stance
+    add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (0, 0, 0), 27)
+    add_bone_keyframe(arm_obj, "Chest", "rotation_euler", (0, 0, 0), 27)
+    add_bone_keyframe(arm_obj, "UpperArm.R", "rotation_euler", (0.5, -0.2, -0.3), 27)
+    add_bone_keyframe(arm_obj, "Forearm.R", "rotation_euler", (-0.9, 0, 0), 27)
     push_to_nla(act_strike, "strike")
 
     # -------------------------------------------------------------
-    # 4. KNOCKDOWN (45f): Fall backward and impact canvas flat
+    # 4. KNOCKDOWN (60f, 1.0s impact & settle flat on canvas)
     # -------------------------------------------------------------
     act_kd = create_clip("knockdown")
-    # F1: Impact reel
+    # F1 (0.00s): Impact reel
     add_bone_keyframe(arm_obj, "Hips", "location", (0, 0, 0), 1)
     add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (0, 0, 0), 1)
     add_bone_keyframe(arm_obj, "Chest", "rotation_euler", (-0.3, 0, 0), 1)
     add_bone_keyframe(arm_obj, "Head", "rotation_euler", (-0.5, 0, 0), 1)
-    # F15: Falling back
-    add_bone_keyframe(arm_obj, "Hips", "location", (0, 0.4, -0.5), 15)
-    add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (-0.9, 0, 0), 15)
-    # F24: Canvas mat impact
-    add_bone_keyframe(arm_obj, "Hips", "location", (0, 0.8, -0.80), 24)
-    add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (-math.pi / 2.0, 0, 0), 24)
-    add_bone_keyframe(arm_obj, "Chest", "rotation_euler", (0, 0, 0), 24)
-    add_bone_keyframe(arm_obj, "UpperArm.L", "rotation_euler", (0, 0, 1.2), 24)
-    add_bone_keyframe(arm_obj, "UpperArm.R", "rotation_euler", (0, 0, -1.2), 24)
-    add_bone_keyframe(arm_obj, "Thigh.L", "rotation_euler", (0.3, 0, 0), 24)
-    add_bone_keyframe(arm_obj, "Thigh.R", "rotation_euler", (0.3, 0, 0), 24)
-    # F45: Settle flat on canvas
-    add_bone_keyframe(arm_obj, "Hips", "location", (0, 0.8, -0.80), 45)
-    add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (-math.pi / 2.0, 0, 0), 45)
+    # F15 (0.25s): Falling backward
+    add_bone_keyframe(arm_obj, "Hips", "location", (0, -0.30, 0), 15)
+    add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (-0.7, 0, 0), 15)
+    # F30 (0.50s): Canvas mat impact flat at mat level (-0.75m local Y)
+    add_bone_keyframe(arm_obj, "Hips", "location", (0, -0.75, 0), 30)
+    add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (-math.pi / 2.0, 0, 0), 30)
+    add_bone_keyframe(arm_obj, "Chest", "rotation_euler", (0, 0, 0), 30)
+    add_bone_keyframe(arm_obj, "UpperArm.L", "rotation_euler", (0, 0, 1.2), 30)
+    add_bone_keyframe(arm_obj, "UpperArm.R", "rotation_euler", (0, 0, -1.2), 30)
+    add_bone_keyframe(arm_obj, "Thigh.L", "rotation_euler", (0.2, 0, 0), 30)
+    add_bone_keyframe(arm_obj, "Thigh.R", "rotation_euler", (0.2, 0, 0), 30)
+    # F60 (1.00s): Settle flat on canvas
+    add_bone_keyframe(arm_obj, "Hips", "location", (0, -0.75, 0), 60)
+    add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (-math.pi / 2.0, 0, 0), 60)
     push_to_nla(act_kd, "knockdown")
 
     # -------------------------------------------------------------
-    # 5. GETUP (60f): Supported get-up through elbow, hand, knee, foot
+    # 5. GETUP (36f, 0.60s): Synchronized with Godot getup timer (0.60s)
     # -------------------------------------------------------------
     act_gu = create_clip("getup")
-    # F1: Flat on back
-    add_bone_keyframe(arm_obj, "Hips", "location", (0, 0.8, -0.80), 1)
+    # F1 (0.00s): Flat on back on canvas
+    add_bone_keyframe(arm_obj, "Hips", "location", (0, -0.75, 0), 1)
     add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (-math.pi / 2.0, 0, 0), 1)
-    # F15: Roll to left hip, plant left elbow & right foot
-    add_bone_keyframe(arm_obj, "Hips", "location", (0, 0.6, -0.65), 15)
-    add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (-1.2, 0, 0.6), 15)
-    add_bone_keyframe(arm_obj, "UpperArm.L", "rotation_euler", (0.4, 0, 0.8), 15)
-    add_bone_keyframe(arm_obj, "Forearm.L", "rotation_euler", (-1.2, 0, 0), 15)
-    add_bone_keyframe(arm_obj, "Thigh.R", "rotation_euler", (0.8, 0, 0), 15)
-    add_bone_keyframe(arm_obj, "Shin.R", "rotation_euler", (1.2, 0, 0), 15)
-    # F30: Push up onto left hand, rise onto left knee, elevate hips
-    add_bone_keyframe(arm_obj, "Hips", "location", (0, 0.3, -0.35), 30)
-    add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (-0.5, 0, 0.3), 30)
-    add_bone_keyframe(arm_obj, "UpperArm.L", "rotation_euler", (0.2, 0, 0.4), 30)
-    add_bone_keyframe(arm_obj, "Forearm.L", "rotation_euler", (-0.3, 0, 0), 30)
-    # F45: Bring right leg forward into lunge/squat, push off thighs
-    add_bone_keyframe(arm_obj, "Hips", "location", (0, 0.1, -0.15), 45)
-    add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (-0.2, 0, 0), 45)
-    add_bone_keyframe(arm_obj, "Chest", "rotation_euler", (0.2, 0, 0), 45)
-    # F60: Rise fully to feet, return to ready idle stance
-    add_bone_keyframe(arm_obj, "Hips", "location", (0, 0, 0), 60)
-    add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (0.05, 0, 0), 60)
-    add_bone_keyframe(arm_obj, "Chest", "rotation_euler", (0.05, 0, 0), 60)
-    add_bone_keyframe(arm_obj, "UpperArm.L", "rotation_euler", (0.5, 0.2, 0.3), 60)
-    add_bone_keyframe(arm_obj, "UpperArm.R", "rotation_euler", (0.5, -0.2, -0.3), 60)
+    # F9 (0.15s): Roll to left hip, plant left elbow & right foot
+    add_bone_keyframe(arm_obj, "Hips", "location", (0, -0.55, 0), 9)
+    add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (-1.1, 0, 0.5), 9)
+    add_bone_keyframe(arm_obj, "UpperArm.L", "rotation_euler", (0.4, 0, 0.8), 9)
+    add_bone_keyframe(arm_obj, "Forearm.L", "rotation_euler", (-1.2, 0, 0), 9)
+    add_bone_keyframe(arm_obj, "Thigh.R", "rotation_euler", (0.8, 0, 0), 9)
+    add_bone_keyframe(arm_obj, "Shin.R", "rotation_euler", (1.2, 0, 0), 9)
+    # F18 (0.30s): Push up onto left hand, rise onto left knee
+    add_bone_keyframe(arm_obj, "Hips", "location", (0, -0.35, 0), 18)
+    add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (-0.4, 0, 0.2), 18)
+    add_bone_keyframe(arm_obj, "UpperArm.L", "rotation_euler", (0.2, 0, 0.4), 18)
+    add_bone_keyframe(arm_obj, "Forearm.L", "rotation_euler", (-0.3, 0, 0), 18)
+    # F27 (0.45s): Bring right leg forward, push off thighs
+    add_bone_keyframe(arm_obj, "Hips", "location", (0, -0.15, 0), 27)
+    add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (-0.1, 0, 0), 27)
+    add_bone_keyframe(arm_obj, "Chest", "rotation_euler", (0.1, 0, 0), 27)
+    # F36 (0.60s): Fully upright in ready stance right as Godot returns to IDLE
+    add_bone_keyframe(arm_obj, "Hips", "location", (0, 0, 0), 36)
+    add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (0.05, 0, 0), 36)
+    add_bone_keyframe(arm_obj, "Chest", "rotation_euler", (0.05, 0, 0), 36)
+    add_bone_keyframe(arm_obj, "UpperArm.L", "rotation_euler", (0.5, 0.2, 0.3), 36)
+    add_bone_keyframe(arm_obj, "UpperArm.R", "rotation_euler", (0.5, -0.2, -0.3), 36)
     push_to_nla(act_gu, "getup")
 
     # -------------------------------------------------------------
     # 6. Safety & Baseline Gameplay Clips
     # -------------------------------------------------------------
-    # Block
+    # Block (30f, 0.50s)
     act_blk = create_clip("block")
     for f in [1, 30]:
         add_bone_keyframe(arm_obj, "UpperArm.L", "rotation_euler", (1.2, 0.3, -0.3), f)
@@ -6649,78 +6717,82 @@ def author_animations(arm_obj):
         add_bone_keyframe(arm_obj, "Forearm.R", "rotation_euler", (-1.5, 0, 0), f)
     push_to_nla(act_blk, "block")
 
-    # Reversal
+    # Reversal (30f, 0.50s)
     act_rev = create_clip("reversal")
     for f in [1, 30]:
         add_bone_keyframe(arm_obj, "UpperArm.L", "rotation_euler", (0.8, 0.5, 0.2), f)
         add_bone_keyframe(arm_obj, "UpperArm.R", "rotation_euler", (0.8, -0.5, -0.2), f)
     push_to_nla(act_rev, "reversal")
 
-    # Grapple Startup
+    # Grapple Startup (11f, 0.18s! Synchronized with MatchRules.GRAPPLE_STARTUP_DURATION = 0.18s)
     act_grp = create_clip("grapple")
-    for f in [1, 30]:
-        add_bone_keyframe(arm_obj, "UpperArm.L", "rotation_euler", (1.4, 0.1, 0.1), f)
-        add_bone_keyframe(arm_obj, "UpperArm.R", "rotation_euler", (1.4, -0.1, -0.1), f)
-        add_bone_keyframe(arm_obj, "Forearm.L", "rotation_euler", (-0.2, 0, 0), f)
-        add_bone_keyframe(arm_obj, "Forearm.R", "rotation_euler", (-0.2, 0, 0), f)
+    add_bone_keyframe(arm_obj, "UpperArm.L", "rotation_euler", (0.5, 0.2, 0.3), 1)
+    add_bone_keyframe(arm_obj, "UpperArm.R", "rotation_euler", (0.5, -0.2, -0.3), 1)
+    add_bone_keyframe(arm_obj, "Forearm.L", "rotation_euler", (-0.9, 0, 0), 1)
+    add_bone_keyframe(arm_obj, "Forearm.R", "rotation_euler", (-0.9, 0, 0), 1)
+    # Fully reaching forward at F11
+    add_bone_keyframe(arm_obj, "UpperArm.L", "rotation_euler", (1.4, 0.1, 0.1), 11)
+    add_bone_keyframe(arm_obj, "UpperArm.R", "rotation_euler", (1.4, -0.1, -0.1), 11)
+    add_bone_keyframe(arm_obj, "Forearm.L", "rotation_euler", (-0.2, 0, 0), 11)
+    add_bone_keyframe(arm_obj, "Forearm.R", "rotation_euler", (-0.2, 0, 0), 11)
     push_to_nla(act_grp, "grapple")
 
-    # Throw Attacker
+    # Throw Attacker (60f, 1.0s! Synchronized with throw_duration = 1.0s, impact at 0.55s / F33)
     act_ta = create_clip("throw_attacker")
-    for f, arm_x in [(1, 0.5), (20, 1.8), (35, 0.2), (45, 0.5)]:
+    for f, arm_x in [(1, 0.5), (20, 1.8), (33, 0.2), (60, 0.5)]:
         add_bone_keyframe(arm_obj, "UpperArm.L", "rotation_euler", (arm_x, 0.2, 0), f)
         add_bone_keyframe(arm_obj, "UpperArm.R", "rotation_euler", (arm_x, -0.2, 0), f)
     push_to_nla(act_ta, "throw_attacker")
 
-    # Throw Defender
+    # Throw Defender (60f, 1.0s! Synchronized with throw_duration = 1.0s, impact at 0.55s / F33)
     act_td = create_clip("throw_defender")
-    for f, rot_x, loc_z in [(1, 0, 0), (20, -1.5, 0.8), (35, -3.14, 0), (45, -3.14, 0)]:
+    for f, rot_x, loc_y in [(1, 0, 0), (20, -1.5, 0.6), (33, -3.14, -0.75), (60, -3.14, -0.75)]:
         add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (rot_x, 0, 0), f)
-        add_bone_keyframe(arm_obj, "Hips", "location", (0, 0, loc_z), f)
+        add_bone_keyframe(arm_obj, "Hips", "location", (0, loc_y, 0), f)
     push_to_nla(act_td, "throw_defender")
 
-    # Pinning (Cover)
+    # Pinning (Cover) (60f, 1.0s)
     act_pinn = create_clip("pinning")
-    for f in [1, 40]:
-        add_bone_keyframe(arm_obj, "Hips", "location", (0, 0, -0.6), f)
+    for f in [1, 60]:
+        add_bone_keyframe(arm_obj, "Hips", "location", (0, -0.45, 0), f)
         add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (0.8, 0, 0), f)
         add_bone_keyframe(arm_obj, "UpperArm.R", "rotation_euler", (1.2, 0, 0), f)
     push_to_nla(act_pinn, "pinning")
 
-    # Pinned (Grounded Struggle)
+    # Pinned (Grounded Struggle) (60f, 1.0s)
     act_pind = create_clip("pinned")
-    for f in [1, 20, 40]:
-        add_bone_keyframe(arm_obj, "Hips", "location", (0, 0, -0.8), f)
+    for f in [1, 30, 60]:
+        add_bone_keyframe(arm_obj, "Hips", "location", (0, -0.75, 0), f)
         add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (-math.pi / 2.0, 0, 0), f)
-        add_bone_keyframe(arm_obj, "Thigh.L", "rotation_euler", (0.4 if f == 20 else 0.1, 0, 0), f)
+        add_bone_keyframe(arm_obj, "Thigh.L", "rotation_euler", (0.4 if f == 30 else 0.1, 0, 0), f)
     push_to_nla(act_pind, "pinned")
 
-    # Submission Attacker
+    # Submission Attacker (60f, 1.0s)
     act_sa = create_clip("submission_attacker")
-    for f in [1, 40]:
-        add_bone_keyframe(arm_obj, "Hips", "location", (0, 0, -0.4), f)
+    for f in [1, 60]:
+        add_bone_keyframe(arm_obj, "Hips", "location", (0, -0.45, 0), f)
         add_bone_keyframe(arm_obj, "UpperArm.L", "rotation_euler", (1.1, 0.2, 0), f)
         add_bone_keyframe(arm_obj, "UpperArm.R", "rotation_euler", (1.1, -0.2, 0), f)
     push_to_nla(act_sa, "submission_attacker")
 
-    # Submission Defender
+    # Submission Defender (60f, 1.0s)
     act_sd = create_clip("submission_defender")
-    for f in [1, 40]:
-        add_bone_keyframe(arm_obj, "Hips", "location", (0, 0, -0.7), f)
+    for f in [1, 60]:
+        add_bone_keyframe(arm_obj, "Hips", "location", (0, -0.75, 0), f)
         add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (-1.2, 0, 0), f)
     push_to_nla(act_sd, "submission_defender")
 
-    # Victory
+    # Victory (60f, 1.0s)
     act_vic = create_clip("victory")
     for f, arm_z in [(1, 0.5), (30, 2.2), (60, 2.0)]:
         add_bone_keyframe(arm_obj, "UpperArm.L", "rotation_euler", (arm_z, 0, 0.6), f)
         add_bone_keyframe(arm_obj, "UpperArm.R", "rotation_euler", (arm_z, 0, -0.6), f)
     push_to_nla(act_vic, "victory")
 
-    # Defeated
+    # Defeated (60f, 1.0s)
     act_def = create_clip("defeated")
-    for f in [1, 40]:
-        add_bone_keyframe(arm_obj, "Hips", "location", (0, 0.8, -0.80), f)
+    for f in [1, 60]:
+        add_bone_keyframe(arm_obj, "Hips", "location", (0, -0.75, 0), f)
         add_bone_keyframe(arm_obj, "Hips", "rotation_euler", (-math.pi / 2.0, 0, 0), f)
     push_to_nla(act_def, "defeated")
 

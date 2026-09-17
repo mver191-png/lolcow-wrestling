@@ -15,6 +15,8 @@ func _init() -> void:
 	
 	test_tophiachu_skeletal_rig_and_bones()
 	test_tophiachu_animation_library()
+	test_animation_timing_and_canonical_synchronization()
+	test_ground_animation_mat_contact_height()
 	test_state_driven_animation_routing()
 	test_visual_root_legacy_override_disabled_for_rigged()
 	test_locomotion_stride_scaling()
@@ -101,6 +103,58 @@ func test_tophiachu_animation_library() -> void:
 	assert_test(idle_anim.loop_mode == Animation.LOOP_LINEAR, "Tophiachu Library: 'idle' loop_mode is LOOP_LINEAR")
 	assert_test(walk_anim.loop_mode == Animation.LOOP_LINEAR, "Tophiachu Library: 'walk' loop_mode is LOOP_LINEAR")
 	assert_test(strike_anim.loop_mode == Animation.LOOP_NONE, "Tophiachu Library: 'strike' loop_mode is LOOP_NONE")
+	
+	fighter.queue_free()
+
+func test_animation_timing_and_canonical_synchronization() -> void:
+	var fighter_scene = load("res://scenes/fighter/fighter.tscn")
+	var fighter = fighter_scene.instantiate()
+	root.add_child(fighter)
+	fighter.load_character_data("tophiachu")
+	
+	var ap: AnimationPlayer = fighter.presentation.anim_player
+	
+	# Strike matches attack_total_time = 0.45s
+	var a_strike = ap.get_animation("strike")
+	assert_test(abs(a_strike.length - 0.45) < 0.01, "Timing: 'strike' length is 0.45s (actual: %.3fs)" % a_strike.length)
+	
+	# Getup matches getup duration = 0.60s
+	var a_getup = ap.get_animation("getup")
+	assert_test(abs(a_getup.length - 0.60) < 0.01, "Timing: 'getup' length is 0.60s (actual: %.3fs)" % a_getup.length)
+	
+	# Grapple startup matches MatchRules.GRAPPLE_STARTUP_DURATION = 0.18s
+	var a_grapple = ap.get_animation("grapple")
+	assert_test(abs(a_grapple.length - 0.183) < 0.01, "Timing: 'grapple' length is ~0.183s (actual: %.3fs)" % a_grapple.length)
+	
+	# Throws match throw_duration = 1.0s
+	var a_ta = ap.get_animation("throw_attacker")
+	var a_td = ap.get_animation("throw_defender")
+	assert_test(abs(a_ta.length - 1.0) < 0.01, "Timing: 'throw_attacker' length is 1.00s")
+	assert_test(abs(a_td.length - 1.0) < 0.01, "Timing: 'throw_defender' length is 1.00s")
+	
+	fighter.queue_free()
+
+func test_ground_animation_mat_contact_height() -> void:
+	var fighter_scene = load("res://scenes/fighter/fighter.tscn")
+	var fighter = fighter_scene.instantiate()
+	root.add_child(fighter)
+	fighter.load_character_data("tophiachu")
+	
+	var ap: AnimationPlayer = fighter.presentation.anim_player
+	var skel: Skeleton3D = fighter.presentation.skeleton
+	var hips_idx = skel.find_bone("Hips")
+	
+	# In knockdown at t=1.0s, hips must be down near the canvas (Y <= 0.20m), NOT floating at 1.68m
+	ap.play("knockdown")
+	ap.seek(1.0, true)
+	var kd_hips = skel.get_bone_pose_position(hips_idx)
+	assert_test(kd_hips.y < 0.20, "Ground Height: Knockdown settled hips height is near canvas (actual Y: %.2fm, must be < 0.20m)" % kd_hips.y)
+	
+	# In getup at t=0.60s, hips must return to standing height (Y >= 0.80m)
+	ap.play("getup")
+	ap.seek(0.60, true)
+	var gu_hips = skel.get_bone_pose_position(hips_idx)
+	assert_test(gu_hips.y > 0.80, "Ground Height: Getup complete hips height is upright (actual Y: %.2fm, must be > 0.80m)" % gu_hips.y)
 	
 	fighter.queue_free()
 

@@ -1577,6 +1577,18 @@ func test_visual_presentation_and_skeletal_rig() -> void:
 	assert_true(ap.get_animation("idle").loop_mode == Animation.LOOP_LINEAR, "Presentation Test: 'idle' loops linearly")
 	assert_true(ap.get_animation("walk").loop_mode == Animation.LOOP_LINEAR, "Presentation Test: 'walk' loops linearly")
 	
+	# Verify canonical timing synchronization
+	assert_true(abs(ap.get_animation("strike").length - 0.45) < 0.01, "Presentation Test: 'strike' length is 0.45s")
+	assert_true(abs(ap.get_animation("getup").length - 0.60) < 0.01, "Presentation Test: 'getup' length is 0.60s")
+	assert_true(abs(ap.get_animation("grapple").length - 0.183) < 0.01, "Presentation Test: 'grapple' length is ~0.183s")
+	
+	# Verify ground contact height (Hips on mat Y <= 0.20m, not floating 1.68m)
+	ap.play("knockdown")
+	ap.seek(1.0, true)
+	var hips_idx = skel.find_bone("Hips")
+	var kd_hips = skel.get_bone_pose_position(hips_idx)
+	assert_true(kd_hips.y < 0.20, "Presentation Test: Knockdown settled hips height is on canvas (Y: %.2fm)" % kd_hips.y)
+	
 	# Verify visual_root guard
 	fighter.current_state = Fighter.State.KNOCKED_DOWN
 	fighter._play_state_animation(Fighter.State.KNOCKED_DOWN)
