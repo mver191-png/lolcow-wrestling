@@ -1,10 +1,10 @@
 # Project State: LOLCOW WRESTLING: OFFLINE MAYHEM
 
-## Milestone Status: M0-M1 Functional -> Pass A Repairs (Pin-Balance Acceptance Complete)
+## Milestone Status: M0-M1 Functional -> Pass A Repairs (Boundary-Safe Paired Throws Complete)
 - **Engine**: Godot 4.7.2 (stable official, Windows x64) - Installed & Verified.
 - **3D DCC Pipeline**: Blender 5.0.1 (headless Python automation) - Verified.
 - **Target**: 1080p @ 60 FPS, Windows standalone.
-- **Authoritative Combat Loop & Integration**: Verified with 210 automated headless tests (154 focused unit tests + 56 full scene physics integration tests, 0 failures, 0 warnings).
+- **Authoritative Combat Loop & Integration**: Verified with 338 automated headless tests (282 focused unit tests + 56 full scene physics integration tests, 0 failures, 0 warnings).
 - **M2/M3 Status**: Functional baseline established. Skeletal animation rigging, authored unique animation clips, and manual visual inspections remain **NOT RUN / PENDING** per code review requirements.
 
 ### Pass A Codebase Repairs & Verifications:
@@ -35,12 +35,16 @@
    - Attacker retains sole vertical authority (1.55m peak verified in center ring).
 7. **Standardized Forward-Axis Conventions (Verified in Pass A)**:
    - Synchronized throws and locomotion unified on standard Godot convention `atan2(-dx, -dz)`.
+8. **Boundary-Safe Paired Throws with Pre-Throw Trajectory Validation (Verified in Pass A Priority 2)**:
+   - Implemented `_validate_and_adjust_throw_boundaries()` in `Fighter._start_synchronized_throw()`.
+   - Calculates predicted slam impact position $\vec{P}_{\text{slam}} = \vec{P}_{\text{atk}} + \vec{F} \times d_{\text{slam}}$ and shifts the grappling pair inward toward ring center such that both attacker, defender, and landing coordinates remain $\le 3.50\text{m}$ (inside $3.65\text{m}$ rope threshold).
+   - Clamped intermediate synchronized lift (`hold_pos`) and landing (`slam_pos`) coordinates to `THROW_SAFE_RING_BOUND = 3.50m` to provide defense-in-depth during multi-frame execution.
+   - Confirmed zero out-of-bounds trajectory and zero snap-back across all 4 ring edges (North, South, East, West) and all 4 corners (NE, NW, SE, SW) across slot inversions and tree processing orders (32 edge/corner/slot permutations, 128 boundary assertions).
 
 ### Active Open Items from Code Review (In Priority Order):
-1. **Boundary-Safe Throws (Pass A Priority 2 - Open)**: Prevent attacker throws near ropes from placing defender out of ring bounds ($|x| > 3.65\text{m}$) before snap-back.
-2. **Directional Contact & Grapple Startup (Pass A Priority 3 - Open)**: Replace omnidirectional distance strike checks with forward cone checks; enforce a real startup window on grapples.
-3. **Submission Simultaneous Outcome Resolution (Pass A Priority 4 - Open)**: Formalize authoritative priority in `MatchManager` when tap-out and escape coincide on the same physics tick.
-4. **Manual Visual Inspection & Skeletal Rigging**: Visual checks and authored animations remain **NOT RUN**.
+1. **Directional Contact & Grapple Startup (Pass A Priority 3 - Open)**: Replace omnidirectional distance strike checks with forward cone checks; enforce a real startup window on grapples.
+2. **Submission Simultaneous Outcome Resolution (Pass A Priority 4 - Open)**: Formalize authoritative priority in `MatchManager` when tap-out and escape coincide on the same physics tick.
+3. **Manual Visual Inspection & Skeletal Rigging**: Visual checks and authored animations remain **NOT RUN**.
 
 ## Verification Summary
 - **M0 Foundation**:

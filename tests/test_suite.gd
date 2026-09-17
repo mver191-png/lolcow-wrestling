@@ -30,6 +30,7 @@ func _init() -> void:
 	test_pass_a_slot_inversions_and_facing_vectors()
 	test_pass_a_resource_aware_pinfall_balance()
 	test_explicit_impact_classification()
+	test_pass_a_boundary_safe_paired_throws()
 	
 	print("==================================================")
 	print("TEST RESULTS: %d Passed, %d Failed, %d Total" % [passed_tests, failed_tests, total_tests])
@@ -986,4 +987,73 @@ func test_explicit_impact_classification() -> void:
 	assert_true(f.recent_heavy_impact_timer == 0.0, "Impact Classification: Genuine finisher overrides heavy impact disorientation")
 	
 	f.free()
+
+func test_pass_a_boundary_safe_paired_throws() -> void:
+	var boundary_cases = [
+		{"name": "East Edge (+X)", "atk": Vector3(2.8, 0, 0), "def": Vector3(3.4, 0, 0)},
+		{"name": "West Edge (-X)", "atk": Vector3(-2.8, 0, 0), "def": Vector3(-3.4, 0, 0)},
+		{"name": "North Edge (+Z)", "atk": Vector3(0, 0, 2.8), "def": Vector3(0, 0, 3.4)},
+		{"name": "South Edge (-Z)", "atk": Vector3(0, 0, -2.8), "def": Vector3(0, 0, -3.4)},
+		{"name": "NE Corner (+X, +Z)", "atk": Vector3(2.5, 0, 2.5), "def": Vector3(3.1, 0, 3.1)},
+		{"name": "NW Corner (-X, +Z)", "atk": Vector3(-2.5, 0, 2.5), "def": Vector3(-3.1, 0, 3.1)},
+		{"name": "SE Corner (+X, -Z)", "atk": Vector3(2.5, 0, -2.5), "def": Vector3(3.1, 0, -3.1)},
+		{"name": "SW Corner (-X, -Z)", "atk": Vector3(-2.5, 0, -2.5), "def": Vector3(-3.1, 0, -3.1)}
+	]
+	
+	for tc in boundary_cases:
+		for invert_slots in [false, true]:
+			for invert_tree in [false, true]:
+				var tag = "%s [%s/%s]" % [
+					tc["name"],
+					"P2Atk" if invert_slots else "P1Atk",
+					"TreeInv" if invert_tree else "TreeNorm"
+				]
+				
+				var p1: Fighter = Fighter.new()
+				var p2: Fighter = Fighter.new()
+				
+				if invert_tree:
+					root.add_child(p2)
+					root.add_child(p1)
+				else:
+					root.add_child(p1)
+					root.add_child(p2)
+					
+				p1.character_id = "tophiachu" if not invert_slots else "cyraxx"
+				p2.character_id = "cyraxx" if not invert_slots else "tophiachu"
+				p1.player_index = 1
+				p2.player_index = 2
+				p1.load_character_data()
+				p2.load_character_data()
+				
+				var atk: Fighter = p2 if invert_slots else p1
+				var def: Fighter = p1 if invert_slots else p2
+				
+				atk.position = tc["atk"]
+				def.position = tc["def"]
+				
+				atk._start_synchronized_throw(def)
+				
+				var max_defender_radius: float = 0.0
+				for frame in range(70):
+					p1._physics_process(1.0 / 60.0)
+					p2._physics_process(1.0 / 60.0)
+					var def_r: float = max(abs(def.position.x), abs(def.position.z))
+					max_defender_radius = max(max_defender_radius, def_r)
+					
+				assert_true(max_defender_radius <= MatchRules.THROW_SAFE_RING_BOUND + 0.01, "Boundary Throw: Defender remains strictly inside ring boundary (%s, max: %.2fm)" % [tag, max_defender_radius])
+				assert_true(atk.current_state == Fighter.State.IDLE, "Boundary Throw: Attacker returns to IDLE (%s)" % tag)
+				assert_true(def.current_state == Fighter.State.KNOCKED_DOWN, "Boundary Throw: Defender enters KNOCKED_DOWN (%s)" % tag)
+				
+				# Check for snap-back on subsequent frame when _clamp_within_ring runs on KNOCKED_DOWN
+				var pos_at_release: Vector3 = def.position
+				for frame in range(5):
+					p1._physics_process(1.0 / 60.0)
+					p2._physics_process(1.0 / 60.0)
+				var pos_after: Vector3 = def.position
+				assert_true(pos_at_release.distance_to(pos_after) < 0.01, "Boundary Throw: Zero snap-back on ground release (%s)" % tag)
+				
+				p1.free()
+				p2.free()
+
 

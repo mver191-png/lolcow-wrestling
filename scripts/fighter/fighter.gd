@@ -452,6 +452,11 @@ func _start_synchronized_throw(target: Fighter) -> void:
 	throw_duration = 1.1
 	throw_impact_time = 0.6
 	
+	# Priority 2: Pre-throw spatial and trajectory validation to prevent rope penetration
+	var is_leverage: bool = (stat_power < target.stat_power or reach_distance < target.reach_distance)
+	var slam_dist: float = 0.9 if is_leverage else 1.1
+	_validate_and_adjust_throw_boundaries(target, slam_dist)
+	
 	_set_state(State.GRAPPLING_ATTACKER)
 	target.on_locked_by_throw(self)
 	
@@ -462,6 +467,57 @@ func _start_synchronized_throw(target: Fighter) -> void:
 	if not forward_dir.is_zero_approx():
 		rotation.y = atan2(-forward_dir.x, -forward_dir.z)
 		target.rotation.y = atan2(forward_dir.x, forward_dir.z)
+
+func _validate_and_adjust_throw_boundaries(target: Fighter, slam_dist: float) -> void:
+	var p1: Vector3 = global_position if is_inside_tree() else position
+	var p2: Vector3 = target.global_position if target.is_inside_tree() else target.position
+	
+	var forward_dir: Vector3 = Vector3(p2.x - p1.x, 0.0, p2.z - p1.z).normalized()
+	if forward_dir.is_zero_approx():
+		forward_dir = -global_transform.basis.z.normalized() if is_inside_tree() else -transform.basis.z.normalized()
+		
+	var slam_pos: Vector3 = p1 + forward_dir * slam_dist
+	var safe_bound: float = MatchRules.THROW_SAFE_RING_BOUND
+	
+	var shift_x: float = 0.0
+	var shift_z: float = 0.0
+	
+	# Evaluate predicted slam position against safe boundary
+	if slam_pos.x > safe_bound:
+		shift_x = slam_pos.x - safe_bound
+	elif slam_pos.x < -safe_bound:
+		shift_x = slam_pos.x - (-safe_bound)
+		
+	if slam_pos.z > safe_bound:
+		shift_z = slam_pos.z - safe_bound
+	elif slam_pos.z < -safe_bound:
+		shift_z = slam_pos.z - (-safe_bound)
+		
+	# Also ensure defender's position after shift remains within safe boundary
+	var post_shift_p2_x: float = p2.x - shift_x
+	var post_shift_p2_z: float = p2.z - shift_z
+	if post_shift_p2_x > safe_bound:
+		shift_x += (post_shift_p2_x - safe_bound)
+	elif post_shift_p2_x < -safe_bound:
+		shift_x += (post_shift_p2_x - (-safe_bound))
+		
+	if post_shift_p2_z > safe_bound:
+		shift_z += (post_shift_p2_z - safe_bound)
+	elif post_shift_p2_z < -safe_bound:
+		shift_z += (post_shift_p2_z - (-safe_bound))
+		
+	# Apply spatial boundary adjustment to both participants equally
+	if abs(shift_x) > 0.001 or abs(shift_z) > 0.001:
+		var adjustment: Vector3 = Vector3(shift_x, 0.0, shift_z)
+		if is_inside_tree():
+			global_position -= adjustment
+		else:
+			position -= adjustment
+			
+		if target.is_inside_tree():
+			target.global_position -= adjustment
+		else:
+			target.position -= adjustment
 
 func on_locked_by_throw(attacker: Fighter) -> void:
 	synchronized_partner = attacker
@@ -484,6 +540,8 @@ func _process_synchronized_attacker() -> void:
 		var peak_height: float = 0.38 if is_leverage else 1.55
 		var lift_height: float = sin(lift_t * PI) * peak_height
 		var hold_pos: Vector3 = my_pos + forward * (0.65 if is_leverage else 0.75) + Vector3(0.0, lift_height, 0.0)
+		hold_pos.x = clamp(hold_pos.x, -MatchRules.THROW_SAFE_RING_BOUND, MatchRules.THROW_SAFE_RING_BOUND)
+		hold_pos.z = clamp(hold_pos.z, -MatchRules.THROW_SAFE_RING_BOUND, MatchRules.THROW_SAFE_RING_BOUND)
 		if synchronized_partner.is_inside_tree():
 			synchronized_partner.global_position = hold_pos
 		else:
@@ -520,6 +578,8 @@ func _process_synchronized_attacker() -> void:
 			# Slam position on canvas
 			var slam_pos: Vector3 = my_pos + forward * (0.9 if is_leverage else 1.1)
 			slam_pos.y = 0.0
+			slam_pos.x = clamp(slam_pos.x, -MatchRules.THROW_SAFE_RING_BOUND, MatchRules.THROW_SAFE_RING_BOUND)
+			slam_pos.z = clamp(slam_pos.z, -MatchRules.THROW_SAFE_RING_BOUND, MatchRules.THROW_SAFE_RING_BOUND)
 			if synchronized_partner.is_inside_tree():
 				synchronized_partner.global_position = slam_pos
 			else:

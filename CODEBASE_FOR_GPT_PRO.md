@@ -289,11 +289,11 @@ godot_console --headless -s tests/test_suite.gd
 `md
 # Project State: LOLCOW WRESTLING: OFFLINE MAYHEM
 
-## Milestone Status: M0-M1 Functional -> Pass A Repairs (Pin-Balance Acceptance Complete)
+## Milestone Status: M0-M1 Functional -> Pass A Repairs (Boundary-Safe Paired Throws Complete)
 - **Engine**: Godot 4.7.2 (stable official, Windows x64) - Installed & Verified.
 - **3D DCC Pipeline**: Blender 5.0.1 (headless Python automation) - Verified.
 - **Target**: 1080p @ 60 FPS, Windows standalone.
-- **Authoritative Combat Loop & Integration**: Verified with 210 automated headless tests (154 focused unit tests + 56 full scene physics integration tests, 0 failures, 0 warnings).
+- **Authoritative Combat Loop & Integration**: Verified with 338 automated headless tests (282 focused unit tests + 56 full scene physics integration tests, 0 failures, 0 warnings).
 - **M2/M3 Status**: Functional baseline established. Skeletal animation rigging, authored unique animation clips, and manual visual inspections remain **NOT RUN / PENDING** per code review requirements.
 
 ### Pass A Codebase Repairs & Verifications:
@@ -324,12 +324,16 @@ godot_console --headless -s tests/test_suite.gd
    - Attacker retains sole vertical authority (1.55m peak verified in center ring).
 7. **Standardized Forward-Axis Conventions (Verified in Pass A)**:
    - Synchronized throws and locomotion unified on standard Godot convention `atan2(-dx, -dz)`.
+8. **Boundary-Safe Paired Throws with Pre-Throw Trajectory Validation (Verified in Pass A Priority 2)**:
+   - Implemented `_validate_and_adjust_throw_boundaries()` in `Fighter._start_synchronized_throw()`.
+   - Calculates predicted slam impact position $\vec{P}_{\text{slam}} = \vec{P}_{\text{atk}} + \vec{F} \times d_{\text{slam}}$ and shifts the grappling pair inward toward ring center such that both attacker, defender, and landing coordinates remain $\le 3.50\text{m}$ (inside $3.65\text{m}$ rope threshold).
+   - Clamped intermediate synchronized lift (`hold_pos`) and landing (`slam_pos`) coordinates to `THROW_SAFE_RING_BOUND = 3.50m` to provide defense-in-depth during multi-frame execution.
+   - Confirmed zero out-of-bounds trajectory and zero snap-back across all 4 ring edges (North, South, East, West) and all 4 corners (NE, NW, SE, SW) across slot inversions and tree processing orders (32 edge/corner/slot permutations, 128 boundary assertions).
 
 ### Active Open Items from Code Review (In Priority Order):
-1. **Boundary-Safe Throws (Pass A Priority 2 - Open)**: Prevent attacker throws near ropes from placing defender out of ring bounds ($|x| > 3.65\text{m}$) before snap-back.
-2. **Directional Contact & Grapple Startup (Pass A Priority 3 - Open)**: Replace omnidirectional distance strike checks with forward cone checks; enforce a real startup window on grapples.
-3. **Submission Simultaneous Outcome Resolution (Pass A Priority 4 - Open)**: Formalize authoritative priority in `MatchManager` when tap-out and escape coincide on the same physics tick.
-4. **Manual Visual Inspection & Skeletal Rigging**: Visual checks and authored animations remain **NOT RUN**.
+1. **Directional Contact & Grapple Startup (Pass A Priority 3 - Open)**: Replace omnidirectional distance strike checks with forward cone checks; enforce a real startup window on grapples.
+2. **Submission Simultaneous Outcome Resolution (Pass A Priority 4 - Open)**: Formalize authoritative priority in `MatchManager` when tap-out and escape coincide on the same physics tick.
+3. **Manual Visual Inspection & Skeletal Rigging**: Visual checks and authored animations remain **NOT RUN**.
 
 ## Verification Summary
 - **M0 Foundation**:
@@ -373,27 +377,27 @@ godot_console --headless -s tests/test_suite.gd
 `md
 ## Active Open Issues & Defects Under Repair
 
-1. **Boundary Safety During Throws (High Priority - Open)**:
-   - `_clamp_within_ring()` skips clamping during `GRAPPLING_DEFENDER` to allow vertical lifting without clipping to the floor. However, an attacker facing outward near the ropes (e.g. $x = 3.0\text{m}$, defender at $x = 3.6\text{m}$) can slam the defender outside the physical ring bounds ($x = 4.1\text{m}$ vs $3.65\text{m}$ ring limit).
-   - *Required Fix*: Implement pre-throw spatial boundary validation that repositions the pair inwards, reorients the throw, or breaks/deflects off ropes rather than placing the defender outside before snap-back.
-
-2. **Directional Attack Contact & Grapple Startup (High Priority - Open)**:
+1. **Directional Attack Contact & Grapple Startup (High Priority - Open)**:
    - `_handle_strike_active_window()` evaluates distance between fighter origins without verifying a forward directional cone, allowing strikes to hit opponents behind the attacker.
    - `_attempt_grapple()` immediately initiates the throw rather than pausing in `GRAPPLE_STARTUP` for a measurable vulnerability/counter window.
    - *Required Fix*: Add forward directional dot-product gating to strike resolution and enforce a distinct startup window on grapples allowing interruptions and reversals.
 
-3. **Simultaneous Submission Outcome Ordering (Medium Priority - Open)**:
+2. **Simultaneous Submission Outcome Ordering (Medium Priority - Open)**:
    - While partner references are now cleared on both sides during escapes, a frame in which vitality depletes to 0 simultaneously with escape progress reaching 100 depends on node processing order (attacker update vs defender update).
    - *Required Fix*: Establish an explicit authoritative priority policy in `MatchManager` for simultaneous tap-out vs escape frames.
 
-4. **Skeletal Animation Pipeline & Unique Moveset Data (Open)**:
+3. **Skeletal Animation Pipeline & Unique Moveset Data (Open)**:
    - 3D character models are composed of procedural primitive geometries without bones or skeletal clips. Throws and strikes utilize parameterized programmatic tweening rather than distinct motion-captured or keyframed animation clips.
 
 ---
 
 ## Resolved in Pass A & Prior Milestones
 
-1. **Pin-Balance Acceptance & Empirical Sequence Validation (Resolved in Pass A Pinfall Balance)**:
+1. **Boundary Safety During Throws (Resolved in Pass A Priority 2)**:
+   - Added `_validate_and_adjust_throw_boundaries()` before locking synchronized throws. Evaluates predicted slam target $\vec{P}_{\text{slam}} = \vec{P}_{\text{atk}} + \vec{F} \times d_{\text{slam}}$ and shifts both attacker and defender inward toward center ring so landing coordinates and hold coordinates remain $\le 3.50\text{m}$ (inside the $3.65\text{m}$ ring limit).
+   - Added secondary clamping in `_process_synchronized_attacker()` for `hold_pos` and `slam_pos`.
+   - Verified across 32 edge, corner, slot, and tree permutations (128 assertions) with zero out-of-bounds trajectory and zero ground release snap-back.
+2. **Pin-Balance Acceptance & Empirical Sequence Validation (Resolved in Pass A Pinfall Balance)**:
    - Replaced flat-rate escape formula with an authoritative resource-aware model factoring in quadratic vitality, remaining stamina, reversal stats, and explicit move-metadata impact disorientation.
    - Eliminated the bug where ordinary heavy throws ($\ge 100$ damage) inflicted finisher disorientation; ordinary heavy throws (177 dmg) now trigger a mild 1.5s heavy impact timer (0.85 mult) allowing healthy defenders to kick out swiftly, while genuine finishers inflict a 4.5s disorientation (0.55 mult).
    - Balanced hold-to-resist as an accessibility alternative at 85.0 base/sec with proportional 8.0/s stamina drain (~85% of 10 Hz mashing speed).
@@ -418,16 +422,22 @@ godot_console --headless -s tests/test_suite.gd
 ## File: NEXT_TASK.md
 
 `md
-# Next Implementation Task: Pass A Priority 2 (Boundary-Safe Paired Throws)
+# Next Implementation Task: Pass A Priority 3 (Directional Contact & Grapple Startup)
 
 ## Immediate Next Task
-**Priority 2: Boundary-Safe Paired Throws**:
-1. Implement shared pre-throw spatial and trajectory validation in `Fighter._attempt_grapple()` and `_start_synchronized_throw()`.
-2. When a throw is initiated near ropes ($|x| > 2.8\text{m}$ or $|z| > 2.8\text{m}$), automatically adjust the attacker-defender pair inwards, reorient facing inward toward the ring center, or trigger a rope collision/break rather than writing defender coordinates outside ring boundary ($|x| > 3.65\text{m}$) during slam arcs.
-3. Validate complete throw cycles near all 4 ring edges and 4 corners in both scene tree processing orders (P1/P2 and P2/P1) without defender clipping or snap-back.
+**Priority 3: Directional Attack Contact & Grapple Startup**:
+1. Implement forward directional cone validation in `Fighter._handle_strike_active_window()`.
+   - Ensure an attacker's strike only hits if the defender lies within a forward angular cone ($\cos(\theta) \ge \text{threshold}$, e.g. dot product $\ge 0.50$ / $60^\circ$ half-angle).
+   - Prevent attacks from connecting with defenders positioned behind or at extreme flanks outside the facing arc.
+2. Implement a measurable `GRAPPLE_STARTUP` window in `Fighter._attempt_grapple()`.
+   - Instead of instantly locking the throw on the first frame of grapple button press, enter a brief startup state (e.g. 0.15s–0.25s).
+   - During startup, attacker can be interrupted by incoming strikes.
+   - If defender inputs grapple/reversal during startup window, handle reversal/break.
+3. Add comprehensive automated tests in `tests/test_suite.gd` verifying:
+   - Strikes connect when defender is in front ($0^\circ$), fail when defender is behind ($180^\circ$) or outside the cone ($90^\circ$).
+   - Grapple startup window allows strike interruption before the synchronized lock is established.
 
 ## Subsequent Backlog (In Strict Priority Order)
-- **Priority 3**: Directional hit cones (`_handle_strike_active_window`) and distinct grapple startup vulnerability window (`GRAPPLE_STARTUP`).
 - **Priority 4**: Centralized hold cleanup and deterministic outcome priority for simultaneous tap-out vs escape frames in `MatchManager`.
 - **Priority 5**: Scene integration and visual verification across all 64 matchups.
 
@@ -445,6 +455,7 @@ extends RefCounted
 
 const RING_MAT_RADIUS: float = 4.0 # Distance from center (0,0) to ropes in meters
 const ROPE_BREAK_DISTANCE: float = 0.85 # Distance from rope threshold to trigger rope break
+const THROW_SAFE_RING_BOUND: float = 3.50 # Safe inner ring boundary for synchronized throw arcs
 const PIN_COUNT_INTERVAL: float = 1.1 # Seconds per referee count
 const PIN_ESCAPE_BASE_RATE: float = 85.0 # Percent escape per second base (hold-to-resist accessibility)
 const PIN_ESCAPE_MASH_BASE: float = 10.0 # Base progress gained per active mash pulse (at 10 Hz = 100.0/s)
@@ -1896,6 +1907,11 @@ func _start_synchronized_throw(target: Fighter) -> void:
 	throw_duration = 1.1
 	throw_impact_time = 0.6
 	
+	# Priority 2: Pre-throw spatial and trajectory validation to prevent rope penetration
+	var is_leverage: bool = (stat_power < target.stat_power or reach_distance < target.reach_distance)
+	var slam_dist: float = 0.9 if is_leverage else 1.1
+	_validate_and_adjust_throw_boundaries(target, slam_dist)
+	
 	_set_state(State.GRAPPLING_ATTACKER)
 	target.on_locked_by_throw(self)
 	
@@ -1906,6 +1922,57 @@ func _start_synchronized_throw(target: Fighter) -> void:
 	if not forward_dir.is_zero_approx():
 		rotation.y = atan2(-forward_dir.x, -forward_dir.z)
 		target.rotation.y = atan2(forward_dir.x, forward_dir.z)
+
+func _validate_and_adjust_throw_boundaries(target: Fighter, slam_dist: float) -> void:
+	var p1: Vector3 = global_position if is_inside_tree() else position
+	var p2: Vector3 = target.global_position if target.is_inside_tree() else target.position
+	
+	var forward_dir: Vector3 = Vector3(p2.x - p1.x, 0.0, p2.z - p1.z).normalized()
+	if forward_dir.is_zero_approx():
+		forward_dir = -global_transform.basis.z.normalized() if is_inside_tree() else -transform.basis.z.normalized()
+		
+	var slam_pos: Vector3 = p1 + forward_dir * slam_dist
+	var safe_bound: float = MatchRules.THROW_SAFE_RING_BOUND
+	
+	var shift_x: float = 0.0
+	var shift_z: float = 0.0
+	
+	# Evaluate predicted slam position against safe boundary
+	if slam_pos.x > safe_bound:
+		shift_x = slam_pos.x - safe_bound
+	elif slam_pos.x < -safe_bound:
+		shift_x = slam_pos.x - (-safe_bound)
+		
+	if slam_pos.z > safe_bound:
+		shift_z = slam_pos.z - safe_bound
+	elif slam_pos.z < -safe_bound:
+		shift_z = slam_pos.z - (-safe_bound)
+		
+	# Also ensure defender's position after shift remains within safe boundary
+	var post_shift_p2_x: float = p2.x - shift_x
+	var post_shift_p2_z: float = p2.z - shift_z
+	if post_shift_p2_x > safe_bound:
+		shift_x += (post_shift_p2_x - safe_bound)
+	elif post_shift_p2_x < -safe_bound:
+		shift_x += (post_shift_p2_x - (-safe_bound))
+		
+	if post_shift_p2_z > safe_bound:
+		shift_z += (post_shift_p2_z - safe_bound)
+	elif post_shift_p2_z < -safe_bound:
+		shift_z += (post_shift_p2_z - (-safe_bound))
+		
+	# Apply spatial boundary adjustment to both participants equally
+	if abs(shift_x) > 0.001 or abs(shift_z) > 0.001:
+		var adjustment: Vector3 = Vector3(shift_x, 0.0, shift_z)
+		if is_inside_tree():
+			global_position -= adjustment
+		else:
+			position -= adjustment
+			
+		if target.is_inside_tree():
+			target.global_position -= adjustment
+		else:
+			target.position -= adjustment
 
 func on_locked_by_throw(attacker: Fighter) -> void:
 	synchronized_partner = attacker
@@ -1928,6 +1995,8 @@ func _process_synchronized_attacker() -> void:
 		var peak_height: float = 0.38 if is_leverage else 1.55
 		var lift_height: float = sin(lift_t * PI) * peak_height
 		var hold_pos: Vector3 = my_pos + forward * (0.65 if is_leverage else 0.75) + Vector3(0.0, lift_height, 0.0)
+		hold_pos.x = clamp(hold_pos.x, -MatchRules.THROW_SAFE_RING_BOUND, MatchRules.THROW_SAFE_RING_BOUND)
+		hold_pos.z = clamp(hold_pos.z, -MatchRules.THROW_SAFE_RING_BOUND, MatchRules.THROW_SAFE_RING_BOUND)
 		if synchronized_partner.is_inside_tree():
 			synchronized_partner.global_position = hold_pos
 		else:
@@ -1964,6 +2033,8 @@ func _process_synchronized_attacker() -> void:
 			# Slam position on canvas
 			var slam_pos: Vector3 = my_pos + forward * (0.9 if is_leverage else 1.1)
 			slam_pos.y = 0.0
+			slam_pos.x = clamp(slam_pos.x, -MatchRules.THROW_SAFE_RING_BOUND, MatchRules.THROW_SAFE_RING_BOUND)
+			slam_pos.z = clamp(slam_pos.z, -MatchRules.THROW_SAFE_RING_BOUND, MatchRules.THROW_SAFE_RING_BOUND)
 			if synchronized_partner.is_inside_tree():
 				synchronized_partner.global_position = slam_pos
 			else:
@@ -3848,6 +3919,7 @@ func _init() -> void:
 	test_pass_a_slot_inversions_and_facing_vectors()
 	test_pass_a_resource_aware_pinfall_balance()
 	test_explicit_impact_classification()
+	test_pass_a_boundary_safe_paired_throws()
 	
 	print("==================================================")
 	print("TEST RESULTS: %d Passed, %d Failed, %d Total" % [passed_tests, failed_tests, total_tests])
@@ -4804,6 +4876,75 @@ func test_explicit_impact_classification() -> void:
 	assert_true(f.recent_heavy_impact_timer == 0.0, "Impact Classification: Genuine finisher overrides heavy impact disorientation")
 	
 	f.free()
+
+func test_pass_a_boundary_safe_paired_throws() -> void:
+	var boundary_cases = [
+		{"name": "East Edge (+X)", "atk": Vector3(2.8, 0, 0), "def": Vector3(3.4, 0, 0)},
+		{"name": "West Edge (-X)", "atk": Vector3(-2.8, 0, 0), "def": Vector3(-3.4, 0, 0)},
+		{"name": "North Edge (+Z)", "atk": Vector3(0, 0, 2.8), "def": Vector3(0, 0, 3.4)},
+		{"name": "South Edge (-Z)", "atk": Vector3(0, 0, -2.8), "def": Vector3(0, 0, -3.4)},
+		{"name": "NE Corner (+X, +Z)", "atk": Vector3(2.5, 0, 2.5), "def": Vector3(3.1, 0, 3.1)},
+		{"name": "NW Corner (-X, +Z)", "atk": Vector3(-2.5, 0, 2.5), "def": Vector3(-3.1, 0, 3.1)},
+		{"name": "SE Corner (+X, -Z)", "atk": Vector3(2.5, 0, -2.5), "def": Vector3(3.1, 0, -3.1)},
+		{"name": "SW Corner (-X, -Z)", "atk": Vector3(-2.5, 0, -2.5), "def": Vector3(-3.1, 0, -3.1)}
+	]
+	
+	for tc in boundary_cases:
+		for invert_slots in [false, true]:
+			for invert_tree in [false, true]:
+				var tag = "%s [%s/%s]" % [
+					tc["name"],
+					"P2Atk" if invert_slots else "P1Atk",
+					"TreeInv" if invert_tree else "TreeNorm"
+				]
+				
+				var p1: Fighter = Fighter.new()
+				var p2: Fighter = Fighter.new()
+				
+				if invert_tree:
+					root.add_child(p2)
+					root.add_child(p1)
+				else:
+					root.add_child(p1)
+					root.add_child(p2)
+					
+				p1.character_id = "tophiachu" if not invert_slots else "cyraxx"
+				p2.character_id = "cyraxx" if not invert_slots else "tophiachu"
+				p1.player_index = 1
+				p2.player_index = 2
+				p1.load_character_data()
+				p2.load_character_data()
+				
+				var atk: Fighter = p2 if invert_slots else p1
+				var def: Fighter = p1 if invert_slots else p2
+				
+				atk.position = tc["atk"]
+				def.position = tc["def"]
+				
+				atk._start_synchronized_throw(def)
+				
+				var max_defender_radius: float = 0.0
+				for frame in range(70):
+					p1._physics_process(1.0 / 60.0)
+					p2._physics_process(1.0 / 60.0)
+					var def_r: float = max(abs(def.position.x), abs(def.position.z))
+					max_defender_radius = max(max_defender_radius, def_r)
+					
+				assert_true(max_defender_radius <= MatchRules.THROW_SAFE_RING_BOUND + 0.01, "Boundary Throw: Defender remains strictly inside ring boundary (%s, max: %.2fm)" % [tag, max_defender_radius])
+				assert_true(atk.current_state == Fighter.State.IDLE, "Boundary Throw: Attacker returns to IDLE (%s)" % tag)
+				assert_true(def.current_state == Fighter.State.KNOCKED_DOWN, "Boundary Throw: Defender enters KNOCKED_DOWN (%s)" % tag)
+				
+				# Check for snap-back on subsequent frame when _clamp_within_ring runs on KNOCKED_DOWN
+				var pos_at_release: Vector3 = def.position
+				for frame in range(5):
+					p1._physics_process(1.0 / 60.0)
+					p2._physics_process(1.0 / 60.0)
+				var pos_after: Vector3 = def.position
+				assert_true(pos_at_release.distance_to(pos_after) < 0.01, "Boundary Throw: Zero snap-back on ground release (%s)" % tag)
+				
+				p1.free()
+				p2.free()
+
 
 
 `

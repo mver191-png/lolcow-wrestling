@@ -5,6 +5,7 @@ extends RefCounted
 
 const RING_MAT_RADIUS: float = 4.0 # Distance from center (0,0) to ropes in meters
 const ROPE_BREAK_DISTANCE: float = 0.85 # Distance from rope threshold to trigger rope break
+const THROW_SAFE_RING_BOUND: float = 3.50 # Safe inner ring boundary for synchronized throw arcs
 const PIN_COUNT_INTERVAL: float = 1.1 # Seconds per referee count
 const PIN_ESCAPE_BASE_RATE: float = 85.0 # Percent escape per second base (hold-to-resist accessibility)
 const PIN_ESCAPE_MASH_BASE: float = 10.0 # Base progress gained per active mash pulse (at 10 Hz = 100.0/s)
