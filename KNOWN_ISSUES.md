@@ -1,22 +1,23 @@
 ## Active Open Issues & Defects Under Repair
 
-1. **Directional Attack Contact & Grapple Startup (High Priority - Open)**:
-   - `_handle_strike_active_window()` evaluates distance between fighter origins without verifying a forward directional cone, allowing strikes to hit opponents behind the attacker.
-   - `_attempt_grapple()` immediately initiates the throw rather than pausing in `GRAPPLE_STARTUP` for a measurable vulnerability/counter window.
-   - *Required Fix*: Add forward directional dot-product gating to strike resolution and enforce a distinct startup window on grapples allowing interruptions and reversals.
-
-2. **Simultaneous Submission Outcome Ordering (Medium Priority - Open)**:
+1. **Simultaneous Submission Outcome Ordering (High Priority - Open)**:
    - While partner references are now cleared on both sides during escapes, a frame in which vitality depletes to 0 simultaneously with escape progress reaching 100 depends on node processing order (attacker update vs defender update).
    - *Required Fix*: Establish an explicit authoritative priority policy in `MatchManager` for simultaneous tap-out vs escape frames.
 
-3. **Skeletal Animation Pipeline & Unique Moveset Data (Open)**:
+2. **Skeletal Animation Pipeline & Unique Moveset Data (Open)**:
    - 3D character models are composed of procedural primitive geometries without bones or skeletal clips. Throws and strikes utilize parameterized programmatic tweening rather than distinct motion-captured or keyframed animation clips.
 
 ---
 
 ## Resolved in Pass A & Prior Milestones
 
-1. **Boundary Safety During Throws (Resolved in Pass A Priority 2)**:
+1. **Directional Attack Contact & Grapple Startup (Resolved in Pass A Priority 3)**:
+   - Added forward directional dot-product gating (`STRIKE_CONE_MIN_DOT = 0.50`, 120-degree cone) to `_handle_strike_active_window()`, preventing strikes from connecting with targets on flanks or behind the attacker.
+   - Enforced measurable `GRAPPLE_STARTUP` window (`GRAPPLE_STARTUP_DURATION = 0.18s`, whiff recovery 0.25s) in `_attempt_grapple()` and `_process_grapple_startup()`.
+   - Verified that unblocked incoming strikes interrupt attacker out of `GRAPPLE_STARTUP` and clear target reference, preventing throw execution.
+   - Verified that defender reversal stance during startup successfully counters the attacker.
+   - Upgraded `CPUController` to retaliate against opponent `GRAPPLE_STARTUP` via strike interruption or reversal counter.
+2. **Boundary Safety During Throws (Resolved in Pass A Priority 2)**:
    - Added `_validate_and_adjust_throw_boundaries()` before locking synchronized throws. Evaluates predicted slam target $\vec{P}_{\text{slam}} = \vec{P}_{\text{atk}} + \vec{F} \times d_{\text{slam}}$ and shifts both attacker and defender inward toward center ring so landing coordinates and hold coordinates remain $\le 3.50\text{m}$ (inside the $3.65\text{m}$ ring limit).
    - Added secondary clamping in `_process_synchronized_attacker()` for `hold_pos` and `slam_pos`.
    - Verified across 32 edge, corner, slot, and tree permutations (128 assertions) with zero out-of-bounds trajectory and zero ground release snap-back.

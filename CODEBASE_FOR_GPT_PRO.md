@@ -289,11 +289,11 @@ godot_console --headless -s tests/test_suite.gd
 `md
 # Project State: LOLCOW WRESTLING: OFFLINE MAYHEM
 
-## Milestone Status: M0-M1 Functional -> Pass A Repairs (Boundary-Safe Paired Throws Complete)
+## Milestone Status: M0-M1 Functional -> Pass A Repairs (Directional Contact & Grapple Startup Complete)
 - **Engine**: Godot 4.7.2 (stable official, Windows x64) - Installed & Verified.
 - **3D DCC Pipeline**: Blender 5.0.1 (headless Python automation) - Verified.
 - **Target**: 1080p @ 60 FPS, Windows standalone.
-- **Authoritative Combat Loop & Integration**: Verified with 338 automated headless tests (282 focused unit tests + 56 full scene physics integration tests, 0 failures, 0 warnings).
+- **Authoritative Combat Loop & Integration**: Verified with 361 automated headless tests (305 focused unit tests + 56 full scene physics integration tests, 0 failures, 0 warnings).
 - **M2/M3 Status**: Functional baseline established. Skeletal animation rigging, authored unique animation clips, and manual visual inspections remain **NOT RUN / PENDING** per code review requirements.
 
 ### Pass A Codebase Repairs & Verifications:
@@ -329,11 +329,16 @@ godot_console --headless -s tests/test_suite.gd
    - Calculates predicted slam impact position $\vec{P}_{\text{slam}} = \vec{P}_{\text{atk}} + \vec{F} \times d_{\text{slam}}$ and shifts the grappling pair inward toward ring center such that both attacker, defender, and landing coordinates remain $\le 3.50\text{m}$ (inside $3.65\text{m}$ rope threshold).
    - Clamped intermediate synchronized lift (`hold_pos`) and landing (`slam_pos`) coordinates to `THROW_SAFE_RING_BOUND = 3.50m` to provide defense-in-depth during multi-frame execution.
    - Confirmed zero out-of-bounds trajectory and zero snap-back across all 4 ring edges (North, South, East, West) and all 4 corners (NE, NW, SE, SW) across slot inversions and tree processing orders (32 edge/corner/slot permutations, 128 boundary assertions).
+9. **Directional Strike Cones & Measurable Grapple Startup (Verified in Pass A Priority 3)**:
+   - Enforced 120-degree forward contact cone ($\cos(60^\circ) = 0.50$, `STRIKE_CONE_MIN_DOT = 0.50`) in `Fighter._handle_strike_active_window()`. Verified that strikes connect when defender is in front ($0^\circ$, dot = 1.0) or angled ($45^\circ$, dot = 0.707), but strictly miss defenders on side flanks ($90^\circ$, dot = 0.0) or behind ($180^\circ$, dot = -1.0).
+   - Implemented measurable `GRAPPLE_STARTUP` window (`MatchRules.GRAPPLE_STARTUP_DURATION = 0.18s`, whiff recovery 0.25s) with procedural reaching arm animation.
+   - Verified strike interruption: incoming unblocked strikes during `GRAPPLE_STARTUP` immediately interrupt attacker back to `IDLE`, clear target references, and prevent throw execution.
+   - Verified reversal counters: defender inputting `REVERSAL_STANCE` during startup successfully counters the attacker upon startup completion, inflicting counter damage, knockdown, and awarding hype.
+   - Upgraded `CPUController` to actively detect opponent `GRAPPLE_STARTUP` within range and retaliate with strike interruptions or reversal counters based on stats.
 
 ### Active Open Items from Code Review (In Priority Order):
-1. **Directional Contact & Grapple Startup (Pass A Priority 3 - Open)**: Replace omnidirectional distance strike checks with forward cone checks; enforce a real startup window on grapples.
-2. **Submission Simultaneous Outcome Resolution (Pass A Priority 4 - Open)**: Formalize authoritative priority in `MatchManager` when tap-out and escape coincide on the same physics tick.
-3. **Manual Visual Inspection & Skeletal Rigging**: Visual checks and authored animations remain **NOT RUN**.
+1. **Submission Simultaneous Outcome Resolution (Pass A Priority 4 - Open)**: Formalize authoritative priority in `MatchManager` when tap-out and escape coincide on the same physics tick.
+2. **Manual Visual Inspection & Skeletal Rigging**: Visual checks and authored animations remain **NOT RUN**.
 
 ## Verification Summary
 - **M0 Foundation**:
@@ -377,23 +382,24 @@ godot_console --headless -s tests/test_suite.gd
 `md
 ## Active Open Issues & Defects Under Repair
 
-1. **Directional Attack Contact & Grapple Startup (High Priority - Open)**:
-   - `_handle_strike_active_window()` evaluates distance between fighter origins without verifying a forward directional cone, allowing strikes to hit opponents behind the attacker.
-   - `_attempt_grapple()` immediately initiates the throw rather than pausing in `GRAPPLE_STARTUP` for a measurable vulnerability/counter window.
-   - *Required Fix*: Add forward directional dot-product gating to strike resolution and enforce a distinct startup window on grapples allowing interruptions and reversals.
-
-2. **Simultaneous Submission Outcome Ordering (Medium Priority - Open)**:
+1. **Simultaneous Submission Outcome Ordering (High Priority - Open)**:
    - While partner references are now cleared on both sides during escapes, a frame in which vitality depletes to 0 simultaneously with escape progress reaching 100 depends on node processing order (attacker update vs defender update).
    - *Required Fix*: Establish an explicit authoritative priority policy in `MatchManager` for simultaneous tap-out vs escape frames.
 
-3. **Skeletal Animation Pipeline & Unique Moveset Data (Open)**:
+2. **Skeletal Animation Pipeline & Unique Moveset Data (Open)**:
    - 3D character models are composed of procedural primitive geometries without bones or skeletal clips. Throws and strikes utilize parameterized programmatic tweening rather than distinct motion-captured or keyframed animation clips.
 
 ---
 
 ## Resolved in Pass A & Prior Milestones
 
-1. **Boundary Safety During Throws (Resolved in Pass A Priority 2)**:
+1. **Directional Attack Contact & Grapple Startup (Resolved in Pass A Priority 3)**:
+   - Added forward directional dot-product gating (`STRIKE_CONE_MIN_DOT = 0.50`, 120-degree cone) to `_handle_strike_active_window()`, preventing strikes from connecting with targets on flanks or behind the attacker.
+   - Enforced measurable `GRAPPLE_STARTUP` window (`GRAPPLE_STARTUP_DURATION = 0.18s`, whiff recovery 0.25s) in `_attempt_grapple()` and `_process_grapple_startup()`.
+   - Verified that unblocked incoming strikes interrupt attacker out of `GRAPPLE_STARTUP` and clear target reference, preventing throw execution.
+   - Verified that defender reversal stance during startup successfully counters the attacker.
+   - Upgraded `CPUController` to retaliate against opponent `GRAPPLE_STARTUP` via strike interruption or reversal counter.
+2. **Boundary Safety During Throws (Resolved in Pass A Priority 2)**:
    - Added `_validate_and_adjust_throw_boundaries()` before locking synchronized throws. Evaluates predicted slam target $\vec{P}_{\text{slam}} = \vec{P}_{\text{atk}} + \vec{F} \times d_{\text{slam}}$ and shifts both attacker and defender inward toward center ring so landing coordinates and hold coordinates remain $\le 3.50\text{m}$ (inside the $3.65\text{m}$ ring limit).
    - Added secondary clamping in `_process_synchronized_attacker()` for `hold_pos` and `slam_pos`.
    - Verified across 32 edge, corner, slot, and tree permutations (128 assertions) with zero out-of-bounds trajectory and zero ground release snap-back.
@@ -422,24 +428,19 @@ godot_console --headless -s tests/test_suite.gd
 ## File: NEXT_TASK.md
 
 `md
-# Next Implementation Task: Pass A Priority 3 (Directional Contact & Grapple Startup)
+# Next Implementation Task: Pass A Priority 4 (Simultaneous Submission Outcome Ordering)
 
 ## Immediate Next Task
-**Priority 3: Directional Attack Contact & Grapple Startup**:
-1. Implement forward directional cone validation in `Fighter._handle_strike_active_window()`.
-   - Ensure an attacker's strike only hits if the defender lies within a forward angular cone ($\cos(\theta) \ge \text{threshold}$, e.g. dot product $\ge 0.50$ / $60^\circ$ half-angle).
-   - Prevent attacks from connecting with defenders positioned behind or at extreme flanks outside the facing arc.
-2. Implement a measurable `GRAPPLE_STARTUP` window in `Fighter._attempt_grapple()`.
-   - Instead of instantly locking the throw on the first frame of grapple button press, enter a brief startup state (e.g. 0.15s–0.25s).
-   - During startup, attacker can be interrupted by incoming strikes.
-   - If defender inputs grapple/reversal during startup window, handle reversal/break.
-3. Add comprehensive automated tests in `tests/test_suite.gd` verifying:
-   - Strikes connect when defender is in front ($0^\circ$), fail when defender is behind ($180^\circ$) or outside the cone ($90^\circ$).
-   - Grapple startup window allows strike interruption before the synchronized lock is established.
+**Priority 4: Simultaneous Submission Outcome Ordering**:
+1. Implement authoritative simultaneous outcome resolution policy in `MatchManager` when submission vitality depletion (tap-out condition) and escape progress (break condition) reach their thresholds on the exact same physics frame.
+2. Ensure centralized hold cleanup:
+   - Clear synchronized partner pointers symmetrically on both attacker and defender.
+   - Prevent conflicting multi-frame state transitions or dangling references.
+3. Validate across both player slot orders (P1 Attacker / P2 Defender vs P2 Attacker / P1 Defender) and scene tree iteration orders (Attacker before Defender vs Defender before Attacker).
 
 ## Subsequent Backlog (In Strict Priority Order)
-- **Priority 4**: Centralized hold cleanup and deterministic outcome priority for simultaneous tap-out vs escape frames in `MatchManager`.
 - **Priority 5**: Scene integration and visual verification across all 64 matchups.
+- **Priority 6**: Skeletal animation rigging and authored animation pipeline.
 
 `
 
@@ -476,6 +477,9 @@ const GRAPPLE_STAMINA_COST: float = 22.0
 const BLOCK_STAMINA_DRAIN: float = 15.0 # Per second held
 const REVERSAL_STAMINA_COST: float = 18.0
 const FINISHER_HYPE_COST: float = 100.0
+const STRIKE_CONE_MIN_DOT: float = 0.50 # 120-degree forward contact cone (cos(60 deg))
+const GRAPPLE_STARTUP_DURATION: float = 0.18 # Seconds of vulnerability before grapple lock executes
+const GRAPPLE_WHIFF_DURATION: float = 0.25 # Seconds of recovery on missed/whiffed grapple
 
 static func is_near_ropes(position_3d: Vector3) -> bool:
 	var x: float = abs(position_3d.x)
@@ -1688,8 +1692,7 @@ func _update_state_machine(delta: float) -> void:
 				
 		State.GRAPPLE_STARTUP:
 			velocity = Vector3.ZERO
-			if state_timer >= 0.25:
-				_set_state(State.IDLE) # Missed grapple recovery
+			_process_grapple_startup(delta)
 				
 		State.GRAPPLING_ATTACKER:
 			velocity = Vector3.ZERO
@@ -1845,8 +1848,24 @@ func _handle_strike_active_window() -> void:
 		if is_instance_valid(opponent):
 			var my_p: Vector3 = global_position if is_inside_tree() else position
 			var opp_p: Vector3 = opponent.global_position if opponent.is_inside_tree() else opponent.position
-			var dist: float = my_p.distance_to(opp_p)
+			var to_opp: Vector3 = Vector3(opp_p.x - my_p.x, 0.0, opp_p.z - my_p.z)
+			var dist: float = to_opp.length()
 			if dist <= reach_distance:
+				# Directional forward cone validation (cos(60 deg) = 0.50 threshold)
+				if dist > 0.001:
+					var forward_dir: Vector3 = -global_transform.basis.z.normalized() if is_inside_tree() else -transform.basis.z.normalized()
+					forward_dir.y = 0.0
+					if forward_dir.is_zero_approx():
+						forward_dir = Vector3(0, 0, -1)
+					else:
+						forward_dir = forward_dir.normalized()
+						
+					var to_opp_dir: Vector3 = to_opp.normalized()
+					var dot: float = forward_dir.dot(to_opp_dir)
+					if dot < MatchRules.STRIKE_CONE_MIN_DOT:
+						# Target outside forward contact cone (flank or behind)
+						return
+				
 				# Check defender state
 				if opponent.current_state == State.REVERSAL_STANCE:
 					# Countered!
@@ -1873,10 +1892,12 @@ func _handle_strike_active_window() -> void:
 
 var is_finisher_attack: bool = false
 var submission_tick_timer: float = 0.0
+var grapple_target: Fighter = null
 
 func _attempt_grapple(is_finisher: bool = false) -> void:
-	_set_state(State.GRAPPLE_STARTUP)
 	if not is_instance_valid(opponent):
+		grapple_target = null
+		_set_state(State.GRAPPLE_STARTUP)
 		return
 		
 	if is_finisher:
@@ -1890,15 +1911,57 @@ func _attempt_grapple(is_finisher: bool = false) -> void:
 	
 	var my_p: Vector3 = global_position if is_inside_tree() else position
 	var opp_p: Vector3 = opponent.global_position if opponent.is_inside_tree() else opponent.position
-	var dist: float = my_p.distance_to(opp_p)
-	if dist <= (reach_distance + 0.35):
-		# Validate defender state
-		if opponent.current_state in [State.IDLE, State.MOVING, State.BLOCKING]:
-			# Successful grapple! (Grapple breaks guard)
-			_start_synchronized_throw(opponent)
-		elif opponent.current_state == State.REVERSAL_STANCE:
-			# Defender counters the grapple!
-			_apply_countered_by(opponent)
+	
+	# Turn to face opponent when initiating grapple
+	var to_opp: Vector3 = Vector3(opp_p.x - my_p.x, 0.0, opp_p.z - my_p.z)
+	if not to_opp.is_zero_approx():
+		rotation.y = atan2(-to_opp.x, -to_opp.z)
+		
+	var dist: float = to_opp.length()
+	if dist <= (reach_distance + 0.35) and opponent.current_state in [State.IDLE, State.MOVING, State.BLOCKING, State.REVERSAL_STANCE, State.GRAPPLE_STARTUP]:
+		grapple_target = opponent
+	else:
+		grapple_target = null
+	
+	_set_state(State.GRAPPLE_STARTUP)
+	
+	# Procedural reaching visual feedback
+	if left_arm and right_arm:
+		var tween: Tween = create_tween().set_parallel(true)
+		tween.tween_property(left_arm, "position:z", -0.5, 0.12)
+		tween.tween_property(right_arm, "position:z", -0.5, 0.12)
+
+func _process_grapple_startup(_delta: float) -> void:
+	if state_timer >= MatchRules.GRAPPLE_STARTUP_DURATION:
+		if is_instance_valid(grapple_target):
+			var my_p: Vector3 = global_position if is_inside_tree() else position
+			var opp_p: Vector3 = grapple_target.global_position if grapple_target.is_inside_tree() else grapple_target.position
+			var dist: float = my_p.distance_to(opp_p)
+			
+			if dist <= (reach_distance + 0.35):
+				var target: Fighter = grapple_target
+				grapple_target = null
+				
+				if left_arm and right_arm:
+					left_arm.position.z = 0.0
+					right_arm.position.z = 0.0
+				
+				if target.current_state == State.REVERSAL_STANCE:
+					# Defender counters the grapple!
+					_apply_countered_by(target)
+					return
+				elif target.current_state in [State.IDLE, State.MOVING, State.BLOCKING, State.GRAPPLE_STARTUP]:
+					# Successful grapple! (Grapple breaks guard)
+					_start_synchronized_throw(target)
+					return
+		
+		# Target moved away, was knocked down, or missed: wait for whiff recovery
+		grapple_target = null
+		if state_timer >= MatchRules.GRAPPLE_WHIFF_DURATION:
+			if left_arm and right_arm:
+				left_arm.position.z = 0.0
+				right_arm.position.z = 0.0
+			_set_state(State.IDLE)
 
 func _start_synchronized_throw(target: Fighter) -> void:
 	synchronized_partner = target
@@ -2298,6 +2361,14 @@ func receive_damage(amount: float, from_fighter: Fighter, was_blocked: bool, is_
 	elif amount >= MatchRules.HEAVY_IMPACT_DAMAGE_THRESHOLD and not was_blocked:
 		recent_heavy_impact_timer = MatchRules.HEAVY_IMPACT_DISORIENTATION_DURATION
 	
+	# Interrupt grapple startup if hit by unblocked damage
+	if current_state == State.GRAPPLE_STARTUP and not was_blocked:
+		grapple_target = null
+		if left_arm and right_arm:
+			left_arm.position.z = 0.0
+			right_arm.position.z = 0.0
+		_set_state(State.IDLE)
+	
 	# Knockdown on heavy damage or low health
 	if not was_blocked and vitality <= 0.0 and current_state != State.KNOCKED_DOWN and current_state != State.PINNED:
 		_set_state(State.KNOCKED_DOWN)
@@ -2311,6 +2382,11 @@ func _set_state(new_state: State) -> void:
 	if current_state == new_state:
 		return
 	var old_state: State = current_state
+	if old_state == State.GRAPPLE_STARTUP:
+		grapple_target = null
+		if left_arm and right_arm:
+			left_arm.position.z = 0.0
+			right_arm.position.z = 0.0
 	current_state = new_state
 	state_timer = 0.0
 	_play_state_animation(new_state)
@@ -2457,6 +2533,16 @@ func _think() -> void:
 			return
 		elif randf() < 0.6:
 			fighter.input_block = true
+			return
+			
+	# If opponent is in grapple startup and within range, test reversal or strike interrupt
+	if opp.current_state == Fighter.State.GRAPPLE_STARTUP and dist <= fighter.reach_distance + 0.2:
+		var rev_chance: float = fighter.stat_reversal * 0.10
+		if randf() < rev_chance and fighter.stamina >= MatchRules.REVERSAL_STAMINA_COST:
+			fighter.input_reversal = true
+			return
+		elif randf() < 0.7 and fighter.stamina >= MatchRules.STRIKE_STAMINA_COST:
+			fighter.input_strike = true
 			return
 
 	# Character specific behavior
@@ -3920,6 +4006,8 @@ func _init() -> void:
 	test_pass_a_resource_aware_pinfall_balance()
 	test_explicit_impact_classification()
 	test_pass_a_boundary_safe_paired_throws()
+	test_pass_a_strike_directional_cone()
+	test_pass_a_grapple_startup_and_interruption()
 	
 	print("==================================================")
 	print("TEST RESULTS: %d Passed, %d Failed, %d Total" % [passed_tests, failed_tests, total_tests])
@@ -4011,7 +4099,7 @@ func test_damage_occurs_only_once() -> void:
 	
 	attacker.opponent = defender
 	attacker.position = Vector3(0, 0, 0)
-	defender.position = Vector3(0, 0, 0.8) # Within reach
+	defender.position = Vector3(0, 0, -0.8) # Within reach and forward cone
 	
 	attacker.input_strike = true
 	attacker._start_strike()
@@ -4945,6 +5033,175 @@ func test_pass_a_boundary_safe_paired_throws() -> void:
 				p1.free()
 				p2.free()
 
+func test_pass_a_strike_directional_cone() -> void:
+	# Test forward cone validation for strikes (120 degree cone, STRIKE_CONE_MIN_DOT = 0.50)
+	var attacker: Fighter = Fighter.new()
+	var defender: Fighter = Fighter.new()
+	attacker.character_id = "tophiachu"
+	defender.character_id = "cyraxx"
+	attacker.load_character_data()
+	defender.load_character_data()
+	attacker.opponent = defender
+	defender.opponent = attacker
+	
+	# Test 1: Defender directly in front at (0, 0, -0.8) (0 deg) -> CONNECTS
+	attacker.position = Vector3(0, 0, 0)
+	attacker.rotation.y = 0.0 # Facing -Z
+	defender.position = Vector3(0, 0, -0.8)
+	defender.vitality = defender.max_vitality
+	attacker._start_strike()
+	attacker.state_timer = 0.15
+	attacker._handle_strike_active_window()
+	assert_true(attacker.attack_has_damaged, "Strike Cone [0 deg In Front]: Attack marks as damaged")
+	assert_true(defender.vitality < defender.max_vitality, "Strike Cone [0 deg In Front]: Defender takes damage")
+	
+	# Test 2: Defender angled at 45 deg (-0.56, 0, -0.56) (dist = 0.79m, dot = 0.707 >= 0.50) -> CONNECTS
+	attacker.position = Vector3(0, 0, 0)
+	attacker.rotation.y = 0.0 # Facing -Z
+	defender.position = Vector3(-0.56, 0, -0.56)
+	defender.vitality = defender.max_vitality
+	attacker._start_strike()
+	attacker.state_timer = 0.15
+	attacker._handle_strike_active_window()
+	assert_true(attacker.attack_has_damaged, "Strike Cone [45 deg Angled]: Attack marks as damaged")
+	assert_true(defender.vitality < defender.max_vitality, "Strike Cone [45 deg Angled]: Defender takes damage")
+	
+	# Test 3: Defender directly to the right at (0.8, 0, 0) (90 deg flank, dot = 0.0 < 0.50) -> MISSES
+	attacker.position = Vector3(0, 0, 0)
+	attacker.rotation.y = 0.0 # Facing -Z
+	defender.position = Vector3(0.8, 0, 0)
+	defender.vitality = defender.max_vitality
+	attacker._start_strike()
+	attacker.state_timer = 0.15
+	attacker._handle_strike_active_window()
+	assert_true(not attacker.attack_has_damaged, "Strike Cone [90 deg Flank]: Attack does NOT mark as damaged")
+	assert_true(defender.vitality == defender.max_vitality, "Strike Cone [90 deg Flank]: Defender takes zero damage")
+	
+	# Test 4: Defender directly behind at (0, 0, 0.8) (180 deg, dot = -1.0 < 0.50) -> MISSES
+	attacker.position = Vector3(0, 0, 0)
+	attacker.rotation.y = 0.0 # Facing -Z
+	defender.position = Vector3(0, 0, 0.8)
+	defender.vitality = defender.max_vitality
+	attacker._start_strike()
+	attacker.state_timer = 0.15
+	attacker._handle_strike_active_window()
+	assert_true(not attacker.attack_has_damaged, "Strike Cone [180 deg Behind]: Attack does NOT mark as damaged")
+	assert_true(defender.vitality == defender.max_vitality, "Strike Cone [180 deg Behind]: Defender takes zero damage")
+	
+	# Test 5: Attacker rotated to face right (+X, rotation.y = -PI/2)
+	attacker.position = Vector3(0, 0, 0)
+	attacker.rotation.y = -PI / 2.0 # Facing +X
+	defender.position = Vector3(0.8, 0, 0) # Directly in front of rotated attacker!
+	defender.vitality = defender.max_vitality
+	attacker._start_strike()
+	attacker.state_timer = 0.15
+	attacker._handle_strike_active_window()
+	assert_true(attacker.attack_has_damaged, "Strike Cone [Rotated Attacker Facing +X]: Attack hits defender at +X")
+	assert_true(defender.vitality < defender.max_vitality, "Strike Cone [Rotated Attacker Facing +X]: Defender at +X takes damage")
+	
+	attacker.free()
+	defender.free()
+
+func test_pass_a_grapple_startup_and_interruption() -> void:
+	# Test 1: Grapple startup initiation and facing alignment
+	var atk: Fighter = Fighter.new()
+	var def: Fighter = Fighter.new()
+	atk.character_id = "tophiachu"
+	def.character_id = "cyraxx"
+	atk.load_character_data()
+	def.load_character_data()
+	atk.opponent = def
+	def.opponent = atk
+	
+	atk.position = Vector3(-0.5, 0, 0)
+	def.position = Vector3(0.5, 0, 0)
+	def._set_state(Fighter.State.IDLE)
+	
+	atk._attempt_grapple(false)
+	assert_true(atk.current_state == Fighter.State.GRAPPLE_STARTUP, "Grapple Startup: Attacker enters GRAPPLE_STARTUP")
+	assert_true(atk.grapple_target == def, "Grapple Startup: Attacker locks target reference")
+	assert_true(atk.state_timer == 0.0, "Grapple Startup: State timer initialized to 0.0")
+	
+	# Test 2: Clean uninterrupted grapple transitions to throw at GRAPPLE_STARTUP_DURATION
+	for frame in range(12): # ~0.20s > 0.18s
+		atk._physics_process(1.0 / 60.0)
+		def._physics_process(1.0 / 60.0)
+		
+	assert_true(atk.current_state == Fighter.State.GRAPPLING_ATTACKER, "Grapple Startup: Clean startup transitions to GRAPPLING_ATTACKER")
+	assert_true(def.current_state == Fighter.State.GRAPPLING_DEFENDER, "Grapple Startup: Defender transitions to GRAPPLING_DEFENDER")
+	
+	atk.free()
+	def.free()
+	
+	# Test 3: Strike interruption during grapple startup
+	var atk2: Fighter = Fighter.new()
+	var def2: Fighter = Fighter.new()
+	atk2.character_id = "tophiachu"
+	def2.character_id = "cyraxx"
+	atk2.load_character_data()
+	def2.load_character_data()
+	atk2.opponent = def2
+	def2.opponent = atk2
+	
+	atk2.position = Vector3(-0.5, 0, 0)
+	def2.position = Vector3(0.5, 0, 0)
+	def2._set_state(Fighter.State.IDLE)
+	
+	atk2._attempt_grapple(false)
+	assert_true(atk2.current_state == Fighter.State.GRAPPLE_STARTUP, "Grapple Interrupt: Attacker starts in GRAPPLE_STARTUP")
+	
+	# Advance 3 frames into startup (0.05s < 0.18s)
+	for frame in range(3):
+		atk2._physics_process(1.0 / 60.0)
+		def2._physics_process(1.0 / 60.0)
+	
+	# Defender strikes and interrupts attacker!
+	atk2.receive_damage(35.0, def2, false)
+	assert_true(atk2.current_state == Fighter.State.IDLE, "Grapple Interrupt: Attacker interrupted out of GRAPPLE_STARTUP back to IDLE")
+	assert_true(atk2.grapple_target == null, "Grapple Interrupt: Grapple target cleared on interrupt")
+	
+	# Advance further past original startup duration: verify throw NEVER occurs
+	for frame in range(15):
+		atk2._physics_process(1.0 / 60.0)
+		def2._physics_process(1.0 / 60.0)
+		
+	assert_true(atk2.current_state != Fighter.State.GRAPPLING_ATTACKER, "Grapple Interrupt: Attacker does NOT execute throw after interrupt")
+	assert_true(def2.current_state != Fighter.State.GRAPPLING_DEFENDER, "Grapple Interrupt: Defender was NOT thrown")
+	
+	atk2.free()
+	def2.free()
+	
+	# Test 4: Reversal countering grapple startup
+	var atk3: Fighter = Fighter.new()
+	var def3: Fighter = Fighter.new()
+	atk3.character_id = "tophiachu"
+	def3.character_id = "cyraxx"
+	atk3.load_character_data()
+	def3.load_character_data()
+	atk3.opponent = def3
+	def3.opponent = atk3
+	
+	atk3.position = Vector3(-0.5, 0, 0)
+	def3.position = Vector3(0.5, 0, 0)
+	def3._set_state(Fighter.State.IDLE)
+	
+	atk3._attempt_grapple(false)
+	assert_true(atk3.current_state == Fighter.State.GRAPPLE_STARTUP, "Grapple Reversal: Attacker enters GRAPPLE_STARTUP")
+	
+	# Defender inputs reversal stance during startup
+	def3._set_state(Fighter.State.REVERSAL_STANCE)
+	
+	# Tick past startup duration (0.18s)
+	for frame in range(12):
+		atk3._physics_process(1.0 / 60.0)
+		def3._physics_process(1.0 / 60.0)
+		
+	assert_true(atk3.current_state == Fighter.State.KNOCKED_DOWN, "Grapple Reversal: Attacker countered and knocked down")
+	assert_true(def3.hype > 0.0, "Grapple Reversal: Defender awarded counter hype")
+	
+	atk3.free()
+	def3.free()
+
 
 
 `
@@ -4954,7 +5211,7 @@ func test_pass_a_boundary_safe_paired_throws() -> void:
 ## File: tests/test_pin_balance_scene.gd
 
 `gdscript
-﻿extends SceneTree
+extends SceneTree
 
 ## Dedicated Scene Integration Test Suite for Pin-Balance Acceptance
 ## Executes actual PackedScenes (Fighter, Referee, MatchManager, CPUController)
@@ -5245,7 +5502,7 @@ func test_finisher_throw_to_pin_cpu_weakened() -> void:
 	p1._attempt_grapple(true)
 	assert_true(p1.is_finisher_attack, "Genuine Finisher: is_finisher_attack flag is true")
 	
-	for i in range(70):
+	for i in range(85):
 		await physics_frame
 		
 	assert_true(p2.recent_finisher_impact_timer > 0.0, "Genuine Finisher: Cyraxx has active 4.5s finisher disorientation (%.2fs)" % p2.recent_finisher_impact_timer)
@@ -5276,7 +5533,7 @@ func test_finisher_throw_to_pin_mash_weakened() -> void:
 	p1.hype = 100.0
 	p1._attempt_grapple(true)
 	
-	for i in range(70):
+	for i in range(85):
 		await physics_frame
 		
 	p2.is_cpu = false
@@ -5310,7 +5567,7 @@ func test_finisher_throw_to_pin_hold_entry_weakened() -> void:
 	p1.hype = 100.0
 	p1._attempt_grapple(true)
 	
-	for i in range(70):
+	for i in range(85):
 		await physics_frame
 		
 	p2.is_cpu = false
@@ -5341,7 +5598,7 @@ func test_finisher_throw_to_pin_hold_preheld_weakened() -> void:
 	p1.hype = 100.0
 	p1._attempt_grapple(true)
 	
-	for i in range(70):
+	for i in range(85):
 		await physics_frame
 		
 	p2.is_cpu = false

@@ -1,10 +1,10 @@
 # Project State: LOLCOW WRESTLING: OFFLINE MAYHEM
 
-## Milestone Status: M0-M1 Functional -> Pass A Repairs (Boundary-Safe Paired Throws Complete)
+## Milestone Status: M0-M1 Functional -> Pass A Repairs (Directional Contact & Grapple Startup Complete)
 - **Engine**: Godot 4.7.2 (stable official, Windows x64) - Installed & Verified.
 - **3D DCC Pipeline**: Blender 5.0.1 (headless Python automation) - Verified.
 - **Target**: 1080p @ 60 FPS, Windows standalone.
-- **Authoritative Combat Loop & Integration**: Verified with 338 automated headless tests (282 focused unit tests + 56 full scene physics integration tests, 0 failures, 0 warnings).
+- **Authoritative Combat Loop & Integration**: Verified with 361 automated headless tests (305 focused unit tests + 56 full scene physics integration tests, 0 failures, 0 warnings).
 - **M2/M3 Status**: Functional baseline established. Skeletal animation rigging, authored unique animation clips, and manual visual inspections remain **NOT RUN / PENDING** per code review requirements.
 
 ### Pass A Codebase Repairs & Verifications:
@@ -40,11 +40,16 @@
    - Calculates predicted slam impact position $\vec{P}_{\text{slam}} = \vec{P}_{\text{atk}} + \vec{F} \times d_{\text{slam}}$ and shifts the grappling pair inward toward ring center such that both attacker, defender, and landing coordinates remain $\le 3.50\text{m}$ (inside $3.65\text{m}$ rope threshold).
    - Clamped intermediate synchronized lift (`hold_pos`) and landing (`slam_pos`) coordinates to `THROW_SAFE_RING_BOUND = 3.50m` to provide defense-in-depth during multi-frame execution.
    - Confirmed zero out-of-bounds trajectory and zero snap-back across all 4 ring edges (North, South, East, West) and all 4 corners (NE, NW, SE, SW) across slot inversions and tree processing orders (32 edge/corner/slot permutations, 128 boundary assertions).
+9. **Directional Strike Cones & Measurable Grapple Startup (Verified in Pass A Priority 3)**:
+   - Enforced 120-degree forward contact cone ($\cos(60^\circ) = 0.50$, `STRIKE_CONE_MIN_DOT = 0.50`) in `Fighter._handle_strike_active_window()`. Verified that strikes connect when defender is in front ($0^\circ$, dot = 1.0) or angled ($45^\circ$, dot = 0.707), but strictly miss defenders on side flanks ($90^\circ$, dot = 0.0) or behind ($180^\circ$, dot = -1.0).
+   - Implemented measurable `GRAPPLE_STARTUP` window (`MatchRules.GRAPPLE_STARTUP_DURATION = 0.18s`, whiff recovery 0.25s) with procedural reaching arm animation.
+   - Verified strike interruption: incoming unblocked strikes during `GRAPPLE_STARTUP` immediately interrupt attacker back to `IDLE`, clear target references, and prevent throw execution.
+   - Verified reversal counters: defender inputting `REVERSAL_STANCE` during startup successfully counters the attacker upon startup completion, inflicting counter damage, knockdown, and awarding hype.
+   - Upgraded `CPUController` to actively detect opponent `GRAPPLE_STARTUP` within range and retaliate with strike interruptions or reversal counters based on stats.
 
 ### Active Open Items from Code Review (In Priority Order):
-1. **Directional Contact & Grapple Startup (Pass A Priority 3 - Open)**: Replace omnidirectional distance strike checks with forward cone checks; enforce a real startup window on grapples.
-2. **Submission Simultaneous Outcome Resolution (Pass A Priority 4 - Open)**: Formalize authoritative priority in `MatchManager` when tap-out and escape coincide on the same physics tick.
-3. **Manual Visual Inspection & Skeletal Rigging**: Visual checks and authored animations remain **NOT RUN**.
+1. **Submission Simultaneous Outcome Resolution (Pass A Priority 4 - Open)**: Formalize authoritative priority in `MatchManager` when tap-out and escape coincide on the same physics tick.
+2. **Manual Visual Inspection & Skeletal Rigging**: Visual checks and authored animations remain **NOT RUN**.
 
 ## Verification Summary
 - **M0 Foundation**:

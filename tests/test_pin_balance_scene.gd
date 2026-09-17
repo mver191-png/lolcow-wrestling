@@ -1,4 +1,4 @@
-﻿extends SceneTree
+extends SceneTree
 
 ## Dedicated Scene Integration Test Suite for Pin-Balance Acceptance
 ## Executes actual PackedScenes (Fighter, Referee, MatchManager, CPUController)
@@ -289,7 +289,7 @@ func test_finisher_throw_to_pin_cpu_weakened() -> void:
 	p1._attempt_grapple(true)
 	assert_true(p1.is_finisher_attack, "Genuine Finisher: is_finisher_attack flag is true")
 	
-	for i in range(70):
+	for i in range(85):
 		await physics_frame
 		
 	assert_true(p2.recent_finisher_impact_timer > 0.0, "Genuine Finisher: Cyraxx has active 4.5s finisher disorientation (%.2fs)" % p2.recent_finisher_impact_timer)
@@ -320,7 +320,7 @@ func test_finisher_throw_to_pin_mash_weakened() -> void:
 	p1.hype = 100.0
 	p1._attempt_grapple(true)
 	
-	for i in range(70):
+	for i in range(85):
 		await physics_frame
 		
 	p2.is_cpu = false
@@ -354,7 +354,7 @@ func test_finisher_throw_to_pin_hold_entry_weakened() -> void:
 	p1.hype = 100.0
 	p1._attempt_grapple(true)
 	
-	for i in range(70):
+	for i in range(85):
 		await physics_frame
 		
 	p2.is_cpu = false
@@ -385,7 +385,7 @@ func test_finisher_throw_to_pin_hold_preheld_weakened() -> void:
 	p1.hype = 100.0
 	p1._attempt_grapple(true)
 	
-	for i in range(70):
+	for i in range(85):
 		await physics_frame
 		
 	p2.is_cpu = false

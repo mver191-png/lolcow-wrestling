@@ -88,6 +88,16 @@ func _think() -> void:
 		elif randf() < 0.6:
 			fighter.input_block = true
 			return
+			
+	# If opponent is in grapple startup and within range, test reversal or strike interrupt
+	if opp.current_state == Fighter.State.GRAPPLE_STARTUP and dist <= fighter.reach_distance + 0.2:
+		var rev_chance: float = fighter.stat_reversal * 0.10
+		if randf() < rev_chance and fighter.stamina >= MatchRules.REVERSAL_STAMINA_COST:
+			fighter.input_reversal = true
+			return
+		elif randf() < 0.7 and fighter.stamina >= MatchRules.STRIKE_STAMINA_COST:
+			fighter.input_strike = true
+			return
 
 	# Character specific behavior
 	if dist <= fighter.reach_distance:

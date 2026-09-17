@@ -26,6 +26,9 @@ const GRAPPLE_STAMINA_COST: float = 22.0
 const BLOCK_STAMINA_DRAIN: float = 15.0 # Per second held
 const REVERSAL_STAMINA_COST: float = 18.0
 const FINISHER_HYPE_COST: float = 100.0
+const STRIKE_CONE_MIN_DOT: float = 0.50 # 120-degree forward contact cone (cos(60 deg))
+const GRAPPLE_STARTUP_DURATION: float = 0.18 # Seconds of vulnerability before grapple lock executes
+const GRAPPLE_WHIFF_DURATION: float = 0.25 # Seconds of recovery on missed/whiffed grapple
 
 static func is_near_ropes(position_3d: Vector3) -> bool:
 	var x: float = abs(position_3d.x)

@@ -233,8 +233,7 @@ func _update_state_machine(delta: float) -> void:
 				
 		State.GRAPPLE_STARTUP:
 			velocity = Vector3.ZERO
-			if state_timer >= 0.25:
-				_set_state(State.IDLE) # Missed grapple recovery
+			_process_grapple_startup(delta)
 				
 		State.GRAPPLING_ATTACKER:
 			velocity = Vector3.ZERO
@@ -390,8 +389,24 @@ func _handle_strike_active_window() -> void:
 		if is_instance_valid(opponent):
 			var my_p: Vector3 = global_position if is_inside_tree() else position
 			var opp_p: Vector3 = opponent.global_position if opponent.is_inside_tree() else opponent.position
-			var dist: float = my_p.distance_to(opp_p)
+			var to_opp: Vector3 = Vector3(opp_p.x - my_p.x, 0.0, opp_p.z - my_p.z)
+			var dist: float = to_opp.length()
 			if dist <= reach_distance:
+				# Directional forward cone validation (cos(60 deg) = 0.50 threshold)
+				if dist > 0.001:
+					var forward_dir: Vector3 = -global_transform.basis.z.normalized() if is_inside_tree() else -transform.basis.z.normalized()
+					forward_dir.y = 0.0
+					if forward_dir.is_zero_approx():
+						forward_dir = Vector3(0, 0, -1)
+					else:
+						forward_dir = forward_dir.normalized()
+						
+					var to_opp_dir: Vector3 = to_opp.normalized()
+					var dot: float = forward_dir.dot(to_opp_dir)
+					if dot < MatchRules.STRIKE_CONE_MIN_DOT:
+						# Target outside forward contact cone (flank or behind)
+						return
+				
 				# Check defender state
 				if opponent.current_state == State.REVERSAL_STANCE:
 					# Countered!
@@ -418,10 +433,12 @@ func _handle_strike_active_window() -> void:
 
 var is_finisher_attack: bool = false
 var submission_tick_timer: float = 0.0
+var grapple_target: Fighter = null
 
 func _attempt_grapple(is_finisher: bool = false) -> void:
-	_set_state(State.GRAPPLE_STARTUP)
 	if not is_instance_valid(opponent):
+		grapple_target = null
+		_set_state(State.GRAPPLE_STARTUP)
 		return
 		
 	if is_finisher:
@@ -435,15 +452,57 @@ func _attempt_grapple(is_finisher: bool = false) -> void:
 	
 	var my_p: Vector3 = global_position if is_inside_tree() else position
 	var opp_p: Vector3 = opponent.global_position if opponent.is_inside_tree() else opponent.position
-	var dist: float = my_p.distance_to(opp_p)
-	if dist <= (reach_distance + 0.35):
-		# Validate defender state
-		if opponent.current_state in [State.IDLE, State.MOVING, State.BLOCKING]:
-			# Successful grapple! (Grapple breaks guard)
-			_start_synchronized_throw(opponent)
-		elif opponent.current_state == State.REVERSAL_STANCE:
-			# Defender counters the grapple!
-			_apply_countered_by(opponent)
+	
+	# Turn to face opponent when initiating grapple
+	var to_opp: Vector3 = Vector3(opp_p.x - my_p.x, 0.0, opp_p.z - my_p.z)
+	if not to_opp.is_zero_approx():
+		rotation.y = atan2(-to_opp.x, -to_opp.z)
+		
+	var dist: float = to_opp.length()
+	if dist <= (reach_distance + 0.35) and opponent.current_state in [State.IDLE, State.MOVING, State.BLOCKING, State.REVERSAL_STANCE, State.GRAPPLE_STARTUP]:
+		grapple_target = opponent
+	else:
+		grapple_target = null
+	
+	_set_state(State.GRAPPLE_STARTUP)
+	
+	# Procedural reaching visual feedback
+	if left_arm and right_arm:
+		var tween: Tween = create_tween().set_parallel(true)
+		tween.tween_property(left_arm, "position:z", -0.5, 0.12)
+		tween.tween_property(right_arm, "position:z", -0.5, 0.12)
+
+func _process_grapple_startup(_delta: float) -> void:
+	if state_timer >= MatchRules.GRAPPLE_STARTUP_DURATION:
+		if is_instance_valid(grapple_target):
+			var my_p: Vector3 = global_position if is_inside_tree() else position
+			var opp_p: Vector3 = grapple_target.global_position if grapple_target.is_inside_tree() else grapple_target.position
+			var dist: float = my_p.distance_to(opp_p)
+			
+			if dist <= (reach_distance + 0.35):
+				var target: Fighter = grapple_target
+				grapple_target = null
+				
+				if left_arm and right_arm:
+					left_arm.position.z = 0.0
+					right_arm.position.z = 0.0
+				
+				if target.current_state == State.REVERSAL_STANCE:
+					# Defender counters the grapple!
+					_apply_countered_by(target)
+					return
+				elif target.current_state in [State.IDLE, State.MOVING, State.BLOCKING, State.GRAPPLE_STARTUP]:
+					# Successful grapple! (Grapple breaks guard)
+					_start_synchronized_throw(target)
+					return
+		
+		# Target moved away, was knocked down, or missed: wait for whiff recovery
+		grapple_target = null
+		if state_timer >= MatchRules.GRAPPLE_WHIFF_DURATION:
+			if left_arm and right_arm:
+				left_arm.position.z = 0.0
+				right_arm.position.z = 0.0
+			_set_state(State.IDLE)
 
 func _start_synchronized_throw(target: Fighter) -> void:
 	synchronized_partner = target
@@ -843,6 +902,14 @@ func receive_damage(amount: float, from_fighter: Fighter, was_blocked: bool, is_
 	elif amount >= MatchRules.HEAVY_IMPACT_DAMAGE_THRESHOLD and not was_blocked:
 		recent_heavy_impact_timer = MatchRules.HEAVY_IMPACT_DISORIENTATION_DURATION
 	
+	# Interrupt grapple startup if hit by unblocked damage
+	if current_state == State.GRAPPLE_STARTUP and not was_blocked:
+		grapple_target = null
+		if left_arm and right_arm:
+			left_arm.position.z = 0.0
+			right_arm.position.z = 0.0
+		_set_state(State.IDLE)
+	
 	# Knockdown on heavy damage or low health
 	if not was_blocked and vitality <= 0.0 and current_state != State.KNOCKED_DOWN and current_state != State.PINNED:
 		_set_state(State.KNOCKED_DOWN)
@@ -856,6 +923,11 @@ func _set_state(new_state: State) -> void:
 	if current_state == new_state:
 		return
 	var old_state: State = current_state
+	if old_state == State.GRAPPLE_STARTUP:
+		grapple_target = null
+		if left_arm and right_arm:
+			left_arm.position.z = 0.0
+			right_arm.position.z = 0.0
 	current_state = new_state
 	state_timer = 0.0
 	_play_state_animation(new_state)

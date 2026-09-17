@@ -31,6 +31,8 @@ func _init() -> void:
 	test_pass_a_resource_aware_pinfall_balance()
 	test_explicit_impact_classification()
 	test_pass_a_boundary_safe_paired_throws()
+	test_pass_a_strike_directional_cone()
+	test_pass_a_grapple_startup_and_interruption()
 	
 	print("==================================================")
 	print("TEST RESULTS: %d Passed, %d Failed, %d Total" % [passed_tests, failed_tests, total_tests])
@@ -122,7 +124,7 @@ func test_damage_occurs_only_once() -> void:
 	
 	attacker.opponent = defender
 	attacker.position = Vector3(0, 0, 0)
-	defender.position = Vector3(0, 0, 0.8) # Within reach
+	defender.position = Vector3(0, 0, -0.8) # Within reach and forward cone
 	
 	attacker.input_strike = true
 	attacker._start_strike()
@@ -1055,5 +1057,174 @@ func test_pass_a_boundary_safe_paired_throws() -> void:
 				
 				p1.free()
 				p2.free()
+
+func test_pass_a_strike_directional_cone() -> void:
+	# Test forward cone validation for strikes (120 degree cone, STRIKE_CONE_MIN_DOT = 0.50)
+	var attacker: Fighter = Fighter.new()
+	var defender: Fighter = Fighter.new()
+	attacker.character_id = "tophiachu"
+	defender.character_id = "cyraxx"
+	attacker.load_character_data()
+	defender.load_character_data()
+	attacker.opponent = defender
+	defender.opponent = attacker
+	
+	# Test 1: Defender directly in front at (0, 0, -0.8) (0 deg) -> CONNECTS
+	attacker.position = Vector3(0, 0, 0)
+	attacker.rotation.y = 0.0 # Facing -Z
+	defender.position = Vector3(0, 0, -0.8)
+	defender.vitality = defender.max_vitality
+	attacker._start_strike()
+	attacker.state_timer = 0.15
+	attacker._handle_strike_active_window()
+	assert_true(attacker.attack_has_damaged, "Strike Cone [0 deg In Front]: Attack marks as damaged")
+	assert_true(defender.vitality < defender.max_vitality, "Strike Cone [0 deg In Front]: Defender takes damage")
+	
+	# Test 2: Defender angled at 45 deg (-0.56, 0, -0.56) (dist = 0.79m, dot = 0.707 >= 0.50) -> CONNECTS
+	attacker.position = Vector3(0, 0, 0)
+	attacker.rotation.y = 0.0 # Facing -Z
+	defender.position = Vector3(-0.56, 0, -0.56)
+	defender.vitality = defender.max_vitality
+	attacker._start_strike()
+	attacker.state_timer = 0.15
+	attacker._handle_strike_active_window()
+	assert_true(attacker.attack_has_damaged, "Strike Cone [45 deg Angled]: Attack marks as damaged")
+	assert_true(defender.vitality < defender.max_vitality, "Strike Cone [45 deg Angled]: Defender takes damage")
+	
+	# Test 3: Defender directly to the right at (0.8, 0, 0) (90 deg flank, dot = 0.0 < 0.50) -> MISSES
+	attacker.position = Vector3(0, 0, 0)
+	attacker.rotation.y = 0.0 # Facing -Z
+	defender.position = Vector3(0.8, 0, 0)
+	defender.vitality = defender.max_vitality
+	attacker._start_strike()
+	attacker.state_timer = 0.15
+	attacker._handle_strike_active_window()
+	assert_true(not attacker.attack_has_damaged, "Strike Cone [90 deg Flank]: Attack does NOT mark as damaged")
+	assert_true(defender.vitality == defender.max_vitality, "Strike Cone [90 deg Flank]: Defender takes zero damage")
+	
+	# Test 4: Defender directly behind at (0, 0, 0.8) (180 deg, dot = -1.0 < 0.50) -> MISSES
+	attacker.position = Vector3(0, 0, 0)
+	attacker.rotation.y = 0.0 # Facing -Z
+	defender.position = Vector3(0, 0, 0.8)
+	defender.vitality = defender.max_vitality
+	attacker._start_strike()
+	attacker.state_timer = 0.15
+	attacker._handle_strike_active_window()
+	assert_true(not attacker.attack_has_damaged, "Strike Cone [180 deg Behind]: Attack does NOT mark as damaged")
+	assert_true(defender.vitality == defender.max_vitality, "Strike Cone [180 deg Behind]: Defender takes zero damage")
+	
+	# Test 5: Attacker rotated to face right (+X, rotation.y = -PI/2)
+	attacker.position = Vector3(0, 0, 0)
+	attacker.rotation.y = -PI / 2.0 # Facing +X
+	defender.position = Vector3(0.8, 0, 0) # Directly in front of rotated attacker!
+	defender.vitality = defender.max_vitality
+	attacker._start_strike()
+	attacker.state_timer = 0.15
+	attacker._handle_strike_active_window()
+	assert_true(attacker.attack_has_damaged, "Strike Cone [Rotated Attacker Facing +X]: Attack hits defender at +X")
+	assert_true(defender.vitality < defender.max_vitality, "Strike Cone [Rotated Attacker Facing +X]: Defender at +X takes damage")
+	
+	attacker.free()
+	defender.free()
+
+func test_pass_a_grapple_startup_and_interruption() -> void:
+	# Test 1: Grapple startup initiation and facing alignment
+	var atk: Fighter = Fighter.new()
+	var def: Fighter = Fighter.new()
+	atk.character_id = "tophiachu"
+	def.character_id = "cyraxx"
+	atk.load_character_data()
+	def.load_character_data()
+	atk.opponent = def
+	def.opponent = atk
+	
+	atk.position = Vector3(-0.5, 0, 0)
+	def.position = Vector3(0.5, 0, 0)
+	def._set_state(Fighter.State.IDLE)
+	
+	atk._attempt_grapple(false)
+	assert_true(atk.current_state == Fighter.State.GRAPPLE_STARTUP, "Grapple Startup: Attacker enters GRAPPLE_STARTUP")
+	assert_true(atk.grapple_target == def, "Grapple Startup: Attacker locks target reference")
+	assert_true(atk.state_timer == 0.0, "Grapple Startup: State timer initialized to 0.0")
+	
+	# Test 2: Clean uninterrupted grapple transitions to throw at GRAPPLE_STARTUP_DURATION
+	for frame in range(12): # ~0.20s > 0.18s
+		atk._physics_process(1.0 / 60.0)
+		def._physics_process(1.0 / 60.0)
+		
+	assert_true(atk.current_state == Fighter.State.GRAPPLING_ATTACKER, "Grapple Startup: Clean startup transitions to GRAPPLING_ATTACKER")
+	assert_true(def.current_state == Fighter.State.GRAPPLING_DEFENDER, "Grapple Startup: Defender transitions to GRAPPLING_DEFENDER")
+	
+	atk.free()
+	def.free()
+	
+	# Test 3: Strike interruption during grapple startup
+	var atk2: Fighter = Fighter.new()
+	var def2: Fighter = Fighter.new()
+	atk2.character_id = "tophiachu"
+	def2.character_id = "cyraxx"
+	atk2.load_character_data()
+	def2.load_character_data()
+	atk2.opponent = def2
+	def2.opponent = atk2
+	
+	atk2.position = Vector3(-0.5, 0, 0)
+	def2.position = Vector3(0.5, 0, 0)
+	def2._set_state(Fighter.State.IDLE)
+	
+	atk2._attempt_grapple(false)
+	assert_true(atk2.current_state == Fighter.State.GRAPPLE_STARTUP, "Grapple Interrupt: Attacker starts in GRAPPLE_STARTUP")
+	
+	# Advance 3 frames into startup (0.05s < 0.18s)
+	for frame in range(3):
+		atk2._physics_process(1.0 / 60.0)
+		def2._physics_process(1.0 / 60.0)
+	
+	# Defender strikes and interrupts attacker!
+	atk2.receive_damage(35.0, def2, false)
+	assert_true(atk2.current_state == Fighter.State.IDLE, "Grapple Interrupt: Attacker interrupted out of GRAPPLE_STARTUP back to IDLE")
+	assert_true(atk2.grapple_target == null, "Grapple Interrupt: Grapple target cleared on interrupt")
+	
+	# Advance further past original startup duration: verify throw NEVER occurs
+	for frame in range(15):
+		atk2._physics_process(1.0 / 60.0)
+		def2._physics_process(1.0 / 60.0)
+		
+	assert_true(atk2.current_state != Fighter.State.GRAPPLING_ATTACKER, "Grapple Interrupt: Attacker does NOT execute throw after interrupt")
+	assert_true(def2.current_state != Fighter.State.GRAPPLING_DEFENDER, "Grapple Interrupt: Defender was NOT thrown")
+	
+	atk2.free()
+	def2.free()
+	
+	# Test 4: Reversal countering grapple startup
+	var atk3: Fighter = Fighter.new()
+	var def3: Fighter = Fighter.new()
+	atk3.character_id = "tophiachu"
+	def3.character_id = "cyraxx"
+	atk3.load_character_data()
+	def3.load_character_data()
+	atk3.opponent = def3
+	def3.opponent = atk3
+	
+	atk3.position = Vector3(-0.5, 0, 0)
+	def3.position = Vector3(0.5, 0, 0)
+	def3._set_state(Fighter.State.IDLE)
+	
+	atk3._attempt_grapple(false)
+	assert_true(atk3.current_state == Fighter.State.GRAPPLE_STARTUP, "Grapple Reversal: Attacker enters GRAPPLE_STARTUP")
+	
+	# Defender inputs reversal stance during startup
+	def3._set_state(Fighter.State.REVERSAL_STANCE)
+	
+	# Tick past startup duration (0.18s)
+	for frame in range(12):
+		atk3._physics_process(1.0 / 60.0)
+		def3._physics_process(1.0 / 60.0)
+		
+	assert_true(atk3.current_state == Fighter.State.KNOCKED_DOWN, "Grapple Reversal: Attacker countered and knocked down")
+	assert_true(def3.hype > 0.0, "Grapple Reversal: Defender awarded counter hype")
+	
+	atk3.free()
+	def3.free()
 
 
