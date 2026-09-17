@@ -1,0 +1,49 @@
+name: Game quality
+on:
+  pull_request:
+  push:
+    branches: [astra/character-animation-overhaul]
+permissions:
+  contents: read
+concurrency:
+  group: game-quality-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GODOT_VERSION: 4.7.2
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install engine and capture dependencies
+        run: |
+          set -euo pipefail
+          mkdir -p .tools evidence
+          curl --fail --location --retry 3 "https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip" -o .tools/godot.zip
+          unzip -q .tools/godot.zip -d .tools
+          mv .tools/Godot_v${GODOT_VERSION}-stable_linux.x86_64 .tools/godot
+          chmod +x .tools/godot
+          .tools/godot --version | tee evidence/engine-version.txt
+      - name: Import project
+        run: .tools/godot --headless --editor --path . --import 2>&1 | tee evidence/import.log
+      - name: Unit and integration checks
+        run: |
+          set -euo pipefail
+          .tools/godot --headless --path . -s tests/test_suite.gd 2>&1 | tee evidence/unit.log
+          .tools/godot --headless --path . -s tests/test_pin_balance_scene.gd 2>&1 | tee evidence/integration.log
+      - name: Package inspected source and portable review engine
+        if: always()
+        run: |
+          mkdir -p review-package
+          cp -r scripts scenes tests assets blender project.godot review-package/
+          cp -r evidence review-package/
+          if test -x .tools/godot; then cp .tools/godot review-package/godot-linux; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: game-review-${{ github.sha }}
+          path: review-package/
+          retention-days: 7
