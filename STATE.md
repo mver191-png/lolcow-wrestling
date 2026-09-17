@@ -1,21 +1,19 @@
-# Current project state
+# Current review-branch state
 
-Branch: `astra/character-animation-overhaul`, based on `2307d013`.
+The roster/venue overhaul remains available on `astra/character-animation-overhaul`.
+The paired-contact continuation adds rotation-only grip correction, supported
+lateral covers, kneeling wrist control, bounded downed-body support, smooth contact
+release, and referee hand-to-mat correction. Gameplay authority remains unchanged.
 
-Implemented: all-roster original skinned assets; corrected regional weights and
-hardware release; authoritative pose sampling; mirror isolation; complete throw
-lifecycle checks; animated referee/halo; venue and crowd; real selection previews.
+Local Godot 4.7.2 validation: 408 mechanics, 126 scene integration, 35 presentation,
+305 prior overhaul and 1,941 contact assertions passed with zero failures.
+Three Python asset-compiler tests passed. Counts overlap.
 
-Locally verified: 408 unit assertions, 126 integration assertions, 35 presentation
-assertions, 305 new overhaul assertions, and 3 Python asset tests. All passed.
-These counts overlap and do not constitute art-quality acceptance.
+All 64 ordered pairings were exercised in both slot/insertion orders for the
+contact pass. Baseline-disabled versus enabled gameplay traces matched exactly in
+the tested 90-tick throw scenario. These results do not prove final art quality.
 
-Rendered/inspected: real engine selection, full-body match, Tophiachu detail,
-and sampled throw sequence. Baseline was separately rendered for comparison.
-Environment: Linux Godot 4.7.2, Mesa llvmpipe Compatibility driver; not a target-GPU
-benchmark or native Windows export test.
-
-Open: likeness/final art approval, exact hand/foot contact during paired moves,
-unique move/trait mechanics, hardware profiling, full manual playtesting.
-
-See REVIEW.md for implementation details, reproducible commands and limitations.
+See `docs/CONTACT_PASS.md` for tolerances, capture commands and limitations.
+See `REVIEW.md` for the original overhaul scope. PR remains a draft; main is not
+merged. Windows packaging, target-hardware performance and a full human playtest
+remain unverified.
