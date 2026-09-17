@@ -61,8 +61,10 @@ func _physics_process(delta:float)->void:
  else:curl_hand("L",.28,.12);curl_hand("R",.28,.12)
  if fighter.current_state==Fighter.State.GETTING_UP and not _dedicated_recovery():
   var p:=clampf(fighter.state_timer/.60,0,1);var hand_w:=1.-smoothstep(.48,.82,p);var knee_w:=smoothstep(.08,.30,p)*(1.-smoothstep(.72,.96,p))
-  # The early recovery remains low enough that a real-length arm can reach the mat.
-  presentation.model.position.y-=.52*body_scale*hand_w;skeleton.force_update_all_bone_transforms()
+  # Preserve the incoming fallback correction in articulated pelvis space.
+  var hips := bone("Hips")
+  if hips >= 0:
+   var hip_pose := skeleton.get_bone_pose_position(hips);hip_pose.y-=.52*body_scale*hand_w;skeleton.set_bone_pose_position(hips,hip_pose);skeleton.force_update_all_bone_transforms()
   var hand_target:=fighter.global_position+fighter.global_basis.x*(-.30*body_scale)+fighter.global_basis.z*(.06*body_scale)+Vector3.UP*.025;var hand_pole:=hand_target-fighter.global_basis.z*.45+Vector3.UP*.22;_support_arm("L",hand_target,hand_pole,hand_w,"getup_hand")
   var foot_target:=fighter.global_position+fighter.global_basis.x*(.20*body_scale)-fighter.global_basis.z*(.24*body_scale)+Vector3.UP*.055;var knee_pole:=fighter.global_position-fighter.global_basis.z*(.42*body_scale)+Vector3.UP*.26;_support_leg("R",foot_target,knee_pole,knee_w,"getup_foot");rotate("Head",Vector3(-.16*(1-p),0,0))
  if stamina_ratio<.25 and fighter.current_state in [Fighter.State.IDLE,Fighter.State.MOVING]:

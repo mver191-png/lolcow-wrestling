@@ -1,4 +1,5 @@
 extends SceneTree
+const IK=preload("res://scripts/fighter/contact_ik.gd")
 const SCENE=preload("res://scenes/fighter/fighter.tscn")
 var total:=0;var failed:=0
 func _init()->void:call_deferred("run")
@@ -30,7 +31,10 @@ func test_character(id:String)->void:
 	for d in f.presentation.contact.diagnostics:
 		if d.kind in ["recovery_palm","recovery_ankle"] and d.weight>=.999:
 			support=true
-			check(d.error<.025,"%s loaded recovery support within 2.5cm"%id)
+			var bone_name: String = "Hand.L" if d.kind=="recovery_palm" else "Foot."+d.side
+			var local_point: Vector3 = Vector3(0,-.045,-.012)*float(f.presentation.contact._scale) if d.kind=="recovery_palm" else Vector3.ZERO
+			var visible: Vector3 = IK.point(s,s.find_bone(bone_name),local_point)
+			check(d.error<.025 and d.unreachable<.08 and visible.distance_to(d.target)<.025,"%s final loaded pose reaches its support within 2.5cm"%id)
 	check(support,"%s recovery has measured support"%id)
 	f._set_state(Fighter.State.IDLE);f.stamina=0;await tick(3)
 	check(f.visual_root.transform.is_equal_approx(Transform3D.IDENTITY),"%s secondary motion leaves gameplay visual root unchanged"%id)

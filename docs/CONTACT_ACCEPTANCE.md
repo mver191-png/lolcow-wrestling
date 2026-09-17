@@ -1,6 +1,6 @@
 # Contact and recovery acceptance
 
-Continues the contact work on `06260e8de03896c86988c0bd63177ff0e860b121`; main is untouched. All original character assets and gameplay rules are preserved.
+Continues the contact work on `06260e8de03896c86988c0bd63177ff0e860b121`; main is untouched. Publication uses `astra/recovery-contact-followup` (draft PR #2) because the original review branch was advancing concurrently. Incoming animation polish through `61562cc9` is reconciled; dedicated recovery has sole ownership of its limb supports. Original character assets and gameplay rules are preserved.
 
 ## Implemented in this follow-up
 
@@ -23,6 +23,7 @@ Godot 4.7.2 Linux, fixed 60 Hz diagnostic stepping. No hardware frame-rate claim
 | Existing overhaul integration | 305 | 0 |
 | Paired contact matrix | 1941 | 0 |
 | New contact/recovery acceptance | 142 | 0 |
+| Secondary-animation/recovery ownership | 56 | 0 |
 | Python asset compiler | 3 | 0 |
 
 Counts overlap and do not represent independent playtests. The new suite covers eight bodies at two orientations, support acquisition/release, fixed anchors, unchanged limb lengths, root neutrality, disabled-contact cleanup, invalid IK requests, and all three official count events including terminal resolution. Samples are written to `evidence/recovery-acceptance.json`.
@@ -35,6 +36,10 @@ godot --path . --audio-driver Dummy --rendering-method gl_compatibility --disabl
 ```
 
 Run these with a real or virtual display, not `--headless`. `--baseline` disables only the new recovery support layer; the existing paired contact solver remains enabled. PNGs are actual game frames; the optional frame sequence is scripted and silent, not a human match. The clean third-count image hides only the CanvasLayer for inspection. Capture uses explicit RenderingServer draws. Xvfb/Mesa llvmpipe emits an unsupported VSync warning.
+
+## Renderer regression found and contained
+
+The incoming runtime material override path produced null-material errors under Compatibility even after subsurface scattering was disabled. This pass therefore preserves the authored embedded materials on Compatibility and headless paths, and only enables optional subsurface scattering on Forward+. The final local before/after captures complete without rendering errors; the virtual-driver VSync warning remains. The optional Forward+ material path is not hardware-verified. Read-only CI now performs a real software-OpenGL capture and rejects rendering errors, rather than relying entirely on headless assertions.
 
 ## Still open
 

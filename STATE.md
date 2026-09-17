@@ -1,18 +1,19 @@
-# Current review-branch state
+# Current recovery follow-up state
 
-The roster/venue overhaul and paired-contact pass remain on `astra/character-animation-overhaul`; `main` is unchanged. The contact pass has rotation-only grip correction, supported lateral covers, kneeling wrist control, bounded downed support, eased release and referee hand-to-mat correction.
+Work is isolated on `astra/recovery-contact-followup` in draft PR #2, targeting the original overhaul review branch (PR #1), not main. Incoming animation-polish changes through `61562cc9` are reconciled without force-updating that moving branch.
 
-The secondary animation-polish layer preserves articulated finger curls, fictional character-specific stance/tempo accents, stamina-responsive body language and per-instance material tuning. Its older recovery IK is now a fallback: when dedicated recovery support is enabled, it must not re-solve the limbs or curl the planted left palm after PairedContact.
+## Implemented
 
-## Recovery and count-contact follow-up
+- Preserved the full skinned roster, venue, paired grips, lateral covers, wrist control, character-specific secondary stance/tempo accents, finger curls and gameplay authority.
+- Added latched left-palm and phased ankle supports during the existing 0.60-second recovery. The secondary polish layer does not re-solve these limbs or close the loaded palm afterward.
+- Added solver input/chain validation, true zero-weight no-op and contact-disable cleanup.
+- Referee transitions blend; the final slap remains visible for 0.08 seconds after the result, without delaying or changing it.
+- Added real-scene recovery/event checks and capture tooling. Compatibility retains authored embedded materials after runtime overrides exposed renderer errors. CI now also renders real software-OpenGL frames.
 
-- Latched left-palm and phased ankle support during the existing 0.60-second recovery, with unchanged limb lengths and gameplay root.
-- Strict solver validation and zero-weight no-op; clean contact disabling during holds.
-- A cosmetic 0.08-second final-slap hold preserves hand-to-canvas contact after the result. Ordinary referee transitions blend for 0.16 seconds without delaying counts.
-- New real-scene recovery/event acceptance and capture tooling. See `docs/CONTACT_ACCEPTANCE.md`.
+## Executed verification
 
-Local validation before reconciliation with the incoming animation-polish commits: 408 mechanics, 126 scene physics, 35 presentation, 305 overhaul, 1941 paired-contact and 142 recovery/event assertions passed, plus three Python compiler tests. Counts overlap. The combined branch is awaiting fresh CI and local render verification; consult actual CI artifacts rather than treating these predecessor numbers as its result.
+Local Godot 4.7.2 checks: 408 mechanics, 126 scene physics, 35 presentation, 305 overhaul, 1,941 paired-contact, 142 recovery/event, and 56 secondary-animation/ownership assertions passed. Three Python asset-compiler tests passed. Counts overlap. CI runs the same suites; consult the workflow artifact for its exact commit and result.
 
-The initial incoming animation-polish test used `angle()` rather than `get_angle()`; that upstream correction is preserved. The updated polish test checks the active recovery owner rather than demanding both layers solve the same limb.
+All eight bodies at two orientations passed loaded recovery-marker checks within 2.5 cm. This is not skin collision or anatomical correctness. Actual scripted Godot frames were captured with Xvfb/Mesa llvmpipe. Final Compatibility captures have no engine errors; an unsupported VSync warning remains. These are not performance benchmarks or comprehensive human playtests.
 
-PR remains a draft. Full-body clearance, anatomical limits, unique move mechanics, Windows packaging, target-hardware performance and comprehensive human playtesting remain unverified. See `KNOWN_ISSUES.md`, `NEXT_TASK.md` and the contact documentation.
+See `docs/CONTACT_ACCEPTANCE.md` and `KNOWN_ISSUES.md`. Full-body clearance, natural authored transitions, distinct move mechanics, Windows export, gamepads and target-GPU Forward+ behavior remain open. Do not auto-merge either draft PR.

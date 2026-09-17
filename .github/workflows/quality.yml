@@ -50,6 +50,19 @@ jobs:
             echo 'Engine reported a script or assertion failure.' >&2
             exit 1
           fi
+      - name: Render contact smoke test with software OpenGL
+        env:
+          LIBGL_ALWAYS_SOFTWARE: 1
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y xvfb libgl1-mesa-dri
+          xvfb-run -a .tools/godot --path . --audio-driver Dummy --rendering-method gl_compatibility --disable-render-loop --fixed-fps 60 -s tools/capture_contact_acceptance.gd 2>&1 | tee evidence/render-smoke.log
+          if grep -E 'ERROR:|Parse Error:|\[FAIL\]' evidence/render-smoke.log; then
+            echo 'Rendered contact smoke test failed.' >&2
+            exit 1
+          fi
+          test -s evidence/contact-acceptance-after/official-third-count-clean.png
       - name: Package source, generated assets and logs
         if: always()
         run: |
