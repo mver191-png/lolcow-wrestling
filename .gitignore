@@ -4,3 +4,6 @@
 *.import
 export_presets.cfg
 test_out.txt
+*.zip
+*.bundle
+*.log
