@@ -3,6 +3,8 @@ extends Node
 
 ## Cosmetic pose ownership. Simulation owns roots; MatchManager owns outcomes.
 ## Manual sampling uses the simulation clock after fighters and match resolution.
+const CONTACT = preload("res://scripts/fighter/paired_contact.gd")
+var contact: Node
 const LOOPING := ["idle", "walk", "run", "downed", "pinned", "submission_attacker", "submission_defender"]
 const CORE := ["idle", "walk", "strike", "knockdown", "getup", "throw_attacker", "throw_defender", "pinning", "pinned", "submission_attacker", "submission_defender", "victory", "defeated"]
 var fighter: CharacterBody3D
@@ -29,6 +31,10 @@ func setup(p_fighter: Fighter, p_visual_root: Node3D) -> void:
 	fighter = p_fighter
 	visual_root = p_visual_root
 	process_physics_priority = 20
+	contact = CONTACT.new()
+	contact.name = "PairedContact"
+	add_child(contact)
+	contact.setup(self)
 
 func _find_type(node: Node, wanted: StringName) -> Node:
 	if node.is_class(wanted):
@@ -91,6 +97,7 @@ func load_model(character_id: String) -> void:
 	var hips := skeleton.find_bone("Hips")
 	if hips >= 0:
 		_body_scale = maxf(skeleton.get_bone_global_rest(hips).origin.y / 0.89, 0.5)
+	contact.reset()
 	play_state_animation(fighter.current_state)
 
 func _capture_pose() -> void:
@@ -148,6 +155,7 @@ func update_locomotion_stride() -> void:
 func _physics_process(delta: float) -> void:
 	if not has_skeletal_rig or not is_instance_valid(fighter) or not fighter.is_inside_tree():
 		return
+	contact.begin_pose(delta)
 	var position_now := fighter.global_position
 	if _previous_valid:
 		var displacement := position_now - _previous_position
@@ -199,3 +207,5 @@ func _physics_process(delta: float) -> void:
 		_impact_time = maxf(0.0, _impact_time - delta)
 		var recoil := Quaternion(Vector3.RIGHT, -0.12 * sin(PI * _impact_time / 0.16))
 		skeleton.set_bone_pose_rotation(_chest, skeleton.get_bone_pose_rotation(_chest) * recoil)
+
+	contact.ground_pose()
