@@ -1,5 +1,8 @@
 class_name Referee
 extends Node3D
+const CONTACT_IK = preload("res://scripts/fighter/contact_ik.gd")
+var hand_contacts: Array[Dictionary] = []
+var _skeleton: Skeleton3D
 ## Non-colliding official. Animated signals never govern the match result.
 signal count_pulse(count_number: int)
 enum RefereeState {IDLE, OBSERVING, RUNNING_TO_PIN, COUNTING_PIN, SIGNAL_ROPE_BREAK, VICTORY}
@@ -20,6 +23,8 @@ var _signal_time := 0.0
 var _clip := ""
 
 func _inspect(node: Node) -> void:
+	if node is Skeleton3D:
+		_skeleton = node
 	if node is AnimationPlayer:
 		_ap = node
 	if node is MeshInstance3D and node.mesh:
@@ -45,6 +50,7 @@ func setup_targets(f1: Node3D, f2: Node3D) -> void:
 	target_fighter_2 = f2
 
 func _physics_process(delta: float) -> void:
+	hand_contacts.clear()
 	_clock += delta
 	halo_pulse_timer = maxf(0.0, halo_pulse_timer-delta)
 	_signal_time = maxf(0.0, _signal_time-delta)
@@ -88,12 +94,21 @@ func _physics_process(delta: float) -> void:
 			_ap.advance(0.0)
 		var length := maxf(_ap.get_animation(clip).length,.001)
 		_ap.seek(fposmod(sample,length) if clip in ["run","idle","ref_count"] else clampf(sample,0,length),true)
+		if clip == "ref_count" and _skeleton != null:
+			_count_contacts(fposmod(sample,length)/length)
 
 func on_pin_started(pin_position: Vector3) -> void:
 	current_state = RefereeState.COUNTING_PIN
 	current_count = 0
 	_look = pin_position
 	_goal = pin_position+Vector3(1.15,0,.35)
+	# Count from the free side of the lateral cover, rather than over the heads.
+	if is_instance_valid(MatchManager.instance) and is_instance_valid(MatchManager.instance.current_pinned):
+		var pinned: Fighter = MatchManager.instance.current_pinned
+		var headward := pinned.global_basis.z.normalized()
+		var free_side := -pinned.global_basis.x.normalized()
+		_look = pin_position + headward*.30
+		_goal = pin_position + free_side*1.40 + headward*.35
 	if count_label_3d:
 		count_label_3d.text = ""
 		count_label_3d.show()
@@ -125,3 +140,30 @@ func on_match_won(winner_position: Vector3) -> void:
 	if count_label_3d:
 		count_label_3d.text = "WINNER"
 		count_label_3d.show()
+
+func _count_contacts(phase: float) -> void:
+	# The official clock determines the cosmetic hand phase, never the inverse.
+	var hips := _skeleton.find_bone("Hips")
+	var scale := _skeleton.get_bone_global_rest(hips).origin.y / .89
+	_skeleton.set_bone_pose_position(hips,Vector3(0,.49*scale,0))
+	for entry in [["Hips",Vector3(-1.2,0,0)],["Spine",Vector3(-.35,0,0)],
+		["Chest",Vector3(-.1,0,0)],["Thigh.L",Vector3(1.4,0,0)],
+		["Thigh.R",Vector3(1.4,0,0)],["Shin.L",Vector3(-PI*.5-.2,0,0)],
+		["Shin.R",Vector3(-PI*.5-.2,0,0)]]:
+		_skeleton.set_bone_pose_rotation(_skeleton.find_bone(entry[0]),Quaternion.from_euler(entry[1]))
+	_skeleton.force_update_all_bone_transforms()
+	for side in ["L","R"]:
+		var sign := 1.0 if side=="L" else -1.0
+		var lift := .28*pow(sin(PI*phase),2.0) if side=="R" else 0.0
+		var surface := global_transform * (Vector3(sign*.20,.035+lift,-.46)*scale)
+		var basis := CONTACT_IK.hand_basis(-global_basis.z,Vector3.DOWN)
+		var hand := _skeleton.find_bone("Hand."+side)
+		var wrist := surface - basis*(Vector3(0,-.045,-.012)*scale)
+		var pole := surface + global_basis.x*sign*.40 + Vector3.UP*.2
+		var result := CONTACT_IK.solve(_skeleton,_skeleton.find_bone("UpperArm."+side),
+			_skeleton.find_bone("Forearm."+side),hand,wrist,pole)
+		if result.get("valid",false):
+			CONTACT_IK._world_rotation(_skeleton,hand,basis.get_rotation_quaternion())
+			var actual := CONTACT_IK.point(_skeleton,hand,Vector3(0,-.045,-.012)*scale)
+			result.merge({"side":side,"phase":phase,"target":surface,"actual":actual,"error":actual.distance_to(surface)},true)
+			hand_contacts.append(result)
