@@ -8,7 +8,7 @@ config_version=5
 
 config/name="LOLCOW WRESTLING: OFFLINE MAYHEM"
 config/description="Arcade 3D wrestling game featuring distinct fighters, synchronized throws, and KingCobraJFS as neutral referee."
-run/main_scene="res://scenes/main.tscn"
+run/main_scene="res://scenes/ui/character_select.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 
 [display]

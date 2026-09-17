@@ -38,6 +38,8 @@ func _ready() -> void:
 		match_manager.pin_started.connect(_on_pin_started)
 		match_manager.pin_count_ticked.connect(_on_pin_count)
 		match_manager.pin_broken.connect(_on_pin_broken)
+		match_manager.submission_started.connect(_on_submission_started)
+		match_manager.submission_escaped.connect(_on_submission_escaped)
 		match_manager.rope_break_called.connect(_on_rope_break)
 		match_manager.match_ended.connect(_on_match_ended)
 		
@@ -140,6 +142,24 @@ func _on_pin_broken(reason: String) -> void:
 		tween.tween_interval(0.8)
 		tween.tween_callback(func(): center_announcement.visible = false)
 
+func _on_submission_started(_attacker: Fighter, defender: Fighter) -> void:
+	current_pinned_fighter = defender
+	if pin_escape_container:
+		pin_escape_container.visible = true
+	if center_announcement:
+		center_announcement.text = "SUBMISSION HOLD!"
+		center_announcement.visible = true
+
+func _on_submission_escaped() -> void:
+	current_pinned_fighter = null
+	if pin_escape_container:
+		pin_escape_container.visible = false
+	if center_announcement:
+		center_announcement.text = "ESCAPED!"
+		var tween: Tween = create_tween()
+		tween.tween_interval(0.8)
+		tween.tween_callback(func(): center_announcement.visible = false)
+
 func _on_rope_break() -> void:
 	current_pinned_fighter = null
 	if pin_escape_container:
@@ -160,4 +180,4 @@ func _on_match_ended(winner: Fighter, method: String) -> void:
 	if victory_panel:
 		victory_panel.visible = true
 		if victory_label:
-			victory_label.text = winner.char_name.to_upper() + " WINS!\n[" + method + "]\n\nPress [R] to Restart Match"
+			victory_label.text = winner.char_name.to_upper() + " WINS!\n[" + method + "]\n\nPress [R] to Rematch | [ESC] Character Select"

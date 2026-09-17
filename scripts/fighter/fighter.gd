@@ -13,6 +13,9 @@ signal hit_landed(attacker: Fighter, target: Fighter, damage: float, was_blocked
 signal throw_impact(attacker: Fighter, defender: Fighter)
 signal pin_initiated(pinner: Fighter, pinned: Fighter)
 signal kick_out_succeeded(fighter: Fighter)
+signal submission_initiated(attacker: Fighter, defender: Fighter)
+signal submission_escaped(fighter: Fighter)
+signal tap_out_submitted(fighter: Fighter)
 
 enum State {
 	IDLE,
@@ -27,6 +30,8 @@ enum State {
 	GETTING_UP,
 	PINNING,
 	PINNED,
+	SUBMISSION_ATTACKER,
+	SUBMISSION_DEFENDER,
 	VICTORY,
 	DEFEATED
 }
@@ -40,6 +45,7 @@ enum State {
 @export var body_mesh: MeshInstance3D
 @export var left_arm: Node3D
 @export var right_arm: Node3D
+var anim_player: AnimationPlayer = null
 
 # Internal attributes scaled from RosterData
 var char_name: String = "Fighter"
@@ -128,12 +134,15 @@ func load_character_data() -> void:
 	if visual_root:
 		for child in visual_root.get_children():
 			child.queue_free()
+		anim_player = null
 		var model_path: String = "res://assets/models/" + character_id + ".glb"
 		if ResourceLoader.exists(model_path):
 			var model_res = load(model_path)
 			if model_res is PackedScene:
 				var inst: Node = model_res.instantiate()
 				visual_root.add_child(inst)
+				anim_player = inst.find_child("AnimationPlayer", true, false) as AnimationPlayer
+				_play_state_animation(current_state)
 
 func _physics_process(delta: float) -> void:
 	if not is_cpu:
@@ -244,6 +253,19 @@ func _update_state_machine(delta: float) -> void:
 				visual_root.position.y = 0.1
 			_process_pin_escape(delta)
 			
+		State.SUBMISSION_ATTACKER:
+			velocity = Vector3.ZERO
+			if visual_root:
+				visual_root.position.y = -0.25
+			_process_submission_attacker(delta)
+			
+		State.SUBMISSION_DEFENDER:
+			velocity = Vector3.ZERO
+			if visual_root:
+				visual_root.rotation.x = deg_to_rad(-90.0)
+				visual_root.position.y = 0.1
+			_process_submission_defender(delta)
+			
 		State.VICTORY:
 			velocity = Vector3.ZERO
 			if visual_root:
@@ -303,11 +325,23 @@ func _check_standing_actions() -> void:
 		_start_strike()
 		return
 		
-	if input_grapple and stamina >= MatchRules.GRAPPLE_STAMINA_COST:
-		stamina -= MatchRules.GRAPPLE_STAMINA_COST
-		stamina_changed.emit(stamina, max_stamina)
-		_attempt_grapple()
-		return
+	if input_finisher and is_instance_valid(opponent):
+		if opponent.current_state == State.KNOCKED_DOWN and hype >= MatchRules.FINISHER_HYPE_COST:
+			_attempt_submission(true)
+			return
+		elif opponent.current_state in [State.IDLE, State.MOVING] and hype >= MatchRules.FINISHER_HYPE_COST:
+			_attempt_grapple(true)
+			return
+
+	if input_grapple:
+		if is_instance_valid(opponent) and opponent.current_state == State.KNOCKED_DOWN:
+			_attempt_submission(false)
+			return
+		elif stamina >= MatchRules.GRAPPLE_STAMINA_COST:
+			stamina -= MatchRules.GRAPPLE_STAMINA_COST
+			stamina_changed.emit(stamina, max_stamina)
+			_attempt_grapple(false)
+			return
 		
 	if input_pin:
 		_attempt_pin()
@@ -351,13 +385,29 @@ func _handle_strike_active_window() -> void:
 				if not is_blocked:
 					gain_hype(MatchRules.HYPE_GAIN_ON_HIT)
 					hit_landed.emit(self, opponent, final_dmg, false)
+					if AudioManager.instance:
+						AudioManager.instance.play_strike(false)
 				else:
 					hit_landed.emit(self, opponent, final_dmg, true)
+					if AudioManager.instance:
+						AudioManager.instance.play_strike(true)
 
-func _attempt_grapple() -> void:
+var is_finisher_attack: bool = false
+var submission_tick_timer: float = 0.0
+
+func _attempt_grapple(is_finisher: bool = false) -> void:
 	_set_state(State.GRAPPLE_STARTUP)
 	if not is_instance_valid(opponent):
 		return
+		
+	if is_finisher:
+		is_finisher_attack = true
+		hype = max(0.0, hype - MatchRules.FINISHER_HYPE_COST)
+		hype_changed.emit(hype, MatchRules.MAX_HYPE)
+		if AudioManager.instance:
+			AudioManager.instance.play_finisher_stinger()
+	else:
+		is_finisher_attack = false
 	
 	var my_p: Vector3 = global_position if is_inside_tree() else position
 	var opp_p: Vector3 = opponent.global_position if opponent.is_inside_tree() else opponent.position
@@ -398,36 +448,53 @@ func _process_synchronized_attacker() -> void:
 		_set_state(State.IDLE)
 		return
 	
-	# Synchronized kinematic positioning of defender relative to attacker
+	# Check if attacker should use leverage/trip instead of overhead lift
+	var is_leverage: bool = (stat_power < synchronized_partner.stat_power or reach_distance < synchronized_partner.reach_distance)
+	
 	var forward: Vector3 = -global_transform.basis.z.normalized() if is_inside_tree() else -transform.basis.z.normalized()
 	var my_pos: Vector3 = global_position if is_inside_tree() else position
 	
-	var progress: float = state_timer / throw_duration
 	if state_timer < throw_impact_time:
-		# Lift phase
+		# Lift phase (leverage throws stay close to canvas)
 		var lift_t: float = state_timer / throw_impact_time
-		var lift_height: float = sin(lift_t * PI) * 1.5
-		var hold_pos: Vector3 = my_pos + forward * 0.75 + Vector3(0.0, lift_height, 0.0)
+		var peak_height: float = 0.38 if is_leverage else 1.55
+		var lift_height: float = sin(lift_t * PI) * peak_height
+		var hold_pos: Vector3 = my_pos + forward * (0.65 if is_leverage else 0.75) + Vector3(0.0, lift_height, 0.0)
 		if synchronized_partner.is_inside_tree():
 			synchronized_partner.global_position = hold_pos
 		else:
 			synchronized_partner.position = hold_pos
 		
-		# Tilt defender upwards
+		# Tilt defender
 		if synchronized_partner.visual_root:
-			synchronized_partner.visual_root.rotation.x = deg_to_rad(-80.0 * lift_t)
+			var tilt_angle: float = -45.0 if is_leverage else -80.0
+			synchronized_partner.visual_root.rotation.x = deg_to_rad(tilt_angle * lift_t)
 	else:
 		# Post-impact phase
 		if not throw_has_impacted:
 			throw_has_impacted = true
 			# Apply damage exactly once
-			var throw_damage: float = 65.0 + (stat_power * 10.0) + (stat_grappling * 6.0)
+			var throw_damage: float = 0.0
+			if is_leverage:
+				throw_damage = 50.0 + (stat_grappling * 10.0) + (stat_mobility * 4.0)
+			else:
+				throw_damage = 65.0 + (stat_power * 10.0) + (stat_grappling * 6.0)
+			if is_finisher_attack:
+				throw_damage *= 1.6
+				
 			synchronized_partner.receive_damage(throw_damage, self, false)
 			gain_hype(MatchRules.HYPE_GAIN_ON_HIT * 1.8)
 			throw_impact.emit(self, synchronized_partner)
 			
+			if AudioManager.instance:
+				AudioManager.instance.play_mat_slam(not is_leverage)
+				if is_finisher_attack:
+					AudioManager.instance.play_crowd_cheer()
+			if BroadcastCamera.instance:
+				BroadcastCamera.instance.add_trauma(0.35 if is_leverage else 0.55)
+			
 			# Slam position on canvas
-			var slam_pos: Vector3 = my_pos + forward * 1.1
+			var slam_pos: Vector3 = my_pos + forward * (0.9 if is_leverage else 1.1)
 			slam_pos.y = 0.0
 			if synchronized_partner.is_inside_tree():
 				synchronized_partner.global_position = slam_pos
@@ -445,6 +512,130 @@ func on_throw_released() -> void:
 	synchronized_partner = null
 	knockdown_duration = 3.0 + clamp((1.0 - (vitality / max_vitality)) * 2.0, 0.0, 2.5)
 	_set_state(State.KNOCKED_DOWN)
+
+# ==============================================================================
+# Submissions System
+# ==============================================================================
+
+func _attempt_submission(is_finisher: bool = false) -> void:
+	if not is_instance_valid(opponent):
+		return
+	if opponent.current_state != State.KNOCKED_DOWN:
+		return
+		
+	var my_p: Vector3 = global_position if is_inside_tree() else position
+	var opp_p: Vector3 = opponent.global_position if opponent.is_inside_tree() else opponent.position
+	var dist: float = my_p.distance_to(opp_p)
+	if dist > 1.8:
+		return
+		
+	if is_finisher:
+		is_finisher_attack = true
+		hype = max(0.0, hype - MatchRules.FINISHER_HYPE_COST)
+		hype_changed.emit(hype, MatchRules.MAX_HYPE)
+		if AudioManager.instance:
+			AudioManager.instance.play_finisher_stinger()
+	else:
+		is_finisher_attack = false
+		
+	synchronized_partner = opponent
+	submission_tick_timer = 0.0
+	_set_state(State.SUBMISSION_ATTACKER)
+	opponent.on_locked_by_submission(self)
+	
+	# Snap attacker near defender
+	var lock_pos: Vector3 = opp_p + Vector3(0.0, 0.1, 0.25)
+	if is_inside_tree():
+		global_position = lock_pos
+	else:
+		position = lock_pos
+		
+	submission_initiated.emit(self, opponent)
+
+func on_locked_by_submission(attacker: Fighter) -> void:
+	synchronized_partner = attacker
+	pin_escape_progress = 0.0
+	_set_state(State.SUBMISSION_DEFENDER)
+
+func _process_submission_attacker(delta: float) -> void:
+	if not is_instance_valid(synchronized_partner):
+		_set_state(State.IDLE)
+		return
+		
+	submission_tick_timer += delta
+	if submission_tick_timer >= 0.5:
+		submission_tick_timer = 0.0
+		var tick_dmg: float = 12.0 + (stat_grappling * 2.5)
+		if is_finisher_attack:
+			tick_dmg *= 1.5
+		synchronized_partner.receive_damage(tick_dmg, self, false)
+		gain_hype(MatchRules.HYPE_GAIN_ON_HIT * 0.3)
+		
+		# Defender stamina drain
+		synchronized_partner.stamina = max(0.0, synchronized_partner.stamina - 15.0)
+		synchronized_partner.stamina_changed.emit(synchronized_partner.stamina, synchronized_partner.max_stamina)
+		
+		if synchronized_partner.vitality <= 0.0:
+			var defender: Fighter = synchronized_partner
+			synchronized_partner = null
+			_set_state(State.VICTORY)
+			defender.on_tap_out()
+
+func _process_submission_defender(delta: float) -> void:
+	var prefix: String = "p" + str(player_index) + "_"
+	var escape_gain: float = 0.0
+	
+	if Input.is_action_just_pressed(prefix + "pin") or Input.is_action_just_pressed(prefix + "strike") or Input.is_action_just_pressed(prefix + "grapple"):
+		escape_gain += 15.0
+	elif Input.is_action_pressed(prefix + "pin") or Input.is_action_pressed(prefix + "strike"):
+		escape_gain += MatchRules.PIN_ESCAPE_BASE_RATE * delta
+		
+	var stamina_factor: float = 0.4 + 0.6 * (stamina / max_stamina)
+	pin_escape_progress += escape_gain * stamina_factor
+	
+	if pin_escape_progress >= 100.0:
+		_execute_submission_escape()
+
+func _execute_submission_escape() -> void:
+	submission_escaped.emit(self)
+	if visual_root:
+		visual_root.rotation = Vector3.ZERO
+		visual_root.position = Vector3.ZERO
+	_set_state(State.GETTING_UP)
+	
+	if is_instance_valid(opponent) and opponent.current_state == State.SUBMISSION_ATTACKER:
+		opponent.on_submission_broken_by_escape()
+
+func on_submission_broken_by_escape() -> void:
+	if visual_root:
+		visual_root.position = Vector3.ZERO
+	var push_dir: Vector3 = -global_transform.basis.z.normalized() if is_inside_tree() else -transform.basis.z.normalized()
+	if is_inside_tree():
+		global_position += push_dir * 1.2
+	else:
+		position += push_dir * 1.2
+	_set_state(State.IDLE)
+	synchronized_partner = null
+	if AudioManager.instance:
+		AudioManager.instance.play_crowd_gasp()
+
+func on_tap_out() -> void:
+	tap_out_submitted.emit(self)
+	if visual_root:
+		visual_root.rotation.x = deg_to_rad(-90.0)
+		visual_root.position.y = 0.1
+	_set_state(State.DEFEATED)
+	synchronized_partner = null
+	if AudioManager.instance:
+		AudioManager.instance.play_crowd_cheer()
+
+func break_submission_rope_break() -> void:
+	if current_state in [State.SUBMISSION_ATTACKER, State.SUBMISSION_DEFENDER]:
+		if visual_root:
+			visual_root.rotation = Vector3.ZERO
+			visual_root.position = Vector3.ZERO
+		_set_state(State.IDLE)
+		synchronized_partner = null
 
 func _apply_countered_by(counterer: Fighter) -> void:
 	# Counterer gains hype
@@ -543,7 +734,32 @@ func _set_state(new_state: State) -> void:
 	var old_state: State = current_state
 	current_state = new_state
 	state_timer = 0.0
+	_play_state_animation(new_state)
 	state_changed.emit(old_state, new_state)
+
+func _play_state_animation(st: State) -> void:
+	if not is_instance_valid(anim_player):
+		return
+	var anim_name: String = ""
+	match st:
+		State.IDLE: anim_name = "idle"
+		State.MOVING: anim_name = "walk"
+		State.STRIKING: anim_name = "strike"
+		State.BLOCKING: anim_name = "block"
+		State.REVERSAL_STANCE: anim_name = "reversal"
+		State.GRAPPLE_STARTUP: anim_name = "grapple"
+		State.GRAPPLING_ATTACKER: anim_name = "throw_attacker"
+		State.GRAPPLING_DEFENDER: anim_name = "throw_defender"
+		State.KNOCKED_DOWN: anim_name = "knockdown"
+		State.GETTING_UP: anim_name = "getup"
+		State.PINNING: anim_name = "pinning"
+		State.PINNED: anim_name = "pinned"
+		State.SUBMISSION_ATTACKER: anim_name = "submission_attacker"
+		State.SUBMISSION_DEFENDER: anim_name = "submission_defender"
+		State.VICTORY: anim_name = "victory"
+		State.DEFEATED: anim_name = "defeated"
+	if anim_name != "" and anim_player.has_animation(anim_name):
+		anim_player.play(anim_name)
 
 func _clamp_within_ring() -> void:
 	var bound: float = MatchRules.RING_MAT_RADIUS - 0.35

@@ -8,6 +8,7 @@
 [ext_resource type="Script" path="res://scripts/ring/broadcast_camera.gd" id="6_cam"]
 [ext_resource type="Script" path="res://scripts/ai/cpu_controller.gd" id="7_cpu"]
 [ext_resource type="PackedScene" path="res://scenes/ui/match_hud.tscn" id="8_hud"]
+[ext_resource type="Script" path="res://scripts/core/audio_manager.gd" id="9_audio"]
 
 [sub_resource type="Environment" id="Environment_arena"]
 background_mode = 1
@@ -25,6 +26,9 @@ fighter_1 = NodePath("Tophiachu")
 fighter_2 = NodePath("Cyraxx")
 cpu_controller_p2 = NodePath("CPUController_P2")
 match_manager = NodePath("MatchManager")
+
+[node name="AudioManager" type="Node" parent="."]
+script = ExtResource("9_audio")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_arena")

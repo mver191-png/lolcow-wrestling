@@ -1,0 +1,328 @@
+[gd_scene format=3 uid="uid://dcharselect01"]
+
+[ext_resource type="Script" path="res://scripts/ui/character_select.gd" id="1_script"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
+bg_color = Color(0.06, 0.06, 0.08, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card_p1"]
+bg_color = Color(0.08, 0.12, 0.16, 0.9)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.2, 0.7, 0.9, 0.8)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card_p2"]
+bg_color = Color(0.16, 0.08, 0.08, 0.9)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.9, 0.3, 0.3, 0.8)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_grid"]
+bg_color = Color(0.1, 0.1, 0.12, 0.85)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="CharacterSelect" type="Control" node_paths=PackedStringArray("grid_container", "p1_name_label", "p1_title_label", "p1_archetype_label", "p1_stats_container", "p1_finisher_label", "p1_trait_label", "p2_name_label", "p2_title_label", "p2_archetype_label", "p2_stats_container", "p2_finisher_label", "p2_trait_label", "cpu_toggle_button", "start_match_button")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+grid_container = NodePath("CenterPanel/GridContainer")
+p1_name_label = NodePath("P1_Card/VBox/Name")
+p1_title_label = NodePath("P1_Card/VBox/Title")
+p1_archetype_label = NodePath("P1_Card/VBox/Archetype")
+p1_stats_container = NodePath("P1_Card/VBox/Stats")
+p1_finisher_label = NodePath("P1_Card/VBox/Finisher")
+p1_trait_label = NodePath("P1_Card/VBox/Trait")
+p2_name_label = NodePath("P2_Card/VBox/Name")
+p2_title_label = NodePath("P2_Card/VBox/Title")
+p2_archetype_label = NodePath("P2_Card/VBox/Archetype")
+p2_stats_container = NodePath("P2_Card/VBox/Stats")
+p2_finisher_label = NodePath("P2_Card/VBox/Finisher")
+p2_trait_label = NodePath("P2_Card/VBox/Trait")
+cpu_toggle_button = NodePath("CenterPanel/VBoxActions/CPUToggleBtn")
+start_match_button = NodePath("CenterPanel/VBoxActions/StartMatchBtn")
+
+[node name="Background" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_bg")
+
+[node name="Header" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 25.0
+offset_bottom = 105.0
+grow_horizontal = 2
+theme_override_constants/separation = 4
+
+[node name="Title" type="Label" parent="Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.25, 1)
+theme_override_font_sizes/font_size = 36
+text = "LOLCOW WRESTLING: OFFLINE MAYHEM"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.75, 1)
+theme_override_font_sizes/font_size = 18
+text = "CHOOSE YOUR FIGHTER"
+horizontal_alignment = 1
+
+[node name="P1_Card" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_left = 40.0
+offset_top = 130.0
+offset_right = 380.0
+offset_bottom = -70.0
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card_p1")
+
+[node name="VBox" type="VBoxContainer" parent="P1_Card"]
+layout_mode = 2
+offset_left = 15.0
+offset_top = 15.0
+offset_right = 325.0
+offset_bottom = 865.0
+theme_override_constants/separation = 10
+
+[node name="Tag" type="Label" parent="P1_Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.8, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = "PLAYER 1"
+
+[node name="Name" type="Label" parent="P1_Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 26
+text = "TOPHIACHU"
+
+[node name="Title" type="Label" parent="P1_Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.5, 1)
+theme_override_font_sizes/font_size = 14
+text = "\"Live & Unfiltered\""
+
+[node name="Archetype" type="Label" parent="P1_Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.85, 0.65, 1)
+theme_override_font_sizes/font_size = 15
+text = "Heavyweight Counter-Brawler"
+
+[node name="HSeparator1" type="HSeparator" parent="P1_Card/VBox"]
+layout_mode = 2
+
+[node name="Stats" type="VBoxContainer" parent="P1_Card/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="HSeparator2" type="HSeparator" parent="P1_Card/VBox"]
+layout_mode = 2
+
+[node name="Finisher" type="Label" parent="P1_Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.6, 0.3, 1)
+theme_override_font_sizes/font_size = 15
+text = "FINISHER: Live-Stream Shutdown"
+autowrap_mode = 2
+
+[node name="Trait" type="Label" parent="P1_Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.9, 0.5, 1)
+theme_override_font_sizes/font_size = 14
+text = "TRAIT: Last Word"
+autowrap_mode = 2
+
+[node name="Prompt" type="Label" parent="P1_Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.7, 0.8, 1)
+theme_override_font_sizes/font_size = 13
+text = "\n[W/A/S/D] Navigate P1"
+
+[node name="P2_Card" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -380.0
+offset_top = 130.0
+offset_right = -40.0
+offset_bottom = -70.0
+grow_horizontal = 0
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card_p2")
+
+[node name="VBox" type="VBoxContainer" parent="P2_Card"]
+layout_mode = 2
+offset_left = 15.0
+offset_top = 15.0
+offset_right = 325.0
+offset_bottom = 865.0
+theme_override_constants/separation = 10
+
+[node name="Tag" type="Label" parent="P2_Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.3, 0.3, 1)
+theme_override_font_sizes/font_size = 20
+text = "PLAYER 2"
+
+[node name="Name" type="Label" parent="P2_Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 26
+text = "CYRAXX"
+
+[node name="Title" type="Label" parent="P2_Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.5, 1)
+theme_override_font_sizes/font_size = 14
+text = "\"Feedback Frenzy\""
+
+[node name="Archetype" type="Label" parent="P2_Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.85, 0.65, 1)
+theme_override_font_sizes/font_size = 15
+text = "Lightweight Burst Striker"
+
+[node name="HSeparator1" type="HSeparator" parent="P2_Card/VBox"]
+layout_mode = 2
+
+[node name="Stats" type="VBoxContainer" parent="P2_Card/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="HSeparator2" type="HSeparator" parent="P2_Card/VBox"]
+layout_mode = 2
+
+[node name="Finisher" type="Label" parent="P2_Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.6, 0.3, 1)
+theme_override_font_sizes/font_size = 15
+text = "FINISHER: Raxx and Ruin"
+autowrap_mode = 2
+
+[node name="Trait" type="Label" parent="P2_Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.9, 0.5, 1)
+theme_override_font_sizes/font_size = 14
+text = "TRAIT: Overdrive"
+autowrap_mode = 2
+
+[node name="Prompt" type="Label" parent="P2_Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.5, 0.5, 1)
+theme_override_font_sizes/font_size = 13
+text = "\n[Arrows] Navigate P2"
+
+[node name="CenterPanel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -540.0
+offset_top = -410.0
+offset_right = 540.0
+offset_bottom = 470.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_grid")
+
+[node name="GridContainer" type="GridContainer" parent="CenterPanel"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -380.0
+offset_top = -180.0
+offset_right = 380.0
+offset_bottom = 60.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/h_separation = 20
+theme_override_constants/v_separation = 20
+columns = 4
+
+[node name="VBoxActions" type="VBoxContainer" parent="CenterPanel"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -220.0
+offset_top = -340.0
+offset_right = 220.0
+offset_bottom = -200.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/separation = 16
+
+[node name="CPUToggleBtn" type="Button" parent="CenterPanel/VBoxActions"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "P2 MODE: [CPU]"
+
+[node name="StartMatchBtn" type="Button" parent="CenterPanel/VBoxActions"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.2, 1)
+theme_override_font_sizes/font_size = 22
+text = "FIGHT! [SPACE / ENTER]"
+
+[node name="Footer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -65.0
+offset_bottom = -15.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/separation = 4
+
+[node name="Instructions" type="Label" parent="Footer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.75, 1)
+theme_override_font_sizes/font_size = 15
+text = "[W/A/S/D] P1 Select  |  [Arrows] P2 Select  |  [C] Toggle P2 CPU  |  [SPACE / ENTER] Start Match"
+horizontal_alignment = 1
+
+[node name="RefereeMemorial" type="Label" parent="Footer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.3, 0.9)
+theme_override_font_sizes/font_size = 14
+text = "Official Referee: KingCobraJFS (1991–2025) presiding over all bouts with pulsing golden halo."
+horizontal_alignment = 1

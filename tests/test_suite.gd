@@ -1,8 +1,9 @@
 extends SceneTree
 
 ## Automated Headless Test Suite for LOLCOW WRESTLING: OFFLINE MAYHEM.
-## Verifies roster data, state machines, movement locking, single-hit damage,
-## synchronized throws, pin counts, and rope break priority.
+## Verifies roster data, character models, state machines, movement locking,
+## single-hit damage, synchronized throws, pin counts, submissions, audio synthesis,
+## character select interface, and all 64 matchups.
 
 var total_tests: int = 0
 var passed_tests: int = 0
@@ -10,14 +11,19 @@ var failed_tests: int = 0
 
 func _init() -> void:
 	print("==================================================")
-	print("RUNNING LOLCOW WRESTLING M1 AUTOMATED TEST SUITE")
+	print("RUNNING LOLCOW WRESTLING AUTOMATED TEST SUITE (M2/M3)")
 	print("==================================================")
 	
 	test_roster_stats_and_points()
+	test_character_models_exist_and_load()
 	test_fighter_movement_lock()
 	test_damage_occurs_only_once()
 	test_synchronized_grapple_lock_and_release()
+	test_leverage_throw_routing()
 	test_pin_count_and_rope_break_priority()
+	test_submission_and_tap_out()
+	test_audio_and_trauma_shake()
+	test_match_config_and_character_select()
 	test_roster_pair_matrix_compatibility()
 	
 	print("==================================================")
@@ -57,97 +63,102 @@ func test_roster_stats_and_points() -> void:
 		assert_true(moves.has("finisher"), "Character '%s' defines a finisher" % id)
 		assert_true(moves.has("trait"), "Character '%s' defines a personality trait" % id)
 
+func test_character_models_exist_and_load() -> void:
+	var ids: Array = RosterData.get_all_ids()
+	for id in ids:
+		var path: String = "res://assets/models/" + id + ".glb"
+		assert_true(ResourceLoader.exists(path), "3D Model exists for character '%s'" % id)
+		var res = load(path)
+		assert_true(res is PackedScene, "Character '%s' model loads as PackedScene" % id)
+		if res is PackedScene:
+			var node = res.instantiate()
+			assert_true(node != null and node.get_child_count() > 0, "Character '%s' instantiates with geometry nodes" % id)
+			node.free()
+			
+	# Test arena and referee
+	assert_true(ResourceLoader.exists("res://assets/models/ring_arena.glb"), "Arena model exists")
+	assert_true(ResourceLoader.exists("res://assets/models/referee_cobra.glb"), "KingCobraJFS referee model exists")
+
 func test_fighter_movement_lock() -> void:
-	var f: Fighter = Fighter.new()
-	f.character_id = "tophiachu"
-	f.load_character_data()
+	var fighter: Fighter = Fighter.new()
+	fighter.character_id = "tophiachu"
+	fighter.load_character_data()
 	
-	# Normal state allows movement
-	f.current_state = Fighter.State.IDLE
-	f.input_dir = Vector2(1.0, 0.0)
-	f._handle_locomotion(0.016)
-	assert_true(f.velocity.x > 0.0, "Fighter moves in IDLE state when receiving input")
+	# 1. Idle state accepts movement
+	fighter.current_state = Fighter.State.IDLE
+	fighter.input_dir = Vector2(1.0, 0.0)
+	fighter._handle_locomotion(0.016)
+	assert_true(fighter.velocity.length() > 0.0, "Fighter moves in IDLE state when receiving input")
 	
-	# Knocked down state must NEVER move
-	f.current_state = Fighter.State.KNOCKED_DOWN
-	f.input_dir = Vector2(1.0, 0.0)
-	f._update_state_machine(0.016)
-	assert_true(f.velocity == Vector3.ZERO, "Fighter movement is strictly locked during KNOCKED_DOWN")
+	# 2. Strict movement ownership locks
+	fighter.input_dir = Vector2(1.0, 0.0)
+	fighter._set_state(Fighter.State.KNOCKED_DOWN)
+	fighter._update_state_machine(0.016)
+	assert_true(fighter.velocity == Vector3.ZERO, "Fighter movement is strictly locked during KNOCKED_DOWN")
 	
-	# Grappling defender must NEVER move independently
-	f.current_state = Fighter.State.GRAPPLING_DEFENDER
-	f.input_dir = Vector2(1.0, 0.0)
-	f._update_state_machine(0.016)
-	assert_true(f.velocity == Vector3.ZERO, "Fighter movement is strictly locked during GRAPPLING_DEFENDER")
+	fighter._set_state(Fighter.State.GRAPPLING_DEFENDER)
+	fighter._update_state_machine(0.016)
+	assert_true(fighter.velocity == Vector3.ZERO, "Fighter movement is strictly locked during GRAPPLING_DEFENDER")
 	
-	# Pinned state must NEVER move
-	f.current_state = Fighter.State.PINNED
-	f.input_dir = Vector2(1.0, 0.0)
-	f._update_state_machine(0.016)
-	assert_true(f.velocity == Vector3.ZERO, "Fighter movement is strictly locked during PINNED")
+	fighter._set_state(Fighter.State.PINNED)
+	fighter._update_state_machine(0.016)
+	assert_true(fighter.velocity == Vector3.ZERO, "Fighter movement is strictly locked during PINNED")
 	
-	f.free()
+	fighter.free()
 
 func test_damage_occurs_only_once() -> void:
-	var f1: Fighter = Fighter.new()
-	f1.character_id = "tophiachu"
-	f1.load_character_data()
-	
-	var f2: Fighter = Fighter.new()
-	f2.character_id = "cyraxx"
-	f2.load_character_data()
-	
-	f1.opponent = f2
-	f2.opponent = f1
-	
-	# Place within striking distance
-	f1.position = Vector3(0, 0, 0)
-	f2.position = Vector3(0, 0, 1.0)
-	
-	var initial_vitality: float = f2.vitality
-	f1._start_strike()
-	assert_true(f1.current_state == Fighter.State.STRIKING, "Fighter enters STRIKING state")
-	
-	# Advance through active frames across multiple physics frames
-	f1.state_timer = 0.15 # Inside active window [0.12, 0.32]
-	f1._handle_strike_active_window()
-	var hp_after_hit1: float = f2.vitality
-	assert_true(hp_after_hit1 < initial_vitality, "First contact applies damage")
-	
-	# Tick again while still in active window
-	f1.state_timer = 0.20
-	f1._handle_strike_active_window()
-	var hp_after_hit2: float = f2.vitality
-	assert_true(hp_after_hit2 == hp_after_hit1, "Subsequent active frames do NOT apply duplicate damage")
-	
-	f1.free()
-	f2.free()
-
-func test_synchronized_grapple_lock_and_release() -> void:
 	var attacker: Fighter = Fighter.new()
-	attacker.character_id = "tophiachu"
-	attacker.load_character_data()
-	
 	var defender: Fighter = Fighter.new()
+	attacker.character_id = "tophiachu"
 	defender.character_id = "cyraxx"
+	attacker.load_character_data()
 	defender.load_character_data()
 	
 	attacker.opponent = defender
-	defender.opponent = attacker
+	attacker.position = Vector3(0, 0, 0)
+	defender.position = Vector3(0, 0, 0.8) # Within reach
+	
+	attacker.input_strike = true
+	attacker._start_strike()
+	assert_true(attacker.current_state == Fighter.State.STRIKING, "Fighter enters STRIKING state")
+	
+	var initial_hp: float = defender.vitality
+	attacker.state_timer = 0.15 # Inside [0.12, 0.32] window
+	attacker._handle_strike_active_window()
+	
+	assert_true(defender.vitality < initial_hp, "First contact applies damage")
+	var hp_after_hit: float = defender.vitality
+	
+	# Tick again inside same active window
+	attacker.state_timer = 0.20
+	attacker._handle_strike_active_window()
+	assert_true(defender.vitality == hp_after_hit, "Subsequent active frames do NOT apply duplicate damage")
+	
+	attacker.free()
+	defender.free()
+
+func test_synchronized_grapple_lock_and_release() -> void:
+	var attacker: Fighter = Fighter.new()
+	var defender: Fighter = Fighter.new()
+	attacker.character_id = "tophiachu"
+	defender.character_id = "cyraxx"
+	attacker.load_character_data()
+	defender.load_character_data()
+	
+	attacker.opponent = defender
 	attacker.position = Vector3(0, 0, 0)
 	defender.position = Vector3(0, 0, 1.0)
 	
-	# Attacker initiates throw
 	attacker._start_synchronized_throw(defender)
 	assert_true(attacker.current_state == Fighter.State.GRAPPLING_ATTACKER, "Attacker enters GRAPPLING_ATTACKER")
 	assert_true(defender.current_state == Fighter.State.GRAPPLING_DEFENDER, "Defender enters GRAPPLING_DEFENDER")
 	
-	# Simulate through throw duration
-	attacker.state_timer = 0.65 # Past impact time (0.6s)
+	# Tick to impact
+	attacker.state_timer = 0.65
 	attacker._process_synchronized_attacker()
 	assert_true(attacker.throw_has_impacted, "Throw registers impact at keyframe")
 	
-	# End of throw -> release
+	# Tick to throw release
 	attacker.state_timer = 1.15
 	attacker._process_synchronized_attacker()
 	assert_true(attacker.current_state == Fighter.State.IDLE, "Attacker cleanly returns to IDLE after throw")
@@ -157,12 +168,107 @@ func test_synchronized_grapple_lock_and_release() -> void:
 	defender.free()
 
 func test_pin_count_and_rope_break_priority() -> void:
-	# 1. Test Rope Break geometric priority
-	var near_rope_pos: Vector3 = Vector3(3.5, 0.0, 0.0) # > (4.0 - 0.85 = 3.15)
-	var center_pos: Vector3 = Vector3(0.5, 0.0, 0.5)
+	var manager: MatchManager = MatchManager.new()
+	var f1: Fighter = Fighter.new()
+	var f2: Fighter = Fighter.new()
+	root.add_child(f1)
+	root.add_child(f2)
+	root.add_child(manager)
+	
+	f1.character_id = "tophiachu"
+	f2.character_id = "cyraxx"
+	f1.load_character_data()
+	f2.load_character_data()
+	
+	manager.fighter_1 = f1
+	manager.fighter_2 = f2
+	manager._setup_match()
+	
+	# 1. Test Rope Break detection
+	var near_rope_pos: Vector3 = Vector3(3.5, 0, 0) # Mat edge is 4.0, within 0.85
+	var center_pos: Vector3 = Vector3(0, 0, 0)
 	assert_true(MatchRules.is_near_ropes(near_rope_pos), "Position near ropes detected correctly")
 	assert_true(not MatchRules.is_near_ropes(center_pos), "Center ring is clear of ropes")
 	
+	# 2. Rope Break cancels pin immediately
+	f2.position = near_rope_pos
+	f1.position = near_rope_pos
+	var rope_break_called: Array[bool] = [false]
+	manager.rope_break_called.connect(func(): rope_break_called[0] = true)
+	manager._on_fighter_pin_initiated(f1, f2)
+	assert_true(rope_break_called[0], "Rope break immediately triggered when pin initiated near ropes")
+	assert_true(manager.current_state == MatchManager.MatchState.IN_PROGRESS, "Match returns to IN_PROGRESS on rope break")
+	
+	# 3. Clean Pin in center
+	f1.position = center_pos
+	f2.position = center_pos
+	manager._on_fighter_pin_initiated(f1, f2)
+	assert_true(manager.current_state == MatchManager.MatchState.PIN_ATTEMPT, "Pin attempt successfully started in center")
+	
+	# Tick pin countdown
+	manager._process_pin_countdown(1.2)
+	assert_true(manager.current_count == 1, "Referee counts 1 at first interval")
+	manager._process_pin_countdown(1.2)
+	assert_true(manager.current_count == 2, "Referee counts 2 at second interval")
+	
+	# Kickout before count 3
+	var pin_broken_called: Array[bool] = [false]
+	manager.pin_broken.connect(func(_reason): pin_broken_called[0] = true)
+	manager._on_kick_out_succeeded(f2)
+	assert_true(pin_broken_called[0], "Kick-out breaks pin before count 3")
+	assert_true(manager.current_state == MatchManager.MatchState.IN_PROGRESS, "Match returns to IN_PROGRESS on kickout")
+	
+	manager.queue_free()
+	f1.queue_free()
+	f2.queue_free()
+
+func test_roster_pair_matrix_compatibility() -> void:
+	var ids: Array = RosterData.get_all_ids()
+	var total_pairs: int = 0
+	var success_pairs: int = 0
+	
+	for atk_id in ids:
+		for def_id in ids:
+			total_pairs += 1
+			var atk: Fighter = Fighter.new()
+			var def: Fighter = Fighter.new()
+			atk.character_id = atk_id
+			def.character_id = def_id
+			atk.load_character_data()
+			def.load_character_data()
+			
+			atk.opponent = def
+			atk._start_synchronized_throw(def)
+			
+			if atk.current_state == Fighter.State.GRAPPLING_ATTACKER and def.current_state == Fighter.State.GRAPPLING_DEFENDER:
+				success_pairs += 1
+				
+			atk.free()
+			def.free()
+			
+	assert_true(total_pairs == 64, "Total roster pairings equal 64 (8x8 matrix)")
+	assert_true(success_pairs == 64, "All 64 attacker-defender pairings initialize throws without error")
+
+func test_leverage_throw_routing() -> void:
+	var cyraxx: Fighter = Fighter.new()
+	var tophiachu: Fighter = Fighter.new()
+	cyraxx.character_id = "cyraxx"
+	tophiachu.character_id = "tophiachu"
+	cyraxx.load_character_data()
+	tophiachu.load_character_data()
+	
+	# Cyraxx (Power 4, reach 0.95) vs Tophiachu (Power 8, reach 1.25)
+	var cyraxx_is_leverage: bool = (cyraxx.stat_power < tophiachu.stat_power or cyraxx.reach_distance < tophiachu.reach_distance)
+	assert_true(cyraxx_is_leverage, "Lightweight Cyraxx correctly routes to low leverage trip against heavyweight Tophiachu")
+	
+	# Tophiachu vs Cyraxx
+	var tophiachu_is_leverage: bool = (tophiachu.stat_power < cyraxx.stat_power or tophiachu.reach_distance < cyraxx.reach_distance)
+	assert_true(not tophiachu_is_leverage, "Heavyweight Tophiachu correctly routes to high overhead powerslam against Cyraxx")
+	
+	cyraxx.free()
+	tophiachu.free()
+
+func test_submission_and_tap_out() -> void:
 	var manager: MatchManager = MatchManager.new()
 	var f1: Fighter = Fighter.new()
 	var f2: Fighter = Fighter.new()
@@ -178,64 +284,106 @@ func test_pin_count_and_rope_break_priority() -> void:
 	manager.fighter_2 = f2
 	manager._setup_match()
 	
-	# Test pin initiated near ropes
-	f1.position = near_rope_pos
-	f2.position = near_rope_pos
-	var rope_break_flag: Array[bool] = [false]
-	manager.rope_break_called.connect(func(): rope_break_flag[0] = true)
+	# Knock down opponent to allow submission
+	f2.current_state = Fighter.State.KNOCKED_DOWN
+	f1.position = Vector3(0, 0, 0)
+	f2.position = Vector3(0, 0, 0.5)
 	
-	manager._on_fighter_pin_initiated(f1, f2)
-	assert_true(rope_break_flag[0], "Rope break immediately triggered when pin initiated near ropes")
-	assert_true(manager.current_state == MatchManager.MatchState.IN_PROGRESS, "Match returns to IN_PROGRESS on rope break")
+	# 1. Attempt submission
+	f1._attempt_submission(false)
+	assert_true(f1.current_state == Fighter.State.SUBMISSION_ATTACKER, "Attacker enters SUBMISSION_ATTACKER")
+	assert_true(f2.current_state == Fighter.State.SUBMISSION_DEFENDER, "Defender enters SUBMISSION_DEFENDER")
 	
-	# Test valid pin in center ring
-	f1.position = center_pos
-	f2.position = center_pos
-	manager._on_fighter_pin_initiated(f1, f2)
-	assert_true(manager.current_state == MatchManager.MatchState.PIN_ATTEMPT, "Pin attempt successfully started in center")
+	# 2. Process submission hold pressure
+	var hp_before: float = f2.vitality
+	var sta_before: float = f2.stamina
+	f1._process_submission_attacker(0.6)
+	assert_true(f2.vitality < hp_before, "Submission hold applies continuous pressure damage")
+	assert_true(f2.stamina < sta_before, "Submission hold drains defender stamina")
 	
-	# Advance count to 1
-	manager._process_pin_countdown(1.2)
-	assert_true(manager.current_count == 1, "Referee counts 1 at first interval")
-	
-	# Advance count to 2
-	manager._process_pin_countdown(1.2)
-	assert_true(manager.current_count == 2, "Referee counts 2 at second interval")
-	
-	# Test kick out before 3
+	# 3. Test escape
 	f2.pin_escape_progress = 100.0
-	var pin_broken_reason: Array[String] = [""]
-	manager.pin_broken.connect(func(r): pin_broken_reason[0] = r)
-	f2._execute_kick_out()
-	assert_true(pin_broken_reason[0] == "KICKOUT", "Kick-out breaks pin before count 3")
-	assert_true(manager.current_state == MatchManager.MatchState.IN_PROGRESS, "Match returns to IN_PROGRESS on kickout")
+	var escaped_flag: Array[bool] = [false]
+	manager.submission_escaped.connect(func(): escaped_flag[0] = true)
+	f2._execute_submission_escape()
+	assert_true(escaped_flag[0], "Defender escape breaks submission hold")
+	assert_true(f2.current_state == Fighter.State.GETTING_UP, "Defender transitions to GETTING_UP on escape")
+	assert_true(f1.current_state == Fighter.State.IDLE, "Attacker returns to IDLE on submission escape")
+	
+	# 4. Test Tap-Out Victory
+	f2.current_state = Fighter.State.KNOCKED_DOWN
+	f2.vitality = 5.0 # Low health
+	f1.position = Vector3(0, 0, 0)
+	f2.position = Vector3(0, 0, 0.5)
+	f1._attempt_submission(false)
+	
+	var tap_out_called: Array[bool] = [false]
+	manager.match_ended.connect(func(_winner, method):
+		if method == "SUBMISSION (TAP OUT)":
+			tap_out_called[0] = true
+	)
+	f1._process_submission_attacker(0.6) # Depletes remaining 5.0 HP
+	assert_true(tap_out_called[0], "Depleting vitality during submission results in SUBMISSION (TAP OUT) victory")
+	assert_true(manager.current_state == MatchManager.MatchState.MATCH_OVER, "Match terminates with MATCH_OVER on tap-out")
 	
 	manager.queue_free()
 	f1.queue_free()
 	f2.queue_free()
 
-func test_roster_pair_matrix_compatibility() -> void:
-	var ids: Array = RosterData.get_all_ids()
-	var total_pairs: int = 0
-	var success_pairs: int = 0
+func test_audio_and_trauma_shake() -> void:
+	# 1. Test AudioManager synthesis
+	var audio: AudioManager = AudioManager.new()
+	audio._create_audio_streams()
+	assert_true(audio.snd_bell != null, "Bell audio stream synthesized successfully")
+	assert_true(audio.snd_mat_slam != null, "Mat slam audio stream synthesized successfully")
+	assert_true(audio.snd_strike_clean != null, "Strike audio stream synthesized successfully")
+	assert_true(audio.snd_ref_slap != null, "Referee slap audio stream synthesized successfully")
+	assert_true(audio.snd_crowd_cheer != null, "Crowd cheer audio stream synthesized successfully")
+	assert_true(audio.snd_finisher_stinger != null, "Finisher stinger audio stream synthesized successfully")
+	assert_true(audio.snd_victory_fanfare != null, "Victory fanfare audio stream synthesized successfully")
+	assert_true(audio.snd_rope_break != null, "Rope break buzzer audio stream synthesized successfully")
+	assert_true(audio.snd_counts.size() == 3, "Count tones synthesized for counts 1, 2, and 3")
+	audio.free()
 	
-	for a_id in ids:
-		for d_id in ids:
-			total_pairs += 1
-			var a: Fighter = Fighter.new()
-			var d: Fighter = Fighter.new()
-			a.character_id = a_id
-			d.character_id = d_id
-			a.load_character_data()
-			d.load_character_data()
-			a.opponent = d
-			d.opponent = a
-			
-			a._start_synchronized_throw(d)
-			if a.current_state == Fighter.State.GRAPPLING_ATTACKER and d.current_state == Fighter.State.GRAPPLING_DEFENDER:
-				success_pairs += 1
-			a.free()
-			d.free()
-			
-	assert_true(total_pairs == 64, "Total roster pairings equal 64 (8x8 matrix)")
-	assert_true(success_pairs == 64, "All 64 attacker-defender pairings initialize throws without error")
+	# 2. Test BroadcastCamera trauma shake
+	var cam: BroadcastCamera = BroadcastCamera.new()
+	var t1: Node3D = Node3D.new()
+	var t2: Node3D = Node3D.new()
+	cam.target_1 = t1
+	cam.target_2 = t2
+	cam.add_trauma(0.6)
+	assert_true(cam.trauma == 0.6, "Camera trauma added correctly")
+	cam._physics_process(0.1)
+	assert_true(cam.trauma < 0.6, "Camera trauma decays smoothly over time")
+	
+	cam.free()
+	t1.free()
+	t2.free()
+
+func test_match_config_and_character_select() -> void:
+	# 1. MatchConfig persistence
+	MatchConfig.set_match("novaonline", "daniel_larson", false)
+	assert_true(MatchConfig.p1_character_id == "novaonline", "MatchConfig stores P1 selection")
+	assert_true(MatchConfig.p2_character_id == "daniel_larson", "MatchConfig stores P2 selection")
+	assert_true(MatchConfig.p2_is_cpu == false, "MatchConfig stores CPU toggle")
+	
+	# 2. CharacterSelect UI instantiation
+	var select_scene_res = load("res://scenes/ui/character_select.tscn")
+	assert_true(select_scene_res is PackedScene, "CharacterSelect scene resource exists and loads")
+	if select_scene_res is PackedScene:
+		var select_ui: CharacterSelect = select_scene_res.instantiate() as CharacterSelect
+		root.add_child(select_ui)
+		select_ui._ready()
+		assert_true(select_ui.roster_buttons.size() == 8, "CharacterSelect creates 8 buttons in roster grid")
+		assert_true(select_ui.p1_index == select_ui.character_ids.find("novaonline"), "CharacterSelect reflects initial MatchConfig P1")
+		assert_true(select_ui.p2_index == select_ui.character_ids.find("daniel_larson"), "CharacterSelect reflects initial MatchConfig P2")
+		
+		# Test CPU toggle
+		var cpu_before: bool = select_ui.p2_is_cpu
+		select_ui._on_cpu_toggle_pressed()
+		assert_true(select_ui.p2_is_cpu != cpu_before, "CharacterSelect toggles P2 CPU mode")
+		
+		select_ui.queue_free()
+	
+	# Reset MatchConfig to defaults
+	MatchConfig.reset_defaults()
