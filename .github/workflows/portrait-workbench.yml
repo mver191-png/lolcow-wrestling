@@ -1,0 +1,61 @@
+name: Portrait workbench
+on:
+  push:
+    branches: [astra/model-quality-v3]
+    paths: [.github/workflows/portrait-workbench.yml]
+permissions:
+  contents: read
+jobs:
+  study:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Prepare pinned renderer and public visual references
+        run: |
+          set -euo pipefail
+          mkdir -p workbench/references
+          curl -fL --retry 2 https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip -o workbench/godot.zip
+          python3 - <<'PY'
+          from urllib.request import Request,urlopen
+          from html.parser import HTMLParser
+          from pathlib import Path
+          import json,html
+          root=Path('workbench/references')
+          direct={
+            'tophiachu':'https://i.kym-cdn.com/entries/icons/facebook/000/043/409/tophiachu.jpg',
+            'novaonline':'https://i.kym-cdn.com/entries/icons/facebook/000/054/574/nova-online.jpg',
+            'cyraxx':'https://media1.tenor.com/m/bTmaXvUo1ToAAAAd/cyraxx-chance.gif',
+            'andy_ditch':'https://media1.tenor.com/m/6d6StQ5b-2UAAAAd/andrew-ditch-ditch.gif',
+            'daniel_larson':'https://i.kym-cdn.com/photos/images/original/002/345/829/5f4.jpg',
+            'referee_cobra':'https://cowboystatedaily.imgix.net/King-Cobra-screenshot-3-9.13.25.jpg'}
+          pages={
+            'jupiter':'https://rumble.com/v5aqrdh-jupiter-the-hybrid-deleted-livestream-06-16-2024.html',
+            'anacondasin':'https://open.spotify.com/episode/3k0IOy5dBTIbC7HTutG0en',
+            'candy_rooks':'https://open.spotify.com/episode/1cdZ9Rc2SO3ukrnMlHwerB'}
+          manifest=[]
+          def read(url):
+              with urlopen(Request(url,headers={'User-Agent':'Mozilla/5.0'}),timeout=20) as r:return r.read(8_000_000),r.headers.get_content_type()
+          class Meta(HTMLParser):
+              def __init__(self):super().__init__();self.image=None
+              def handle_starttag(self,tag,attrs):
+                  d=dict(attrs)
+                  if tag=='meta' and d.get('property')=='og:image':self.image=d.get('content')
+          for key,url in pages.items():
+              try:
+                  data,typ=read(url);text=data.decode('utf-8','replace');(root/(key+'.html')).write_text(text)
+                  m=Meta();m.feed(text)
+                  if m.image:direct[key]=html.unescape(m.image)
+                  manifest.append({'key':key,'page':url,'og_image':m.image})
+              except Exception as e:manifest.append({'key':key,'error':str(e)})
+          for key,url in direct.items():
+              try:
+                  data,typ=read(url);suffix='.gif' if 'gif' in typ else '.png' if 'png' in typ else '.jpg'
+                  (root/(key+suffix)).write_bytes(data);manifest.append({'key':key,'image':url,'file':key+suffix,'type':typ})
+              except Exception as e:manifest.append({'key':key,'error':str(e)})
+          (root/'manifest.json').write_text(json.dumps(manifest,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: portrait-workbench
+          path: workbench/
+          retention-days: 1
