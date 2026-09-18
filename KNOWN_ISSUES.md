@@ -1,4 +1,4 @@
-# Open issues in the source-guided v3.2 build
+# Open issues in the source-guided v3.3 build
 
 - Half-angle helpers preserve the measured elbow/knee crease, not the entire limb's
   volume. Adjacent skin, shoulders, armpits, collars and clothes can still intersect.
@@ -10,9 +10,9 @@
 - Strike contact remains a logical facing/range envelope, not a swept limb volume.
 - First referee count after late arrival may not show the full gesture; official
   counts remain independent of travel. The final slap retention fix is preserved.
-- Seven slots have source-guided portrait interpretations, not approved scans.
-  Jupiter the Hybrid and AnacondaSin still need clear, individually attributed
-  front/side references. New facial textures are original procedural art, not photos.
+- All nine slots now have source-attributed portrait studies, not approved scans.
+  Jupiter and AnacondaSin are based on newly located subject-labelled covers; more
+  profile/full-body views are needed. Texture maps are original procedural art.
 - Hair/face shading, shoulder/sleeve seams and facial expression still need polish.
   The dedicated portrait studio uses unshadowed fill; coarse self-shadow artifacts
   in other lighting are not claimed solved by that capture setup.
@@ -23,4 +23,4 @@
   remain. Source checkouts contain baseline GLBs and need `python tools/build_roster.py`;
   downloadable packages and CI artifacts contain the newly compiled assets.
 
-See `docs/REFERENCE_LIKENESS.md` and `docs/INTEGRATED_DEFORMATION.md` for scope.
+See `docs/PORTRAIT_REFINEMENT_V33.md`, `docs/REFERENCE_LIKENESS.md` and `docs/INTEGRATED_DEFORMATION.md` for scope.

@@ -23,7 +23,14 @@ func inspect(node: Node, results: Dictionary) -> void:
 				results["portrait"] = true
 				check(m.albedo_texture != null,"Head uses original embedded albedo")
 				if m.albedo_texture:
-					check(m.albedo_texture.get_width() == 384,"Expected procedural portrait texture")
+					check(m.albedo_texture.get_width() == 512,"Expected procedural portrait texture")
+				check(m.normal_enabled and m.normal_texture != null,"Original skin micro-normal imports")
+				check(m.roughness_texture != null,"Original skin roughness imports")
+				var tangents: PackedFloat32Array = node.mesh.surface_get_arrays(i)[Mesh.ARRAY_TANGENT]
+				check(not tangents.is_empty(),"Normal mapped face has exported tangents")
+			if m.resource_name == "portrait_eye":
+				results["eyes"] = true
+				check(m.albedo_texture != null,"Fitted sclera/iris uses original texture")
 			if m.resource_name == "skin" or m.resource_name == "beard_surface":
 				var colors: PackedColorArray = node.mesh.surface_get_arrays(i)[Mesh.ARRAY_COLOR]
 				check(not colors.is_empty(),"Skin tint is present in imported geometry")
@@ -35,11 +42,12 @@ func run() -> void:
 		var model: Node3D=load("res://assets/models/%s.glb"%id).instantiate()
 		root.add_child(model)
 		await process_frame
-		var results: Dictionary={"portrait":false,"bones":0,"clips":0,"halos":0}
+		var results: Dictionary={"portrait":false,"bones":0,"clips":0,"halos":0,"eyes":false}
 		inspect(model,results)
 		check(results.bones == 46,id+" main/deformation rig retained")
 		check(results.clips >= 25,id+" complete animation library retained")
-		check(results.portrait == (id not in ["jupiter_the_hybrid","anacondasin"]),id+" reference coverage matches source manifest")
+		check(results.portrait == true,id+" reference coverage matches source manifest")
+		check(results.eyes,id+" fitted iris aperture exists")
 		check(results.halos == (1 if id=="referee_cobra" else 0),id+" correct halo count")
 		model.queue_free()
 		await process_frame

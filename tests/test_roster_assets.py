@@ -120,7 +120,7 @@ class RosterAssets(unittest.TestCase):
                 self.assertEqual(len(targets),92)
                 self.assertEqual(len(animation["channels"]),92)
             self.assertTrue(all("TEXCOORD_0" in p["attributes"] for p in document["meshes"][0]["primitives"]))
-            self.assertEqual(len(document["images"]),5)
+            self.assertEqual(len(document["images"]),10)
             self.assertTrue(document["extras"]["geometry_regions"]["eyelid"]>500)
 
     def test_reference_status_and_original_embedded_textures(self):
@@ -133,7 +133,7 @@ class RosterAssets(unittest.TestCase):
                     source_count+=1
                     self.assertTrue(STUDIES[key]['sources'])
                     self.assertIn('portrait_skin',asset.mat)
-                    self.assertEqual(len(asset.doc['images']),5)
+                    self.assertEqual(len(asset.doc['images']),8 if STUDIES[key]['hair']=='close_bald' else 10)
                     portrait=asset.doc['materials'][asset.mat['portrait_skin']]['pbrMetallicRoughness']
                     self.assertIn('baseColorTexture',portrait)
                     if STUDIES[key]['glasses']!='none':self.assertIn('glasses_frame',asset.regions)
@@ -154,7 +154,27 @@ class RosterAssets(unittest.TestCase):
                     self.assertEqual(colors['count'],vertices['count'])
                 if key=='referee_cobra':self.assertEqual(len(asset.regions['halo']),717)
                 else:self.assertNotIn('halo',asset.regions)
-        self.assertEqual(source_count,7)
+        self.assertEqual(source_count,9)
+
+    def test_portrait_maps_and_tangent_frames(self):
+        for key,asset in self.assets.items():
+            with self.subTest(character=key):
+                face=asset.doc['materials'][asset.mat['portrait_skin']]
+                self.assertIn('normalTexture',face)
+                self.assertIn('metallicRoughnessTexture',face['pbrMetallicRoughness'])
+                self.assertIn('portrait_eye',asset.mat)
+                for primitive,(material,part) in zip(asset.doc['meshes'][0]['primitives'],asset.parts.items()):
+                    if 'normalTexture' not in asset.doc['materials'][material]:continue
+                    self.assertIn('TANGENT',primitive['attributes'])
+                    self.assertEqual(len(part['tangent']),len(part['v']))
+                    for n,t in zip(part['n'],part['tangent']):
+                        self.assertTrue(all(math.isfinite(c) for c in t))
+                        self.assertAlmostEqual(sum(c*c for c in t[:3]),1.,places=5)
+                        self.assertAlmostEqual(sum(x*y for x,y in zip(n,t[:3])),0.,places=5)
+                        self.assertIn(t[3],[-1.,1.])
+        # Every portrait remains a locally authored study, not runtime network IO.
+        self.assertNotIn('urlopen',(ROOT/'tools/portrait_geometry.py').read_text())
+        self.assertNotIn('urlopen',(ROOT/'tools/portrait_materials.py').read_text())
 
     def test_built_assets_match_manifest(self):
         manifest=json.loads((ROOT/"assets/models/roster_manifest.json").read_text())

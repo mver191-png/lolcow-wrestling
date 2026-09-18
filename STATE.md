@@ -1,25 +1,21 @@
-# Current source-guided model branch
+# Current portrait-refinement branch
 
-Active work: `astra/model-quality-v3`, draft PR #3; main and predecessor review
-branches are not merged or force-updated. Base gameplay/deformation is integrated
-v3.1 (`c5e0ca33`).
+Active: `astra/model-quality-v3`, draft PR #3. Main and predecessor review branches
+remain unchanged. The source-guided v3.2 work is the starting point, not new work
+claimed by this pass.
 
-The v3.2 art pass uses source-labelled public portrait studies for seven slots.
-Original head/hair/glasses/beard geometry, fitted eyes/lips, original procedural
-head albedo and more restrained clothing palettes are implemented. Jupiter the
-Hybrid and AnacondaSin have insufficient unambiguous references and remain
-provisional; there is no guessed likeness attribution.
+V3.3 refines all nine character portraits, fitted eyes, original skin/hair material
+maps and rounded shirt shoulders. Additional subject-labelled public cover images
+allow first studies for Jupiter and AnacondaSin; their profiles still need better
+reference coverage and user approval. All art parameters are interpretations, not
+biometric measurements. No photographs are included in compiled textures.
 
-The 46-joint rig, contact landmarks, 25 clips, authored first-pair attacks,
-recovery, whole-mesh visual clearance and referee rules are preserved. No new
-finisher mechanics or photorealism claim is made.
+The original 46-joint contract, deformation helpers, contact landmarks, 25 clips,
+combat scripts, stats and match rules are preserved. Runtime source is unchanged.
+New imported-material/tangent checks join the existing regression and render
+suites. Consult the exact CI artifact/logs for execution results; implementation
+and automated passes do not certify photorealism or an approved likeness.
 
-Tests and render fixtures are part of the same CI job. New import checks verify
-that the loaded skin actually uses tint and embedded head texture. There are 36
-neutral portrait views in addition to the established model/deformation/match
-captures. Consult exact artifact results rather than assuming implementation means
-visual approval. See `docs/REFERENCE_LIKENESS.md` and its public-source manifest.
-
-Downloaded packages contain compiled models. Raw source checkouts must first run
-`python tools/build_roster.py`. Keep PR #3 a draft. Human likeness approval,
-comprehensive playtesting, Windows/gamepads and hardware Forward+ remain pending.
+See `docs/PORTRAIT_REFINEMENT_V33.md` for sources, scope, commands and limits.
+Packaged downloads contain rebuilt GLBs. Raw checkouts require the Python asset
+build before Godot import. Keep PR #3 a draft; do not auto-merge.

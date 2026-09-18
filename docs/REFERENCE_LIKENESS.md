@@ -1,3 +1,7 @@
+> Historical v3.2 record. Current v3.3 coverage, sources and remaining limits are
+> in `PORTRAIT_REFINEMENT_V33.md`; the two formerly provisional slots now have
+> source-attributed first studies. This does not constitute likeness approval.
+
 # Source-guided likeness pass (v3.2)
 
 This is an original-model art update on the integrated v3.1 gameplay/deformation

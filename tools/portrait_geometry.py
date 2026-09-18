@@ -21,8 +21,8 @@ class Portrait:
         self.w=self.p['width'];self.h=self.p['height'];self.y0=self.p['chin'];self.d=self.p['depth']
         jaw=self.p['jaw'];cheek=self.p['cheek'];temple=self.p['temple']
         self.sections=[(0.,.28,.53),(.035,.46,.64),(.10,.67*jaw,.78),(.18,.83*jaw,.88),
-                       (.28,.94*jaw,.97),(.38,1.00*cheek,1.01),(.48,.99*cheek,1.02),
-                       (.56,.92*temple,1.00),(.64,.92*temple,.99),(.74,.93,.98),
+                       (.28,.93*jaw,.97),(.38,.995*cheek,1.01),(.48,.99*cheek,1.02),
+                       (.56,.97*temple,1.00),(.64,.965*temple,.99),(.74,.93,.98),
                        (.83,.88,.91),(.91,.73,.79),(.975,.39,.46),(1.,.012,.018)]
         self._dimensions_cache={}
         self.materials()
@@ -30,61 +30,29 @@ class Portrait:
     def materials(self):
         a=self.a;p=self.p
         for key,color,roughness in [
-            ('facial_hair',tuple(c*.90 for c in p['hair_color']),.9),
+            ('facial_hair',tuple(c*.90 for c in p.get('beard_color',p['hair_color'])),.9),
             ('beard_surface',(1.,1.,1.),.88),
             ('beard_highlight',tuple(min(1,c*.75+.10) for c in p['hair_color']),.85),
             ('frame_black',(.075,.071,.068),.48),
             ('frame_metal',(.46,.43,.38),.30),
-            ('bandana',(.32,.075,.105),.9),
+            ('bandana',p.get('band_color',(.32,.075,.105)),.94),
             ('skin_fold',tuple(c*.89 for c in p['skin']),.77),
-            ('lip_natural',tuple(c*k for c,k in zip(p['skin'],(.91,.78,.76))),.64),
+            ('lip_natural',tuple(c*k for c,k in zip(p['skin'],(.97,.72,.72))),.64),
             ('eye_white',(.79,.79,.735),.36),
             ('eye_iris',p['iris'],.4)]:
             a.mat[key]=a.material(key,color,roughness,metal=.60 if key=='frame_metal' else 0.)
         a.doc['materials'][a.mat['skin']]['pbrMetallicRoughness']['roughnessFactor']=.73
         a.doc['materials'][a.mat['hair']]['pbrMetallicRoughness']['roughnessFactor']=.89
         self.skin_texture()
+        self.eye_texture()
 
     def skin_texture(self):
-        # Hand-authored procedural albedo, no photo sampling. Each pixel uses the
-        # same angular/height coordinates as this head surface's UVs. Coverage
-        # variation and beard roots soften the prior flat material boundaries.
-        from roster_base import png
-        a=self.a;p=self.p;size=384;pixels=[];style=p['beard'];m=p['mouth_level']
-        for row in range(size):
-            t=(row+.5)/size;rx,_=self.dim(t)
-            for col in range(size):
-                angle=TAU*(col+.5)/size;x=rx*math.cos(angle);front=max(0.,-math.sin(angle))
-                seed=(col*374761393+row*668265263)&0xffffffff
-                seed=((seed^(seed>>13))*1274126177)&0xffffffff
-                noise=((seed^(seed>>16))&65535)/65535-.5
-                mottling=.006*math.sin(col*.074+row*.03)*math.sin(row*.052)
-                redness=.035*sum(g(x,t,v*p['eye_spread'],p['eye_level']-.11,.043,.10) for v in [-1,1])*front**5
-                factors=(.98+noise*.018+mottling,.968+noise*.018+mottling-redness,.958+noise*.018+mottling-redness*.82)
-                rgb=[c*v for c,v in zip(p['skin'],factors)]
-                beard=0.
-                if style in ('long_beard','goatee'):
-                    width=.13 if style=='long_beard' else .038
-                    edge=m+.06+(.10*min(1.,abs(x)/.08) if style=='long_beard' else -.035)
-                    beard=math.exp(-(abs(x)/width)**4)*smooth((edge-t)/.105)*(.91 if style=='long_beard' else .90)
-                elif style in ('short_stubble','light_stubble','chin_shadow'):
-                    width=.16 if style=='short_stubble' else .055 if style=='chin_shadow' else .10
-                    beard=math.exp(-(abs(x)/width)**4)*smooth((m+.015-t)/.10)*smooth((t+.02)/.06)
-                    beard*=.29 if style=='short_stubble' else .17
-                if style in ('long_beard','goatee','short_stubble'):
-                    moustache=math.exp(-((t-m-.031)/.019)**2)*math.exp(-(x/(p['mouth_width']*.90))**6)
-                    beard=max(beard,moustache*.66)
-                beard*=front**5
-                if beard>0:
-                    density=max(0,min(1,beard*(.91+.18*(noise+.5))))
-                    rgb=[lerp(c,h*.98,density) for c,h in zip(rgb,p['hair_color'])]
-                pixels.extend(round(255*max(0,min(1,c))) for c in rgb)
-        data=png(size,size,pixels)
-        a.doc['images'].append({'bufferView':a.view(data),'mimeType':'image/png','name':'original_portrait_albedo'})
-        a.doc['textures'].append({'sampler':0,'source':len(a.doc['images'])-1})
-        a.mat['portrait_skin']=a.material('portrait_skin',(1,1,1),.74)
-        mat=a.doc['materials'][a.mat['portrait_skin']]['pbrMetallicRoughness']
-        mat['baseColorTexture']={'index':len(a.doc['textures'])-1}
+        from portrait_materials import skin_material
+        skin_material(self)
+
+    def eye_texture(self):
+        from portrait_materials import eye_material
+        eye_material(self)
 
     def y(self,t):return self.y0+self.h*t
 
@@ -135,15 +103,26 @@ class Portrait:
         # Mouth plane and philtrum; no teeth, wounds or exaggerated medical traits.
         m=p['mouth_level'];z-=.004*g(x,t,0,m+.014,p['mouth_width'],.060)
         z+=.002*g(x,t,0,m+.064,.009,.038)
+        # Brow cushions, nasolabial planes and the labiomental transition are
+        # part of the skin surface, not floating dark lines or separate beads.
+        z-=.007*(g(x,t,ex,eyes+.065,.036,.040)+g(x,t,-ex,eyes+.065,.036,.040))
+        z-=.0025*(g(x,t,ex,eyes-.044,.031,.026)+g(x,t,-ex,eyes-.044,.031,.026))
+        crease=p.get('crease',.5)
+        naso_x=p['nose_width']*.88+(n-t)*.072
+        naso_gate=math.exp(-((t-(n+m)*.5)/max(.04,(n-m)*.68))**4)
+        z+=.0017*crease*math.exp(-((abs(x)-naso_x)/.0045)**2)*naso_gate
+        z+=.0025*g(x,t,0,m-.075,p['mouth_width']*.73,.024)
+        # Soft philtrum columns connect nasal base to the cupid's bow.
+        z-=.0015*(g(x,t,.007,m+.044,.003,.023)+g(x,t,-.007,m+.044,.003,.023))
         return z+.009
 
     def head(self):
         a=self.a;s=self.s;head=lambda pt,i:a.weights('Head')
         rows=[]
-        for k in range(65):
-            t=k/64;rx,rz=self.dim(t);row=[]
-            for j in range(97):
-                theta=TAU*j/96;x=rx*math.cos(theta);z=rz*math.sin(theta)+.009
+        for k in range(97):
+            t=k/96;rx,rz=self.dim(t);row=[]
+            for j in range(129):
+                theta=TAU*j/128;x=rx*math.cos(theta);z=rz*math.sin(theta)+.009
                 if math.sin(theta)<0:
                     z=self.front(x,t)
                 # Very small asymmetry stops a mechanically mirrored mask, while
@@ -175,20 +154,15 @@ class Portrait:
         # A shallow almond surface occupies the actual aperture. This avoids a
         # large white eyeball pushing through the cheek on a full face.
         rows=[]
-        for r in range(9):
-            v=r/8;row=[]
-            for j in range(33):
-                u=j/16-1;arc=math.sqrt(max(.001,1-u*u));x=cx+u*ew
-                y=y0+lerp(-opening*.68,opening,v)*arc+sign*u*.001
-                z=self.front(x,(y-self.y0)/self.h)-.0015-.003*arc*math.sin(math.pi*v)
+        for r in range(17):
+            v=r/16;row=[]
+            for j in range(49):
+                u=j/24-1;arc=math.sqrt(max(.001,1-u*u));x=cx+u*ew
+                y=y0+lerp(-opening*.70,opening,v)*arc+sign*u*.001
+                z=self.front(x,(y-self.y0)/self.h)-.0017-.0032*arc*math.sin(math.pi*v)
                 row.append((x,y,z))
             rows.append(row)
-        s.grid(rows,'eye_white',head,'eyes',wrap=False)
-        cz=self.front(cx,t0)-.0050
-        radius=min(.010,opening*1.06)
-        a.ellipsoid((cx,y0,cz),(radius,radius,.0020),'eye_iris','Head','eyes',24,14)
-        a.ellipsoid((cx,y0,cz-.0016),(radius*.43,radius*.48,.001),'dark','Head','eyes',16,10)
-        a.ellipsoid((cx-.002,y0+.0025,cz-.0029),(.00125,.00125,.0007),'white','Head','eyes',8,6)
+        s.grid(rows,'portrait_eye',head,'eyes',wrap=False)
         for upper in [True,False]:
             path=[]
             for j in range(33):
@@ -197,14 +171,19 @@ class Portrait:
                 z=self.front(x,(y-self.y0)/self.h)-.002
                 path.append((x,y,z))
             s.tube(path,[.0010+.0012*math.sin(math.pi*j/32) for j in range(33)],'skin',head,'eyelid',8)
-            # Upper hood blends toward the brow instead of a thick separate tube.
-            hood=[]
-            for j,point in enumerate(path):
-                u=j/16-1
-                offset=(.003+p['hood'])*math.sin(math.pi*j/32)*(1 if upper else -.5)
-                yy=point[1]+offset
-                hood.append((point[0],yy,self.front(point[0],(yy-self.y0)/self.h)-.0007))
-            s.tube(hood,.0010,'skin_fold',head,'eyelid_crease',6)
+            # Tissue ramps from the aperture onto the orbital skin, with a
+            # continuous broad lid surface and a very shallow crease.
+            lid_rows=[]
+            for r in range(6):
+                v=r/5;row=[]
+                for j,point in enumerate(path):
+                    arch=math.sin(math.pi*j/32)
+                    yy=point[1]+(.011+p['hood'])*arch*v*(1 if upper else -.65)
+                    zz=self.front(point[0],(yy-self.y0)/self.h)-.0004-.0017*(1-v)*arch
+                    row.append((point[0],yy,zz))
+                lid_rows.append(row)
+            if not upper:lid_rows.reverse()
+            s.grid(lid_rows,'skin',head,'eyelid_tissue',wrap=False)
         # Sparse eyebrow fibers on a broad low ridge, sized separately per study.
         for fiber in range(35):
             u=fiber/34*2-1;x=cx+u*(ew*1.08);t=t0+.073+.009*(1-u*u)
@@ -225,8 +204,8 @@ class Portrait:
                 for j in range(33):
                     u=j/16-1;arc=(max(0,1-u*u))**.7;x=u*mw
                     bow=(1-.25*math.exp(-(u/.23)**2)) if upper else 1.0
-                    yy=self.y(level)+((p['lip']*bow if upper else -p['lip']*.92)*v)*arc
-                    zz=self.front(x,(yy-self.y0)/self.h)-.0013-.0025*math.sin(math.pi*v)*arc
+                    yy=self.y(level)+((p['lip']*bow if upper else -p['lip']*1.10)*v)*arc
+                    zz=self.front(x,(yy-self.y0)/self.h)-.0014-.0040*math.sin(math.pi*v)*arc
                     row.append((x,yy,zz))
                 rows.append(row)
             if not upper:rows.reverse()
@@ -249,7 +228,7 @@ class Portrait:
         head=lambda pt,i:a.weights('Head');cx=p['eye_spread'];cy=self.y(p['eye_level']+.006)
         frame='frame_metal' if p['glasses']=='wire_oval' else 'frame_black'
         z=min(self.front(cx,p['eye_level'])-.013,-self.d-.016)
-        halfw=.045 if p['glasses']=='rectangle' else .043;halfh=.022 if frame=='frame_black' else .029
+        halfw=p.get('frame_width',.045 if p['glasses']=='rectangle' else .043);halfh=p.get('frame_height',.022 if frame=='frame_black' else .029)
         for sign in [-1,1]:
             path=[]
             for j in range(65):
@@ -274,11 +253,11 @@ class Portrait:
         # the chin. Stubble stays translucent in coverage by leaving skin exposed.
         if long:
             rows=[]
-            length=.079 if dense else .066
-            width=.092 if dense else .039
+            length=p.get('beard_length',.052 if dense else .040)
+            width=.079 if dense else .034
             for j in range(14):
                 u=j/13;yy=lerp(self.y0-length,self.y(m-.045),u)
-                half=width*(.10+.90*math.sin(u*math.pi*.75));row=[]
+                half=width*(.19+.81*math.sin(u*math.pi*.66));row=[]
                 for k in range(25):
                     q=k/12-1;x=q*half
                     t=max(0,(yy-self.y0)/self.h)
@@ -301,7 +280,7 @@ class Portrait:
         if long:
             # Tapering chin fibers break the straight patch silhouette.
             for i in range(55):
-                u=i/54*2-1;length=(.060 if dense else .048)*(1-.60*abs(u))+.003*math.sin(i*3.1);x=u*(.072 if dense else .033)
+                u=i/54*2-1;length=p.get('beard_length',.052 if dense else .040)*(1-.60*abs(u))+.003*math.sin(i*3.1);x=u*(.072 if dense else .033)
                 y0=self.y(.105);z0=self.front(x,.105)-.012
                 path=[(x,lerp(y0,self.y0-length,j/8),z0+.018*(j/8)**2+.004*math.sin(i+j*.6)) for j in range(9)]
                 s.tube(path,[.0010*(1-j/9)+.0001 for j in range(9)],'beard_highlight' if i%8==0 else 'facial_hair',head,'beard_strand',6)
@@ -314,103 +293,8 @@ class Portrait:
                     s.tube([(x,y,z),(x+sign*.002,y-.004,z-.001)],.0008,'facial_hair',head,'moustache',5)
 
     def hair(self):
-        a=self.a;s=self.s;p=self.p;style=p['hair'];head=lambda pt,i:a.weights('Head')
-        if style=='close_bald':
-            # The source-selected look has an uncovered scalp; no invented cap.
-            return
-        sparse=style in ('balding_fringe','receding_long')
-        long=style in ('parted_shoulder','receding_long','volume_curls')
-        # Scalp shell follows each head's skull, with a source-specific hairline.
-        if not sparse:
-            rows=[]
-            for r in range(19):
-                row=[]
-                for j in range(97):
-                    angle=TAU*j/96;front=max(0,-math.sin(angle));side=abs(math.cos(angle))
-                    line=.47+.28*front**2 if style=='parted_shoulder' else .56+.20*front**3
-                    if style=='rough_crop':line=.61+.14*front**2+.026*math.sin(angle*5)
-                    if style=='volume_curls':line=.47+.23*front**3
-                    if style=='short_coils':line=.60+.15*front**4
-                    t=lerp(line,1,r/18);rx,rz=self.dim(t)
-                    volume=.016 if style=='short_coils' else .018 if style=='volume_curls' else .006
-                    ripple=.0007*math.sin(angle*31+r*.23)
-                    x=(rx+volume+ripple)*math.cos(angle)
-                    z=(rz+volume+ripple)*math.sin(angle)+.009
-                    if front>0:z=self.front(min(rx*.995,abs(rx*math.cos(angle)))*math.copysign(1,math.cos(angle)),t)-volume-ripple
-                    yy=self.y(t)+volume*(r/18)**3
-                    row.append((x,yy,z))
-                rows.append(row)
-            s.grid(rows,'hair',head,'hair_cap',cap=True)
-        # Continuous curved locks, with sufficient density to read as hair rather
-        # than a band of isolated noodles. Strands remain attached to Head.
-        n=100 if style=='volume_curls' else 94 if style=='parted_shoulder' else 44 if sparse else 60
-        for i in range(n):
-            angle=TAU*i/n;front=max(0,-math.sin(angle))
-            if sparse and front>.22:continue
-            if style=='parted_shoulder' and front>.65:continue
-            if style=='volume_curls' and front>.42:continue
-            if style=='short_coils' and front>.55:continue
-            if style=='receding_long' and front>.0:continue
-            side=abs(math.cos(angle));seed=math.sin(i*13.51)
-            if style=='volume_curls':
-                tstart=.76+.23*((i*.381966)%1);end=-.05+.34*((i*.71)%1);radius=.010
-            elif style=='parted_shoulder':
-                tstart=.99-.09*side;end=-.18+.19*((i*.61)%1);radius=.006
-            elif sparse:
-                tstart=.63+.11*((i*.73)%1);end=(-.08 if style=='receding_long' else .20)+.12*((i*.31)%1);radius=.007
-            else:
-                tstart=.95+.045*seed;end=.73+.09*((i*.618)%1)+(.055 if front>.4 else 0);radius=.005
-            path=[]
-            for j in range(15):
-                u=j/14;t=lerp(tstart,end,u);rx,rz=self.dim(max(0,min(1,t)))
-                if long or sparse:
-                    rx=max(rx,self.w*(.92+(.14 if style=='volume_curls' else .04))*smooth(u*3))
-                    rz=max(rz,self.d*.72*smooth(u*3))
-                curl=.012*math.sin(u*TAU*2.4+i) if style=='volume_curls' else .006*math.sin(u*6+i)
-                aa=angle+(.028*math.sin(u*TAU*2+i) if style=='volume_curls' else .035*math.sin(u*4))
-                out=.027 if style=='volume_curls' else .009
-                xx=(rx+out+curl)*math.cos(aa)
-                zz=(rz+out+curl)*math.sin(aa)+.009
-                yy=self.y(t)+(.018*(1-u) if style=='rough_crop' else 0)
-                if not long and not sparse:
-                    yy+=.014*math.sin(math.pi*u)*(1+seed*.35)
-                path.append((xx,yy,zz))
-            radii=[max(.0004,radius*(.28+.72*math.sin(math.pi*(j+.7)/15.5))*(1-.94*smooth((j/14-.76)/.24))) for j in range(15)]
-            s.tube(path,radii,'hair_highlight' if i%9==0 else 'hair',head,'hair_lock',8)
-        if style in ('volume_curls','short_coils'):
-            # Dense loops sit ON the shaped cap, rather than being buried inside
-            # it. Their size is deliberately small: silhouette and light breakup
-            # should read as coils rather than large ribbons or beads.
-            count=330 if style=='short_coils' else 260
-            for i in range(count):
-                aa=i*2.399963;front=max(0,-math.sin(aa))
-                line=(.60+.15*front**4) if style=='short_coils' else (.47+.23*front**3)
-                tt=lerp(line+.010,.996,(i*.41421356)%1)
-                radius=.004 if style=='short_coils' else .0065
-                centers=[]
-                for j in range(13):
-                    u=TAU*j/12;angle=aa+math.cos(u)*.026
-                    t=max(line,min(.999,tt+radius/self.h*math.sin(u)))
-                    rx,rz=self.dim(t);volume=.016 if style=='short_coils' else .018
-                    x=(rx+volume)*math.cos(angle)
-                    z=(rz+volume)*math.sin(angle)+.009
-                    if math.sin(angle)<0:
-                        z=self.front(rx*math.cos(angle),t)-volume
-                    x+=.0025*math.cos(angle);z+=.0025*math.sin(angle)
-                    centers.append((x,self.y(t)+volume*((t-line)/(1-line))**3,z))
-                s.tube(centers,.0015 if style=='short_coils' else .0019,'hair_highlight' if i%13==0 else 'hair',head,'curl',6)
-        if p['band']:
-            rows=[]
-            for k in range(5):
-                row=[]
-                for j in range(97):
-                    angle=TAU*j/96;front=max(0,-math.sin(angle));t=.70+.035*k/4
-                    rx,rz=self.dim(t);row.append(((rx+.021)*math.cos(angle),self.y(t)+.007*math.cos(angle),(rz+.025)*math.sin(angle)+.009))
-                rows.append(row)
-            s.grid(rows,'bandana',head,'headband',cap=False)
-            # Two tucked fabric ends; no floating logo or borrowed pattern.
-            for sign in [-1,1]:
-                s.tube([(sign*.035,self.y(.76),self.d+.02),(sign*.070,self.y(.64),self.d+.031)],.009,'bandana',head,'band_tie',8)
+        from portrait_hair import build_hair
+        build_hair(self)
 
     def halo(self):
         a=self.a;s=self.s;head=lambda pt,i:a.weights('Head')

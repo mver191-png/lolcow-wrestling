@@ -121,7 +121,7 @@ def build_character(a):
     s.grid(rows,'gear',torso_weight,'torso',cap=True)
     s.band(lambda y,angle:body_point(y,angle,.006),.842,.874,'trim',torso_weight)
     # Tailored neck opening instead of a bright ring around the entire shoulder.
-    s.band(lambda y,angle:body_point(y,angle,.012),1.444,1.463,'trim',torso_weight)
+    s.band(lambda y,angle:body_point(y,angle,.006),1.452,1.465,'gear' if portrait else 'trim',torso_weight)
     # Narrow garment panels follow the actual torso instead of floating in front.
     def panel(xcenter,halfwidth,y0,y1,material):
         rows=[]
@@ -174,7 +174,7 @@ def build_character(a):
     if portrait:
         from likeness_profiles import STUDIES
         fullness=STUDIES[a.key]['neck_fill']
-        neck=[(1.43,.130,.098),(1.46,.116,.095),(1.49,.101,.088),(1.52,.086,.080),(1.555,.075,.071),(1.585,.080,.074)]
+        neck=[(1.43,.118,.092),(1.46,.113,.090),(1.49,.102,.088),(1.52,.094,.084),(1.555,.092,.081),(1.585,.095,.079)]
         a.loft([((0,y,.030),rx*fullness,rz) for y,rx,rz in neck],
                'skin',lambda pt,i:a.weights('Neck','Head',_smooth((pt[1]-1.49)/.09)),'neck',40)
     else:
@@ -257,14 +257,38 @@ def _limbs(a,s,side,sign,costume):
     # Elbow and knee neighborhoods receive extra rings for smoother weighted bends.
     arm_sections=[(.838,.60),(.868,.66),(.91,.76),(.965,.82),(1.018,.81),(1.065,.77),
                   (1.09,.79),(1.113,.83),(1.145,.89),(1.19,.99),(1.245,1.065),(1.30,1.07),(1.348,1.00),(1.385,.84),(1.410,.63)]
+    if getattr(a,'reference_study',False) and has_portrait(a.key):
+        arm_sections=[(y,r) for y,r in arm_sections if y<=1.245]
     a.loft([((x,y,0),arm*r,arm*r*.90) for y,r in arm_sections],'skin',lambda pt,i:a.limb_w(side,pt[1],True),'arm',32)
     # A deformable shoulder bridge hides the capped-arm seam without assigning any
     # torso vertex to an arm. Its ownership is explicitly tagged "shoulder".
-    centers=[(sign*(w*.82+(w+.055-w*.82)*i/8),1.38,0) for i in range(9)]
     studied=getattr(a,'reference_study',False) and has_portrait(a.key)
-    bridge_r=[arm*((.80+.14*math.sin(math.pi*i/8)) if studied else (.43+.06*math.sin(math.pi*i/8))) for i in range(9)]
-    s.tube(centers,bridge_r,'gear' if studied or costume in ('jacket','referee') else 'skin',
-           lambda pt,i:a.weights('Chest','UpperArm.'+side,_smooth((abs(pt[0])-w*.81)/(w+.055-w*.81))),'shoulder',20)
+    if studied:
+        # One rounded shoulder/sleeve envelope replaces the horizontal capped
+        # bridge plus another intersecting sleeve. Its upper inner cap ends
+        # inside the torso. This is weighted garment geometry, not a collider.
+        shoulder_rows=[]
+        profile=[(1.235,0,1.06),(1.255,0,1.10),(1.285,.004,1.12),
+                 (1.32,.012,1.10),(1.35,.025,1.045),(1.375,.045,.96),
+                 (1.398,.065,.80),(1.418,.079,.56),(1.430,.087,.20)]
+        for y,inset,radius in profile:
+            row=[]
+            for j in range(41):
+                theta=TAU*j/40
+                fold=.0013*math.cos(theta*5+(y-1.23)*19)
+                row.append((sign*(w+.055-inset)+(arm*radius+fold)*math.cos(theta),
+                            y,(arm*radius*.96+fold)*math.sin(theta)))
+            shoulder_rows.append(row)
+        def sleeve_weights(pt,i):
+            # Upper inside follows chest, outside and lower sleeve follows arm.
+            arm_weight=1.-_smooth((pt[1]-1.32)/.11)*(1.-_smooth((abs(pt[0])-w*.75)/(.24*w+.055)))
+            return a.weights('Chest','UpperArm.'+side,arm_weight)
+        s.grid(shoulder_rows,'gear',sleeve_weights,'shoulder',cap=True)
+    else:
+        centers=[(sign*(w*.82+(w+.055-w*.82)*i/8),1.38,0) for i in range(9)]
+        bridge_r=[arm*(.43+.06*math.sin(math.pi*i/8)) for i in range(9)]
+        s.tube(centers,bridge_r,'gear' if costume in ('jacket','referee') else 'skin',
+               lambda pt,i:a.weights('Chest','UpperArm.'+side,_smooth((abs(pt[0])-w*.81)/(w+.055-w*.81))),'shoulder',20)
     a.loft([((x,y,0),arm*.72,arm*.66) for y in [.858,.869,.900,.912]],'wrap',lambda pt,i:a.limb_w(side,pt[1],True),'wrap',24)
     _hand(a,s,side,sign,x)
     leg_sections=[(.285,.63),(.335,.70),(.39,.71),(.445,.69),(.483,.72),(.510,.765),(.538,.80),
@@ -276,7 +300,7 @@ def _limbs(a,s,side,sign,costume):
     a.loft([((lx,y,0),leg*.96,leg*.91) for y in [.635,.654]],'trim',lambda pt,i:a.limb_w(side,pt[1],False),'gear_detail',32)
     a.ellipsoid((lx,.505,-leg*.72),(leg*.69,.068,.025),'boots','Shin.'+side,'kneepad',20,12)
     a.ellipsoid((lx,.505,-leg*.89),(leg*.49,.045,.009),'trim','Shin.'+side,'pad_insert',18,10)
-    if costume in ('jacket','referee') or (getattr(a,'reference_study',False) and has_portrait(a.key)):
+    if costume in ('jacket','referee') and not studied:
         a.loft([((x,y,0),arm*r,arm*r*.92) for y,r in [(1.235,1.045),(1.27,1.09),(1.325,1.105),(1.38,.93)]],
                'gear',lambda pt,i:a.limb_w(side,pt[1],True),'sleeve',32)
     a.loft([((lx,y,-.018),.102*leg/.14,rz) for y,rz in [(.045,.166),(.065,.172),(.103,.165),(.145,.137),(.182,.105),(.25,.101),(.29,.096)]],
