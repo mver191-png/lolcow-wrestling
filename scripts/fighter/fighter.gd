@@ -78,14 +78,16 @@ var opponent: Fighter = null
 # Attack & Grapple tracking
 var current_attack_id: int = 0
 var attack_has_damaged: bool = false
+var strike_move: Dictionary = {}
+var strike_resolved_hits: Dictionary = {}
 var state_timer: float = 0.0
 var active_frame_start: float = 0.0
 var active_frame_end: float = 0.0
 var attack_total_time: float = 0.0
 
 # Synchronized grapple parameters
-var throw_duration: float = 1.0
-var throw_impact_time: float = 0.55
+var throw_duration: float = 1.1
+var throw_impact_time: float = 0.6
 var throw_has_impacted: bool = false
 var synchronized_partner: Fighter = null
 var initial_defender_local_pos: Vector3 = Vector3.ZERO
@@ -106,6 +108,8 @@ var input_pin: bool = false
 var input_finisher: bool = false
 var input_hold_pin: bool = false
 var prev_pin_held: bool = false
+# Replay/test providers opt in explicitly. Hardware must never retain old commands.
+var use_external_input: bool = false
 
 func _init() -> void:
 	# Priority 0 ensures fighters update movement, mechanics, and input processing
@@ -164,7 +168,7 @@ func _physics_process(delta: float) -> void:
 	if recent_heavy_impact_timer > 0.0:
 		recent_heavy_impact_timer = max(0.0, recent_heavy_impact_timer - delta)
 		
-	if not is_cpu:
+	if not is_cpu and not use_external_input:
 		_gather_player_inputs()
 	
 	_tick_stamina(delta)
@@ -176,33 +180,39 @@ func _physics_process(delta: float) -> void:
 
 func _gather_player_inputs() -> void:
 	var prefix: String = "p" + str(player_index) + "_"
-	
-	var dir: Vector2 = Vector2.ZERO
-	if Input.is_action_pressed(prefix + "up"):
-		dir.y -= 1.0
-	if Input.is_action_pressed(prefix + "down"):
-		dir.y += 1.0
-	if Input.is_action_pressed(prefix + "left"):
-		dir.x -= 1.0
-	if Input.is_action_pressed(prefix + "right"):
-		dir.x += 1.0
-	if dir != Vector2.ZERO or input_dir == Vector2.ZERO:
-		input_dir = dir.normalized()
-	
-	if not input_strike:
-		input_strike = Input.is_action_just_pressed(prefix + "strike")
-	if not input_grapple:
-		input_grapple = Input.is_action_just_pressed(prefix + "grapple")
-	if not input_block:
-		input_block = Input.is_action_pressed(prefix + "block")
-	if not input_reversal:
-		input_reversal = Input.is_action_just_pressed(prefix + "reversal")
+	input_dir = Input.get_vector(prefix + "left", prefix + "right", prefix + "up", prefix + "down")
+	input_strike = Input.is_action_just_pressed(prefix + "strike")
+	input_grapple = Input.is_action_just_pressed(prefix + "grapple")
+	input_block = Input.is_action_pressed(prefix + "block")
+	input_reversal = Input.is_action_just_pressed(prefix + "reversal")
 	var pin_down: bool = Input.is_action_pressed(prefix + "pin")
-	input_pin = input_pin or (pin_down and not prev_pin_held)
-	input_hold_pin = input_hold_pin or (pin_down and prev_pin_held)
+	input_pin = pin_down and not prev_pin_held
+	input_hold_pin = pin_down
 	prev_pin_held = pin_down
-	if not input_finisher:
-		input_finisher = Input.is_action_just_pressed(prefix + "finisher")
+	input_finisher = Input.is_action_just_pressed(prefix + "finisher")
+
+func clear_inputs() -> void:
+	input_dir = Vector2.ZERO
+	input_block = false
+	input_hold_pin = false
+	prev_pin_held = false
+	_clear_consumed_pulse_inputs()
+
+func apply_command(command: Dictionary) -> void:
+	# Complete snapshot; omitted continuous fields intentionally become neutral.
+	var movement: Vector2 = command.get("move", Vector2.ZERO)
+	input_dir = movement.limit_length(1.0)
+	input_block = command.get("block", false)
+	input_hold_pin = command.get("hold_pin", false)
+	input_strike = command.get("strike", false)
+	input_grapple = command.get("grapple", false)
+	input_reversal = command.get("reversal", false)
+	input_pin = command.get("pin", false)
+	input_finisher = command.get("finisher", false)
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+		clear_inputs()
 
 func _clear_consumed_pulse_inputs() -> void:
 	input_strike = false
@@ -388,63 +398,54 @@ func _check_standing_actions() -> void:
 func _start_strike() -> void:
 	current_attack_id += 1
 	attack_has_damaged = false
-	active_frame_start = 0.12
-	active_frame_end = 0.32
-	attack_total_time = 0.45
+	strike_resolved_hits.clear()
+	strike_move = StrikeMoves.definition(character_id)
+	active_frame_start = strike_move.hits[0].start
+	active_frame_end = strike_move.hits[-1].end
+	attack_total_time = strike_move.duration
 	_set_state(State.STRIKING)
-	
-	# Arm punch animation
 	if right_arm and not is_rigged():
 		var tween: Tween = create_tween()
 		tween.tween_property(right_arm, "position:z", -0.8, 0.15)
 		tween.tween_property(right_arm, "position:z", 0.0, 0.25)
 
 func _handle_strike_active_window() -> void:
-	if state_timer >= active_frame_start and state_timer <= active_frame_end and not attack_has_damaged:
-		if is_instance_valid(opponent):
-			var my_p: Vector3 = global_position if is_inside_tree() else position
-			var opp_p: Vector3 = opponent.global_position if opponent.is_inside_tree() else opponent.position
-			var to_opp: Vector3 = Vector3(opp_p.x - my_p.x, 0.0, opp_p.z - my_p.z)
-			var dist: float = to_opp.length()
-			if dist <= reach_distance:
-				# Directional forward cone validation (cos(60 deg) = 0.50 threshold)
-				if dist > 0.001:
-					var forward_dir: Vector3 = -global_transform.basis.z.normalized() if is_inside_tree() else -transform.basis.z.normalized()
-					forward_dir.y = 0.0
-					if forward_dir.is_zero_approx():
-						forward_dir = Vector3(0, 0, -1)
-					else:
-						forward_dir = forward_dir.normalized()
-						
-					var to_opp_dir: Vector3 = to_opp.normalized()
-					var dot: float = forward_dir.dot(to_opp_dir)
-					if dot < MatchRules.STRIKE_CONE_MIN_DOT:
-						# Target outside forward contact cone (flank or behind)
-						return
-				
-				# Check defender state
-				if opponent.current_state == State.REVERSAL_STANCE:
-					# Countered!
-					attack_has_damaged = true
-					_apply_countered_by(opponent)
-					return
-				
-				var is_blocked: bool = (opponent.current_state == State.BLOCKING)
-				var base_dmg: float = 30.0 + (stat_power * 6.0)
-				var final_dmg: float = base_dmg * (0.25 if is_blocked else 1.0)
-				
-				attack_has_damaged = true
-				opponent.receive_damage(final_dmg, self, is_blocked)
-				
-				if not is_blocked:
-					gain_hype(MatchRules.HYPE_GAIN_ON_HIT)
-					hit_landed.emit(self, opponent, final_dmg, false)
-					if AudioManager.instance:
-						AudioManager.instance.play_strike(false)
-				else:
-					hit_landed.emit(self, opponent, final_dmg, true)
-					if AudioManager.instance:
-						AudioManager.instance.play_strike(true)
+	if current_state != State.STRIKING or not is_instance_valid(opponent):
+		return
+	if strike_move.is_empty():
+		strike_move = StrikeMoves.definition(character_id)
+	# Preserve the existing forward/range envelope. Precision limb hurtboxes are
+	# a separate change; a cosmetic skeleton or clearance offset cannot award hits.
+	if opponent.current_state not in [State.IDLE, State.MOVING, State.STRIKING,
+			State.BLOCKING, State.REVERSAL_STANCE, State.GRAPPLE_STARTUP]:
+		return
+	var my_p: Vector3 = global_position if is_inside_tree() else position
+	var opp_p: Vector3 = opponent.global_position if opponent.is_inside_tree() else opponent.position
+	var to_opp := Vector3(opp_p.x - my_p.x, 0.0, opp_p.z - my_p.z)
+	if to_opp.length() > reach_distance or absf(opp_p.y - my_p.y) > 0.65:
+		return
+	var forward: Vector3 = -global_transform.basis.z if is_inside_tree() else -transform.basis.z
+	forward.y = 0.0
+	if not to_opp.is_zero_approx() and forward.normalized().dot(to_opp.normalized()) < MatchRules.STRIKE_CONE_MIN_DOT:
+		return
+	for hit in strike_move.hits:
+		if strike_resolved_hits.has(hit.id) or state_timer < hit.start or state_timer > hit.end:
+			continue
+		# An authored hit may resolve once; whiffed earlier windows never catch up.
+		strike_resolved_hits[hit.id] = true
+		attack_has_damaged = true
+		if opponent.current_state == State.REVERSAL_STANCE:
+			_apply_countered_by(opponent)
+			return
+		var blocked: bool = opponent.current_state == State.BLOCKING
+		var share: float = hit.share
+		var damage := (30.0 + stat_power * 6.0) * share * (0.25 if blocked else 1.0)
+		opponent.receive_damage(damage, self, blocked)
+		if not blocked:
+			gain_hype(MatchRules.HYPE_GAIN_ON_HIT * share)
+		hit_landed.emit(self, opponent, damage, blocked)
+		if AudioManager.instance:
+			AudioManager.instance.play_strike(blocked)
 
 var is_finisher_attack: bool = false
 var submission_tick_timer: float = 0.0
@@ -503,15 +504,12 @@ func _process_grapple_startup(_delta: float) -> void:
 					right_arm.position.z = 0.0
 				
 				if target.current_state == State.REVERSAL_STANCE:
-					# Defender counters the grapple!
 					_apply_countered_by(target)
 					return
 				elif target.current_state in [State.IDLE, State.MOVING, State.BLOCKING, State.GRAPPLE_STARTUP]:
-					# Successful grapple! (Grapple breaks guard)
 					_start_synchronized_throw(target)
 					return
 		
-		# Target moved away, was knocked down, or missed: wait for whiff recovery
 		grapple_target = null
 		if state_timer >= MatchRules.GRAPPLE_WHIFF_DURATION:
 			if left_arm and right_arm and not is_rigged():
@@ -526,15 +524,12 @@ func _start_synchronized_throw(target: Fighter) -> void:
 	throw_duration = 1.1
 	throw_impact_time = 0.6
 	
-	# Priority 2: Pre-throw spatial and trajectory validation to prevent rope penetration
 	var is_leverage: bool = (stat_power < target.stat_power or reach_distance < target.reach_distance)
 	var slam_dist: float = 0.9 if is_leverage else 1.1
 	_validate_and_adjust_throw_boundaries(target, slam_dist)
-	
 	_set_state(State.GRAPPLING_ATTACKER)
 	target.on_locked_by_throw(self)
 	
-	# Face each other using standard Godot -Z forward convention
 	var p1: Vector3 = global_position if is_inside_tree() else position
 	var p2: Vector3 = target.global_position if target.is_inside_tree() else target.position
 	var forward_dir: Vector3 = Vector3(p2.x - p1.x, 0.0, p2.z - p1.z).normalized()
@@ -545,49 +540,37 @@ func _start_synchronized_throw(target: Fighter) -> void:
 func _validate_and_adjust_throw_boundaries(target: Fighter, slam_dist: float) -> void:
 	var p1: Vector3 = global_position if is_inside_tree() else position
 	var p2: Vector3 = target.global_position if target.is_inside_tree() else target.position
-	
 	var forward_dir: Vector3 = Vector3(p2.x - p1.x, 0.0, p2.z - p1.z).normalized()
 	if forward_dir.is_zero_approx():
 		forward_dir = -global_transform.basis.z.normalized() if is_inside_tree() else -transform.basis.z.normalized()
-		
 	var slam_pos: Vector3 = p1 + forward_dir * slam_dist
 	var safe_bound: float = MatchRules.THROW_SAFE_RING_BOUND
-	
 	var shift_x: float = 0.0
 	var shift_z: float = 0.0
-	
-	# Evaluate predicted slam position against safe boundary
 	if slam_pos.x > safe_bound:
 		shift_x = slam_pos.x - safe_bound
 	elif slam_pos.x < -safe_bound:
 		shift_x = slam_pos.x - (-safe_bound)
-		
 	if slam_pos.z > safe_bound:
 		shift_z = slam_pos.z - safe_bound
 	elif slam_pos.z < -safe_bound:
 		shift_z = slam_pos.z - (-safe_bound)
-		
-	# Also ensure defender's position after shift remains within safe boundary
 	var post_shift_p2_x: float = p2.x - shift_x
 	var post_shift_p2_z: float = p2.z - shift_z
 	if post_shift_p2_x > safe_bound:
 		shift_x += (post_shift_p2_x - safe_bound)
 	elif post_shift_p2_x < -safe_bound:
 		shift_x += (post_shift_p2_x - (-safe_bound))
-		
 	if post_shift_p2_z > safe_bound:
 		shift_z += (post_shift_p2_z - safe_bound)
 	elif post_shift_p2_z < -safe_bound:
 		shift_z += (post_shift_p2_z - (-safe_bound))
-		
-	# Apply spatial boundary adjustment to both participants equally
 	if abs(shift_x) > 0.001 or abs(shift_z) > 0.001:
 		var adjustment: Vector3 = Vector3(shift_x, 0.0, shift_z)
 		if is_inside_tree():
 			global_position -= adjustment
 		else:
 			position -= adjustment
-			
 		if target.is_inside_tree():
 			target.global_position -= adjustment
 		else:
@@ -601,15 +584,10 @@ func _process_synchronized_attacker() -> void:
 	if not is_instance_valid(synchronized_partner):
 		_set_state(State.IDLE)
 		return
-	
-	# Check if attacker should use leverage/trip instead of overhead lift
 	var is_leverage: bool = (stat_power < synchronized_partner.stat_power or reach_distance < synchronized_partner.reach_distance)
-	
 	var forward: Vector3 = -global_transform.basis.z.normalized() if is_inside_tree() else -transform.basis.z.normalized()
 	var my_pos: Vector3 = global_position if is_inside_tree() else position
-	
 	if state_timer < throw_impact_time:
-		# Lift phase (leverage throws stay close to canvas)
 		var lift_t: float = state_timer / throw_impact_time
 		var peak_height: float = 0.38 if is_leverage else 1.55
 		var lift_height: float = sin(lift_t * PI) * peak_height
@@ -620,16 +598,12 @@ func _process_synchronized_attacker() -> void:
 			synchronized_partner.global_position = hold_pos
 		else:
 			synchronized_partner.position = hold_pos
-		
-		# Tilt defender
-		if synchronized_partner.visual_root:
+		if synchronized_partner.visual_root and not synchronized_partner.is_rigged():
 			var tilt_angle: float = -45.0 if is_leverage else -80.0
 			synchronized_partner.visual_root.rotation.x = deg_to_rad(tilt_angle * lift_t)
 	else:
-		# Post-impact phase
 		if not throw_has_impacted:
 			throw_has_impacted = true
-			# Apply damage exactly once
 			var throw_damage: float = 0.0
 			if is_leverage:
 				throw_damage = 50.0 + (stat_grappling * 10.0) + (stat_mobility * 4.0)
@@ -637,19 +611,15 @@ func _process_synchronized_attacker() -> void:
 				throw_damage = 65.0 + (stat_power * 10.0) + (stat_grappling * 6.0)
 			if is_finisher_attack:
 				throw_damage *= 1.6
-				
 			synchronized_partner.receive_damage(throw_damage, self, false, is_finisher_attack)
 			gain_hype(MatchRules.HYPE_GAIN_ON_HIT * 1.8)
 			throw_impact.emit(self, synchronized_partner)
-			
 			if AudioManager.instance:
 				AudioManager.instance.play_mat_slam(not is_leverage)
 				if is_finisher_attack:
 					AudioManager.instance.play_crowd_cheer()
 			if BroadcastCamera.instance:
 				BroadcastCamera.instance.add_trauma(0.35 if is_leverage else 0.55)
-			
-			# Slam position on canvas
 			var slam_pos: Vector3 = my_pos + forward * (0.9 if is_leverage else 1.1)
 			slam_pos.y = 0.0
 			slam_pos.x = clamp(slam_pos.x, -MatchRules.THROW_SAFE_RING_BOUND, MatchRules.THROW_SAFE_RING_BOUND)
@@ -658,9 +628,7 @@ func _process_synchronized_attacker() -> void:
 				synchronized_partner.global_position = slam_pos
 			else:
 				synchronized_partner.position = slam_pos
-		
 	if state_timer >= throw_duration:
-		# Release mutual lock
 		var partner: Fighter = synchronized_partner
 		synchronized_partner = null
 		_set_state(State.IDLE)
@@ -673,6 +641,8 @@ func _process_synchronized_attacker() -> void:
 
 func on_throw_released() -> void:
 	synchronized_partner = null
+	if visual_root and is_rigged():
+		visual_root.transform = Transform3D.IDENTITY
 	if is_inside_tree():
 		global_position.y = 0.0
 	else:
@@ -680,22 +650,16 @@ func on_throw_released() -> void:
 	knockdown_duration = 3.0 + clamp((1.0 - (vitality / max_vitality)) * 2.0, 0.0, 2.5)
 	_set_state(State.KNOCKED_DOWN)
 
-# ==============================================================================
-# Submissions System
-# ==============================================================================
-
 func _attempt_submission(is_finisher: bool = false) -> void:
 	if not is_instance_valid(opponent):
 		return
 	if opponent.current_state != State.KNOCKED_DOWN:
 		return
-		
 	var my_p: Vector3 = global_position if is_inside_tree() else position
 	var opp_p: Vector3 = opponent.global_position if opponent.is_inside_tree() else opponent.position
 	var dist: float = my_p.distance_to(opp_p)
 	if dist > 1.8:
 		return
-		
 	if is_finisher:
 		is_finisher_attack = true
 		hype = max(0.0, hype - MatchRules.FINISHER_HYPE_COST)
@@ -704,19 +668,15 @@ func _attempt_submission(is_finisher: bool = false) -> void:
 			AudioManager.instance.play_finisher_stinger()
 	else:
 		is_finisher_attack = false
-		
 	synchronized_partner = opponent
 	submission_tick_timer = 0.0
 	_set_state(State.SUBMISSION_ATTACKER)
 	opponent.on_locked_by_submission(self)
-	
-	# Snap attacker near defender
 	var lock_pos: Vector3 = opp_p + Vector3(0.0, 0.1, 0.25)
 	if is_inside_tree():
 		global_position = lock_pos
 	else:
 		position = lock_pos
-		
 	submission_initiated.emit(self, opponent)
 
 func on_locked_by_submission(attacker: Fighter) -> void:
@@ -728,7 +688,6 @@ func _process_submission_attacker(delta: float) -> void:
 	if not is_instance_valid(synchronized_partner):
 		_set_state(State.IDLE)
 		return
-		
 	submission_tick_timer += delta
 	if submission_tick_timer >= 0.5:
 		submission_tick_timer = 0.0
@@ -737,13 +696,9 @@ func _process_submission_attacker(delta: float) -> void:
 			tick_dmg *= 1.5
 		synchronized_partner.receive_damage(tick_dmg, self, false)
 		gain_hype(MatchRules.HYPE_GAIN_ON_HIT * 0.3)
-		
-		# Defender stamina drain
 		synchronized_partner.stamina = max(0.0, synchronized_partner.stamina - 15.0)
 		synchronized_partner.stamina_changed.emit(synchronized_partner.stamina, synchronized_partner.max_stamina)
-		
-		# In active match, MatchManager._process_submission_watch() has exclusive authority.
-		# For isolated standalone node tests without a MatchManager:
+		# Active matches are resolved exclusively by MatchManager.
 		if MatchManager.instance == null or MatchManager.instance.current_state != MatchManager.MatchState.SUBMISSION_ATTEMPT:
 			if synchronized_partner.vitality <= 0.0:
 				var defender: Fighter = synchronized_partner
@@ -753,18 +708,12 @@ func _process_submission_attacker(delta: float) -> void:
 
 func _process_submission_defender(delta: float) -> void:
 	var escape_gain: float = 0.0
-	
-	# Any mash press (pin, strike, grapple) yields immediate burst escape gain
 	if input_pin or input_strike or input_grapple:
 		escape_gain += 15.0
 	elif input_hold_pin or input_block:
 		escape_gain += MatchRules.PIN_ESCAPE_BASE_RATE * delta
-		
 	var stamina_factor: float = 0.4 + 0.6 * (stamina / max_stamina)
 	pin_escape_progress += escape_gain * stamina_factor
-	
-	# In active match, MatchManager._process_submission_watch() has exclusive authority.
-	# For isolated standalone node tests without a MatchManager:
 	if MatchManager.instance == null or MatchManager.instance.current_state != MatchManager.MatchState.SUBMISSION_ATTEMPT:
 		if pin_escape_progress >= 100.0:
 			_execute_submission_escape()
@@ -773,17 +722,14 @@ func _execute_submission_escape() -> void:
 	if current_state in [State.DEFEATED, State.VICTORY]:
 		return
 	submission_escaped.emit(self)
-	# Guard: If manager intervened during signal handling and finalized outcome, do NOT overwrite!
 	if current_state in [State.DEFEATED, State.VICTORY, State.GETTING_UP, State.IDLE]:
 		return
 	if visual_root:
 		visual_root.rotation = Vector3.ZERO
 		visual_root.position = Vector3.ZERO
 	_set_state(State.GETTING_UP)
-	
 	var partner: Fighter = synchronized_partner
 	synchronized_partner = null
-	
 	if is_instance_valid(partner) and partner.current_state == State.SUBMISSION_ATTACKER:
 		partner.on_submission_broken_by_escape()
 	elif is_instance_valid(opponent) and opponent.current_state == State.SUBMISSION_ATTACKER:
@@ -794,7 +740,6 @@ func on_submission_broken_by_escape() -> void:
 		return
 	if visual_root:
 		visual_root.position = Vector3.ZERO
-	# Push backward away from opponent
 	var push_back: Vector3 = global_transform.basis.z.normalized() if is_inside_tree() else transform.basis.z.normalized()
 	if is_inside_tree():
 		global_position += push_back * 1.2
@@ -809,7 +754,6 @@ func on_tap_out() -> void:
 	if current_state in [State.DEFEATED, State.VICTORY]:
 		return
 	tap_out_submitted.emit(self)
-	# Guard: If manager intervened during signal handling (e.g. clutch escape), do NOT overwrite!
 	if current_state in [State.GETTING_UP, State.IDLE, State.DEFEATED, State.VICTORY]:
 		return
 	if visual_root:
@@ -829,9 +773,7 @@ func break_submission_rope_break() -> void:
 		synchronized_partner = null
 
 func _apply_countered_by(counterer: Fighter) -> void:
-	# Counterer gains hype
 	counterer.gain_hype(MatchRules.HYPE_GAIN_ON_COUNTER)
-	# Attacker stumbles and takes moderate counter damage
 	receive_damage(35.0, counterer, false)
 	_set_state(State.KNOCKED_DOWN)
 
@@ -848,7 +790,6 @@ func _attempt_pin() -> void:
 func _start_pin(target: Fighter) -> void:
 	_set_state(State.PINNING)
 	target.on_pinned(self)
-	# Snap attacker on top of defender
 	var target_pos: Vector3 = target.global_position if target.is_inside_tree() else target.position
 	if is_inside_tree():
 		global_position = target_pos + Vector3(0.0, 0.2, 0.0)
@@ -863,19 +804,14 @@ func on_pinned(attacker: Fighter) -> void:
 func _process_pin_escape(delta: float) -> void:
 	var has_mash_input: bool = (input_pin or input_strike or input_grapple)
 	var has_hold_input: bool = input_hold_pin
-	
 	var vit_ratio: float = clamp(vitality / max_vitality, 0.0, 1.0)
 	var stam_ratio: float = clamp(stamina / max_stamina, 0.0, 1.0)
 	var rev_ratio: float = clamp(stat_reversal / 10.0, 0.1, 1.0)
-	
-	# Quadratic vitality weighting ensures high HP defenders kick out swiftly (<1.2s),
-	# while exhausted/damaged defenders (<15% HP) suffer realistic 3-count pinfall defeats.
 	var health_factor: float = 0.06 + 0.64 * (vit_ratio * vit_ratio) + 0.30 * stam_ratio
 	var rev_mult: float = 0.85 + 0.30 * rev_ratio
 	var finisher_mult: float = MatchRules.PIN_ESCAPE_FINISHER_PENALTY if recent_finisher_impact_timer > 0.0 else 1.0
 	var heavy_mult: float = MatchRules.PIN_ESCAPE_HEAVY_IMPACT_PENALTY if recent_heavy_impact_timer > 0.0 else 1.0
 	var total_mult: float = health_factor * rev_mult * finisher_mult * heavy_mult
-	
 	if has_mash_input:
 		var mash_gain: float = MatchRules.PIN_ESCAPE_MASH_BASE * total_mult
 		pin_escape_progress += mash_gain
@@ -887,11 +823,7 @@ func _process_pin_escape(delta: float) -> void:
 		stamina = max(0.0, stamina - MatchRules.PIN_ESCAPE_HOLD_STAMINA_DRAIN * delta)
 		stamina_changed.emit(stamina, max_stamina)
 	else:
-		# Passive decay when unresisted (simulates pin weight & pinning arm pressure)
 		pin_escape_progress = max(0.0, pin_escape_progress - MatchRules.PIN_ESCAPE_DECAY_RATE * delta)
-	
-	# In active match, MatchManager._process_pin_countdown() has exclusive authority.
-	# For isolated standalone node tests without a MatchManager:
 	if MatchManager.instance == null or MatchManager.instance.current_state != MatchManager.MatchState.PIN_ATTEMPT:
 		if pin_escape_progress >= 100.0:
 			_execute_kick_out()
@@ -900,15 +832,12 @@ func _execute_kick_out() -> void:
 	if current_state != State.PINNED:
 		return
 	kick_out_succeeded.emit(self)
-	# Guard: If manager already finalized outcome, do NOT overwrite!
 	if current_state in [State.DEFEATED, State.VICTORY, State.GETTING_UP, State.IDLE]:
 		return
 	if visual_root:
 		visual_root.rotation = Vector3.ZERO
 		visual_root.position = Vector3.ZERO
 	_set_state(State.GETTING_UP)
-	
-	# Push pinning opponent away
 	if is_instance_valid(opponent) and opponent.current_state == State.PINNING:
 		opponent.on_kick_out_received()
 
@@ -917,7 +846,6 @@ func on_kick_out_received() -> void:
 		return
 	if visual_root:
 		visual_root.position = Vector3.ZERO
-	# Stumble backward away from opponent
 	var push_back: Vector3 = global_transform.basis.z.normalized() if is_inside_tree() else transform.basis.z.normalized()
 	if is_inside_tree():
 		global_position += push_back * 1.2
@@ -934,24 +862,20 @@ func break_pin_rope_break() -> void:
 
 func receive_damage(amount: float, from_fighter: Fighter, was_blocked: bool, is_finisher: bool = false) -> void:
 	vitality = max(0.0, vitality - amount)
+	if presentation and not was_blocked:
+		presentation.notify_hit(amount)
 	vitality_changed.emit(vitality, max_vitality)
-	
-	# Explicit impact classification: Finisher pressure is strictly gated by move metadata
 	if is_finisher:
 		recent_finisher_impact_timer = MatchRules.FINISHER_DISORIENTATION_DURATION
-		recent_heavy_impact_timer = 0.0 # Finisher overrides heavy impact
+		recent_heavy_impact_timer = 0.0
 	elif amount >= MatchRules.HEAVY_IMPACT_DAMAGE_THRESHOLD and not was_blocked:
 		recent_heavy_impact_timer = MatchRules.HEAVY_IMPACT_DISORIENTATION_DURATION
-	
-	# Interrupt grapple startup if hit by unblocked damage
 	if current_state == State.GRAPPLE_STARTUP and not was_blocked:
 		grapple_target = null
 		if left_arm and right_arm:
 			left_arm.position.z = 0.0
 			right_arm.position.z = 0.0
 		_set_state(State.IDLE)
-	
-	# Knockdown on heavy damage or low health (NOT during active submissions or pins)
 	if not was_blocked and vitality <= 0.0 and current_state not in [State.KNOCKED_DOWN, State.PINNED, State.SUBMISSION_DEFENDER, State.SUBMISSION_ATTACKER]:
 		_set_state(State.KNOCKED_DOWN)
 
@@ -963,7 +887,6 @@ func gain_hype(amount: float) -> void:
 func _set_state(new_state: State) -> void:
 	if current_state == new_state:
 		return
-	# Terminal match state guard: VICTORY and DEFEATED cannot be overwritten by active gameplay states
 	if current_state in [State.VICTORY, State.DEFEATED] and new_state not in [State.VICTORY, State.DEFEATED]:
 		return
 	var old_state: State = current_state
@@ -1003,10 +926,8 @@ func _play_state_animation(st: State) -> void:
 			anim_player.play(anim_name)
 
 func _clamp_within_ring() -> void:
-	# Single authoritative ownership: attacker solely controls defender's position during throws
 	if current_state == State.GRAPPLING_DEFENDER:
 		return
-		
 	var bound: float = MatchRules.RING_MAT_RADIUS - 0.35
 	if is_inside_tree():
 		global_position.x = clamp(global_position.x, -bound, bound)

@@ -1,121 +1,111 @@
 # LOLCOW WRESTLING: OFFLINE MAYHEM
 
-> A stylized 3D arcade wrestling game built in Godot 4.7.2 Forward+ with Blender 5.0 DCC procedural assets, targeting 1080p @ 60 FPS on Windows standalone.
+A stylized 3D arcade wrestling prototype for Godot. This overhaul replaces the
+placeholder roster with nine original skinned actors, adds an indoor venue and
+live character previews, and fixes presentation/input ownership regressions.
 
----
+**Status:** playable development build, not a finished commercial game. The
+character designs are fictional ring interpretations, not likeness-accurate
+scans. Named moves and traits remain partly design metadata; they are not all
+unique implemented mechanics. See [REVIEW.md](REVIEW.md) for tested changes and
+remaining limits.
 
-## 1. Project Overview
+## Run
 
-*LOLCOW WRESTLING: OFFLINE MAYHEM* is an arcade-style 3D professional wrestling title featuring 8 distinct fighters, synchronized grapple and throw sequences, continuous submission holds, dynamic referee officiating, and an integrated Character Selection system.
+Open `project.godot` in **Godot 4.7.2** and press F6/F5, or run:
 
-### In Memoriam: KingCobraJFS (1991–2025)
-Reporting confirms that KingCobraJFS passed away on 21 August 2025. Throughout the entire game across all game modes, KingCobraJFS serves as the neutral, untargetable official referee. He features a permanently visible, pulsing emissive gold halo hovering above his gothic cap as an enduring memorial tribute.
-
----
-
-## 2. The 8-Character Canonical Roster
-
-Every fighter has an authoritative, canonical 42-point attribute distribution across 7 stats (Power, Mobility, Grappling, Stamina, Durability, Reversal, Showmanship; all rated 1–10).
-
-| ID | Name | Archetype | Style Summary | Signature Finisher |
-| :--- | :--- | :--- | :--- | :--- |
-| tophiachu | Tophiachu | Heavyweight Counter-Brawler | Slow heavy tank, devastating strikes & high powerslams | *Live-Stream Shutdown* |
-| novaonline | NovaOnline | Momentum Heavyweight | Balanced heavyweight with forward burst | *Going Offline* |
-| cyraxx | Cyraxx | Lightweight Burst Striker | Compact, lightning strikes, low leverage throws | *Raxx and Ruin* |
-| candy_rooks | Candy Rooks | Combination Grappler | High power and durability combination brawler | *Ribs & Kidney Beans* |
-| andy_ditch | Andy Ditch | Territory Anchor Grappler | Anchor wrestler with high grappling defense | *Case Closed* |
-| jupiter_the_hybrid | Jupiter the Hybrid | Stance-Shift Grappler | Agile kicks, swift escapes, aerial offense | *Eclipse Driver* |
-| anacondasin | AnacondaSin | Positional Submission Specialist | Dangerous lock specialist, rapid tap-out inducer | *Anaconda Lock* |
-| daniel_larson | Daniel Larson | Mobile Opportunist | Unpredictable, fast scrambler and reversal threat | *Final Encore* |
-
----
-
-## 3. Core Mechanics & Architecture
-
-1. **Deterministic Combat State Machine**:
-   - Strictly authoritative state gating on Fighter (IDLE, WALK, STRIKE, BLOCK, REVERSAL, GRAPPLE_INIT, GRAPPLE_LIFT, THROW_ATTACKER, THROW_DEFENDER, KNOCKDOWN, GETUP, PINNING, PINNED, SUBMISSION_ATTACKER, SUBMISSION_DEFENDER, VICTORY, DEFEATED).
-   - Zero sliding or desynchronization during mutual grapple locks.
-   - Attacker and defender trajectories are mutually locked and frame-synchronized.
-
-2. **Leverage & Weight-Class Throw Scaling**:
-   - Grapples dynamically evaluate the attacker-to-defender weight/power ratio.
-   - Heavyweights lifting lighter opponents execute high overhead powerslams (1.55m vertical peak).
-   - Lightweight strikers throwing heavyweights route to low-angle leverage trips (0.38m vertical peak), ensuring believable physical interactions.
-
-3. **Submissions & Pinning**:
-   - **Continuous Submissions**: Lock holds drain defender vitality and stamina continuously. Defender can mash kick-out keys to escape; if vitality drops to zero during a hold, a tap-out victory is declared.
-   - **Pinning & 3-Count**: Pin attempts alert referee KingCobraJFS to drop into position and begin 1-2-3 counts. A kick-out meter allows escapes before count 3.
-   - **Rope Break Priority**: Being within 0.8m of the ring ropes immediately breaks pins and submissions.
-
-4. **16-Bit PCM Procedural Audio Synthesizer (scripts/core/audio_manager.gd)**:
-   - Zero external WAV dependencies; all sounds synthesized in real time via 16-bit PCM waveforms:
-     - Mat slam impacts, canvas slaps, clean strike snaps, blocked thuds.
-     - Ring bell chimes and elastic rope twangs.
-     - Referee count tone accents (Count 1: 350 Hz, Count 2: 440 Hz, Count 3: 530 Hz).
-     - Rope break alert buzzer.
-     - Rising finisher power chord stinger.
-     - Triumphant 4-note brass victory fanfare.
-
-5. **Broadcast Presentation**:
-   - Dynamic 3D arena with canvas, apron, steel corner posts, and 3-tier ropes.
-   - Broadcast camera with zoom framing and trauma-based screen shake.
-   - Full arcade Character Select menu with dual navigation (WASD for P1, Arrows for P2), stat radars, CPU toggle, and match persistence.
-
----
-
-## 4. Default Input Controls
-
-### Character Select
-- **P1 Selection**: W / A / S / D
-- **P2 Selection**: Up / Left / Down / Right
-- **Toggle P2 CPU/Human**: C key
-- **Confirm / Start Match**: Space or Enter
-
-### In-Ring Combat
-| Action | Player 1 | Player 2 (If Human) |
-| :--- | :--- | :--- |
-| **Move Up / Down / Left / Right** | W / S / A / D | Up / Down / Left / Right |
-| **Strike** | J | Numpad 1 |
-| **Grapple / Throw** | K | Numpad 2 |
-| **Block / Submission** | L | Numpad 3 |
-| **Reversal** | U | Numpad 4 |
-| **Pin / Kick-out** | Space | Numpad 0 |
-| **Signature Finisher** | I | Numpad 5 |
-| **Return to Menu** | Escape | Escape |
-
----
-
-## 5. Verification & Test Suite
-
-The project includes an automated headless verification suite testing the combat state machine, 3D model geometry, audio synthesis, and all 64 attacker-defender matchups ( \times 8$).
-
-Run tests headlessly:
-`ash
-godot_console --headless -s tests/test_suite.gd
-`
-**Current Status**: 150 / 150 Passed (100% Pass, 0 Failures, 0 Warnings).
-
----
-
-## 6. Directory Layout
-
+```sh
+godot --path .
 ```
-.
-├── assets/models/         # Compiled GLB 3D assets (all 8 fighters + ring + referee)
-├── blender/               # Blender 5.0 automated generation pipeline (generate_assets.py)
-├── scenes/
-│   ├── arena/             # 3D Ring arena scene
-│   ├── fighter/           # Instantiable 3D fighter entity
-│   ├── referee/           # KingCobraJFS referee entity
-│   └── ui/                # Character select and broadcast match HUD
-├── scripts/
-│   ├── ai/                # Autonomous CPU combat controller
-│   ├── core/              # RosterData, MatchRules, MatchManager, AudioManager, MatchConfig
-│   ├── fighter/           # State machine, movement, grapple sync, combat logic
-│   ├── referee/           # KingCobraJFS ring positioning and 3-count officiating
-│   ├── ring/              # Ring boundary and broadcast camera shake
-│   └── ui/                # UI controllers
-├── tests/                 # 150-case headless automated test suite
-├── project.godot          # Engine configuration & input mappings
-└── START_GAME.bat         # Direct Windows standalone launcher
+
+On Windows, place the Godot executable beside `START_GAME.bat`, put `godot` on
+PATH, or set `GODOT_BIN` to its path. Double-click the batch launcher. This is a
+source project launcher, not a standalone exported Windows executable. On
+systems without Forward+ support, use `--rendering-method gl_compatibility`.
+
+Compiled GLBs are included; Blender and Python are **not** required to play.
+After cloning, let Godot finish its initial asset import.
+
+## Controls
+
+| Action | Player 1 | Player 2 |
+|---|---|---|
+| Move | W/A/S/D | Arrow keys |
+| Strike | J | Numpad 1 |
+| Grapple; submission on grounded opponent | K | Numpad 2 |
+| Block | L | Numpad 3 |
+| Reversal | U | Numpad 4 |
+| Pin; tap or hold to resist | Space | Numpad 0 |
+| Finisher | I | Numpad 5 |
+
+Character selection supports the same movement keys. C changes Player 2 between
+human and CPU. Space/Enter starts the match. Mouse click selects Player 1;
+Shift-click selects Player 2. Escape returns from a match to selection; R
+restarts the match. Keyboard-only controls are the currently verified input path.
+
+## Roster
+
+Tophiachu, NovaOnline, Cyraxx, Candy Rooks, Andy Ditch, Jupiter the Hybrid,
+AnacondaSin, and Daniel Larson retain their canonical seven-stat allocations.
+KingCobraJFS is the non-colliding, untargetable official with one head-attached
+gold halo. The halo remains visible without bloom.
+
+## What changed
+
+- All eight wrestlers and the referee have a consistent **42-bone** skinned rig,
+  articulated fingers, differentiated proportions and gear, facial details,
+  original embedded cloth textures, and a **25-clip animation library**.
+- `tools/build_roster.py` is a deterministic, standard-library-only glTF asset
+  compiler. Explicit anatomical regions own skin weights; wide torso vertices
+  cannot be misclassified as arms. Every clip keys every bone.
+- Presentation samples an authoritative action clock. Mirror matches isolate
+  mutable animation resources. Skeletal throws no longer receive the legacy
+  whole-model tilt. Landed wrestlers use a downed pose rather than replaying a
+  standing collapse. Locomotion reads actual post-simulation travel.
+- Human input release clears movement, guard, and held resistance. External
+  providers opt in with `use_external_input` and complete command snapshots.
+- The venue adds apron/signage, steps, barrier seating, instanced reacting crowd,
+  overhead trusses, entrance area, and subdued materials/lighting.
+- Character selection previews the actual in-game assets. HUD announcements and
+  escape UI are less obstructive. Referee movement and signals use the new rig.
+
+## Rebuild assets
+
+```sh
+python tools/build_roster.py
+python tools/build_roster.py --character tophiachu
+python tests/test_roster_assets.py
 ```
+
+The `.glb` files include geometry, skin, animations, and original textures and can
+be imported into Blender for further editing. The compiler is the editable
+source of truth; manual Blender edits must be exported deliberately rather than
+subsequently overwritten by the compiler. Old Blender entry points delegate to
+the new compiler. The manifest records reproducible SHA-256 checksums.
+
+## Verify
+
+```sh
+godot --headless --editor --path . --import
+python tests/test_roster_assets.py
+godot --headless --path . -s tests/test_suite.gd
+godot --headless --fixed-fps 60 --path . -s tests/test_pin_balance_scene.gd
+godot --headless --path . -s tests/test_visual_presentation.gd
+godot --headless --fixed-fps 60 --path . -s tests/test_overhaul.gd
+```
+
+`test_overhaul.gd` uses engine-scheduled physics, including all 64 ordered
+attacker/defender combinations through complete grapple/throw/release sequences.
+It tests logic and pose ownership, **not** anatomically perfect grip contact.
+The presentation suite is structural; bone/clip counts are not quality scores.
+
+For actual rendered evidence (a graphics driver or virtual display is required):
+
+```sh
+godot --path . --fixed-fps 60 --rendering-method gl_compatibility --audio-driver Dummy -s tools/capture_review.gd
+```
+
+The capture tool saves actual engine images under `evidence/`. They are
+repeatable diagnostic scenes, not proof of real-time performance. Target hardware
+performance, native Windows export, controller support, precise grip IK, and
+final likeness/art approval remain unverified.

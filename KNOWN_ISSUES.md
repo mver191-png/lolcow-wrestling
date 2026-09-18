@@ -1,60 +1,30 @@
-## Active Open Issues & Visual Overhaul Pipeline
+# Open issues
 
-1. **Roster Skeletal Animation Migration (In Progress)**:
-   - **Migrated (Production)**:
-     - `tophiachu`: Complete 22-bone humanoid armature, customized heavyweight mesh, defined facial features, textured materials, and 16 keyframed skeletal animation clips exported to `assets/models/tophiachu.glb`.
-   - **Pending Migration (Provisional Assets Preserved)**:
-     - `cyraxx`: Next character queued for 22-bone humanoid rig, frail cruiserweight proportions, black beanie silhouette, and rapid strike clips.
-     - `referee_cobra` (KingCobraJFS): Neutral referee queued for customized vest, iconic glasses, bowler hat, and permanent golden halo attached to head bone.
-     - Remaining 6 fighters (`novaonline`, `candy_rooks`, `andy_ditch`, `jupiter_the_hybrid`, `anacondasin`, `daniel_larson`): Preserving current provisional assets and procedural fallback tweens until their production turns.
-2. **Visual Checks & Authored Animations Status**:
-   - Automated structural checks (bone count, animation presence, looping modes, state routing, speed scale clamping, fallback safety) are verified passing 100% in headless Godot.
-   - Interactive visual rendering and manual gameplay playtests remain **NOT RUN** per headless review protocol.
+The review branch is playable but is not a production-art sign-off.
 
----
+- Tophiachu and Cyraxx now have distinct primary-strike choreography and hit
+  schedules, not unique finishers. Cyraxx's flurry deliberately splits the former
+  single-hit damage/Hype budget. Practical matchup balance needs human playtests.
+- Strike contact still uses the existing logical forward/range envelope. Accurate
+  swept limb volumes and body-specific hurtboxes remain work; matching a hit window
+  is not proof of visual hand contact at the edge of reach.
+- The first two characters have authored, supported recovery. The other six keep
+  the current baseline. The short arcade get-up and early pose transition still
+  need more art refinement; reduced correction does not prove perfect foot planting.
+- Full-mesh clearance protects the current linear-skinned geometry against canvas
+  and a square rope envelope. It is not collision with rope cylinders, turnbuckles,
+  the referee, opponents, shader displacement, cloth or future blend shapes.
+- Bounded cosmetic offsets remain separate from gameplay roots. The safeguard can
+  prevent penetration while still producing hovering or noticeable displacement.
+- Grip markers and constant limb lengths do not prove collision-free fingers or
+  clothing. Shoulder/elbow seams, extreme joints, detailed faces and hair remain
+  visible art limitations. The stylized models are not approved likeness scans.
+- Referee approach/first-count anticipation and distinct finisher/trait mechanics
+  are still pending. No tournament/online mode was added.
+- Windows export, gamepads, Forward+ target-GPU performance and a comprehensive
+  human match playtest remain unverified. Software rendering has an unsupported
+  VSync warning. Previous Unicode import diagnostics and a small create/free smoke
+  fixture's shutdown instances have not been fully isolated.
 
-## Resolved in Current Overhaul & Prior Milestones
-
-1. **Skinned Mesh & Presentation Architecture (Resolved in Graphics Phase 1)**:
-   - Created `FighterPresentation` (`scripts/fighter/fighter_presentation.gd`) to decouple visual asset management, skeletal rig detection, and animation playback from authoritative combat physics.
-   - Guarded legacy procedural limb tweens and whole-model tilt/offset overrides in `scripts/fighter/fighter.gd` with `not is_rigged()`.
-   - Enabled locomotion stride synchronization (`anim_player.speed_scale` dynamic scaling).
-   - Authored Blender 5.0.1 generator pipeline (`blender/build_skinned_character.py`) exporting 22-bone armature and 16 NLA-backed action clips.
-2. **Exclusive Terminal Outcome Ownership & Deterministic Scheduling (Resolved in Pass A Terminal Ownership)**:
-   - Fixed competing ownership between `Fighter` and `MatchManager`: `MatchManager` has exclusive authority over terminal match outcome declarations (`_process_submission_watch()`, `_process_pin_countdown()`, `_resolve_pin_kick_out()`, `_resolve_submission_escape()`, `_resolve_submission_tap_out()`).
-   - Assigned deterministic engine priorities: `Fighter.process_physics_priority = 0` and `MatchManager.process_physics_priority = 10`, ensuring fighters fully update resistance inputs, damage, and progress before `MatchManager` evaluates rules.
-   - Symmetrically cleared `synchronized_partner = null` on both participants when entering terminal outcomes.
-   - Guarded terminal states `VICTORY` and `DEFEATED` in `_set_state()` against being overwritten by gameplay callbacks (`GETTING_UP`, `IDLE`).
-   - Guarded fighter callbacks (`_execute_submission_escape()`, `on_tap_out()`, `_execute_kick_out()`, `on_kick_out_received()`) against overwriting manager decisions.
-   - Fully tested across slot inversions and tree processing orders with real scene physics frames (126 scene tests, 404 unit tests, 0 failures).
-3. **Simultaneous Submission Outcome Ordering & Centralized Hold Cleanup (Resolved in Pass A Priority 4)**:
-   - Established explicit simultaneous priority policy in `MatchManager` (`MatchRules.SUBMISSION_SIMULTANEOUS_PRIORITY = MatchRules.SubmissionPriority.ESCAPE_BREAKS`).
-   - Decoupled terminal submission resolution from individual fighter update frames into `MatchManager` resolvers: `_resolve_submission_escape()` and `_resolve_submission_tap_out()`.
-   - Guaranteed identical, deterministic outcomes across all 4 permutations of slot orders (P1/P2 vs P2/P1) and tree processing orders (Attacker-first vs Defender-first).
-   - Enforced centralized, symmetrical hold cleanup: `synchronized_partner = null` cleared on both sides during all breakout, rope break, and tap-out transitions with zero dangling references.
-4. **Directional Attack Contact & Grapple Startup (Resolved in Pass A Priority 3)**:
-   - Added forward directional dot-product gating (`STRIKE_CONE_MIN_DOT = 0.50`, 120-degree cone) to `_handle_strike_active_window()`, preventing strikes from connecting with targets on flanks or behind the attacker.
-   - Enforced measurable `GRAPPLE_STARTUP` window (`GRAPPLE_STARTUP_DURATION = 0.18s`, whiff recovery 0.25s) in `_attempt_grapple()` and `_process_grapple_startup()`.
-   - Verified that unblocked incoming strikes interrupt attacker out of `GRAPPLE_STARTUP` and clear target reference, preventing throw execution.
-   - Verified that defender reversal stance during startup successfully counters the attacker.
-   - Upgraded `CPUController` to retaliate against opponent `GRAPPLE_STARTUP` via strike interruption or reversal counter.
-5. **Boundary Safety During Throws (Resolved in Pass A Priority 2)**:
-   - Added `_validate_and_adjust_throw_boundaries()` before locking synchronized throws. Evaluates predicted slam target $\vec{P}_{\text{slam}} = \vec{P}_{\text{atk}} + \vec{F} \times d_{\text{slam}}$ and shifts both attacker and defender inward toward center ring so landing coordinates and hold coordinates remain $\le 3.50\text{m}$ (inside the $3.65\text{m}$ ring limit).
-   - Added secondary clamping in `_process_synchronized_attacker()` for `hold_pos` and `slam_pos`.
-   - Verified across 32 edge, corner, slot, and tree permutations (128 assertions) with zero out-of-bounds trajectory and zero ground release snap-back.
-6. **Pin-Balance Acceptance & Empirical Sequence Validation (Resolved in Pass A Pinfall Balance)**:
-   - Replaced flat-rate escape formula with an authoritative resource-aware model factoring in quadratic vitality, remaining stamina, reversal stats, and explicit move-metadata impact disorientation.
-   - Eliminated the bug where ordinary heavy throws ($\ge 100$ damage) inflicted finisher disorientation; ordinary heavy throws (177 dmg) now trigger a mild 1.5s heavy impact timer (0.85 mult) allowing healthy defenders to kick out swiftly, while genuine finishers inflict a 4.5s disorientation (0.55 mult).
-   - Balanced hold-to-resist as an accessibility alternative at 85.0 base/sec with proportional 8.0/s stamina drain (~85% of 10 Hz mashing speed).
-   - Resolved tick 198 (3.30s) floating point boundary precision (`+ 0.0005`) and made kickout ($\ge 100.0$) and rope break strictly preempt the 3-count pinfall across all slot inversions and tree processing orders.
-   - Empirically validated across 56 real engine physics tests (`tests/test_pin_balance_scene.gd`) that fresh Cyraxx kicks out at Count 1 (~1.5s–1.6s) across all 4 modes (CPU, 10 Hz mash, hold-on-entry, pre-held), and weakened Cyraxx loses by 3-count pinfall across all 4 modes.
-7. **CPU Pin & Submission Escape Command Disconnection (Resolved in Pass A Baseline)**:
-   - Unified all escape checks to consume the `Fighter` command interface (`input_pin`, `input_hold_pin`, `input_strike`, `input_grapple`, `input_block`) rather than polling global hardware keys during combat physics.
-8. **Conflicting Throw Height Ownership (Resolved in Pass A Baseline)**:
-   - Removed canvas grounding conflicts in central ring throws so overhead powerslams reach full 1.55m vertical peak before canvas impact.
-9. **Forward-Axis Facing Vector Standardization (Resolved in Pass A Baseline)**:
-   - Standardized all locomotion, stationary facing, and synchronized throw vectors to Godot's `-basis.z` forward convention (`atan2(-dx, -dz)`).
-10. **Canonical Finisher Names Alignment (Resolved in Pass A Baseline)**:
-    - Synchronized `README.md` to canonical names in `scripts/core/roster_data.gd`.
-11. **Desktop Launcher Script Trailing Quote Bug (Resolved in M3 Polish)**:
-    - Fixed `%~dp0` trailing backslash CRT escaping issue in `START_GAME.bat`.
+See `docs/AUTHORED_MOTION_PASS.md`, `docs/CLEARANCE_PASS.md`,
+`docs/CONTACT_PASS.md` and `REVIEW.md` for implemented scope and evidence.

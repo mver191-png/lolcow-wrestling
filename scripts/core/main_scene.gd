@@ -23,6 +23,7 @@ func _ready() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("toggle_cpu"):
 		if cpu_controller_p2 and fighter_2:
+			fighter_2.clear_inputs()
 			fighter_2.is_cpu = not fighter_2.is_cpu
 			MatchConfig.p2_is_cpu = fighter_2.is_cpu
 			cpu_controller_p2.set_physics_process(fighter_2.is_cpu)
@@ -31,3 +32,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_ESCAPE:
 			get_tree().change_scene_to_file("res://scenes/ui/character_select.tscn")
+
+func _exit_tree() -> void:
+	if is_instance_valid(fighter_1): fighter_1.clear_inputs()
+	if is_instance_valid(fighter_2): fighter_2.clear_inputs()

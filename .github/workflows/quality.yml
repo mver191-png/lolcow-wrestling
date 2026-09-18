@@ -1,0 +1,77 @@
+name: Game quality
+on:
+  pull_request:
+  push:
+    branches: [main, astra/character-animation-overhaul]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: game-quality-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GODOT_VERSION: 4.7.2
+      GODOT_SILENCE_ROOT_WARNING: 1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build original roster assets and verify exports
+        run: |
+          set -euo pipefail
+          mkdir -p evidence
+          python3 tools/build_roster.py 2>&1 | tee evidence/asset-build.log
+          python3 tests/test_roster_assets.py 2>&1 | tee evidence/assets-tests.log
+      - name: Install the project engine
+        run: |
+          set -euo pipefail
+          mkdir -p .tools
+          curl --fail --location --retry 3 "https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip" -o .tools/godot.zip
+          unzip -q .tools/godot.zip -d .tools
+          mv .tools/Godot_v${GODOT_VERSION}-stable_linux.x86_64 .tools/godot
+          chmod +x .tools/godot
+          .tools/godot --version | tee evidence/engine-version.txt
+      - name: Import and validate gameplay and presentation
+        run: |
+          set -euo pipefail
+          .tools/godot --headless --editor --path . --import 2>&1 | tee evidence/import.log
+          .tools/godot --headless --path . -s tests/test_suite.gd 2>&1 | tee evidence/unit.log
+          .tools/godot --headless --fixed-fps 60 --path . -s tests/test_pin_balance_scene.gd 2>&1 | tee evidence/integration.log
+          .tools/godot --headless --path . -s tests/test_visual_presentation.gd 2>&1 | tee evidence/presentation.log
+          .tools/godot --headless --fixed-fps 60 --path . -s tests/test_overhaul.gd 2>&1 | tee evidence/overhaul.log
+          .tools/godot --headless --fixed-fps 60 --path . -s tests/test_contacts.gd 2>&1 | tee evidence/contacts.log
+          .tools/godot --headless --fixed-fps 60 --path . -s tests/test_animation_polish.gd 2>&1 | tee evidence/animation-polish.log
+          .tools/godot --headless --fixed-fps 60 --path . -s tests/test_clearance.gd 2>&1 | tee evidence/clearance.log
+          .tools/godot --headless --fixed-fps 60 --path . -s tests/test_authored_moves.gd 2>&1 | tee evidence/authored-moves.log
+          if grep -E 'SCRIPT ERROR:|Parse Error:|\[FAIL\]' evidence/{import,unit,integration,presentation,overhaul,contacts,animation-polish,clearance,authored-moves}.log; then
+            echo 'Engine reported a script or assertion failure.' >&2
+            exit 1
+          fi
+      - name: Package source, generated assets and logs
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, shutil
+          from pathlib import Path
+          root=Path.cwd();out=root/'review-package';out.mkdir(exist_ok=True)
+          names=['.gitignore','project.godot','README.md','REVIEW.md','STATE.md','KNOWN_ISSUES.md','NEXT_TASK.md','START_GAME.bat','CODEBASE_FOR_GPT_PRO.md','DECISIONS.md','GEMINI_GRAPHICS_ANIMATION_MASTER_PROMPT.md']
+          files=[root/name for name in names]
+          for folder in ['.github','scripts','scenes','tests','tools','blender','docs','assets/models','evidence']:
+              files.extend(p for p in (root/folder).rglob('*') if p.is_file())
+          manifest={}
+          for p in files:
+              if not p.is_file() or '__pycache__' in p.parts or p.suffix in ['.pyc','.import'] or p.name.endswith('_woven.png'):continue
+              name=p.relative_to(root).as_posix();target=out/name;target.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(p,target);manifest[name]=hashlib.sha256(target.read_bytes()).hexdigest()
+          (out/'source-manifest.json').write_text(json.dumps(manifest,indent=2));print('Packaged',len(manifest),'files')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: game-review-${{ github.sha }}
+          path: review-package/
+          include-hidden-files: true
+          retention-days: 7

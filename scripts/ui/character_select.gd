@@ -31,6 +31,9 @@ var p2_index: int = 2 # Default to Cyraxx
 var p2_is_cpu: bool = true
 
 var roster_buttons: Array[Button] = []
+const PreviewScript = preload("res://scripts/ui/character_preview.gd")
+var preview_p1: SubViewportContainer
+var preview_p2: SubViewportContainer
 
 func _ready() -> void:
 	character_ids = RosterData.get_all_ids()
@@ -44,6 +47,14 @@ func _ready() -> void:
 	if p2_found != -1:
 		p2_index = p2_found
 		
+	if preview_p1 == null and p1_stats_container:
+		preview_p1 = PreviewScript.new()
+		p1_stats_container.get_parent().add_child(preview_p1)
+		p1_stats_container.get_parent().move_child(preview_p1, 4)
+	if preview_p2 == null and p2_stats_container:
+		preview_p2 = PreviewScript.new()
+		p2_stats_container.get_parent().add_child(preview_p2)
+		p2_stats_container.get_parent().move_child(preview_p2, 4)
 	_setup_grid()
 	_update_p1_display()
 	_update_p2_display()
@@ -60,6 +71,7 @@ func _setup_grid() -> void:
 		return
 		
 	for child in grid_container.get_children():
+		grid_container.remove_child(child)
 		child.queue_free()
 	roster_buttons.clear()
 	
@@ -68,8 +80,21 @@ func _setup_grid() -> void:
 		var data: Dictionary = RosterData.get_character(id)
 		var btn: Button = Button.new()
 		btn.text = data.get("name", id)
-		btn.custom_minimum_size = Vector2(160, 60)
+		btn.custom_minimum_size = Vector2(210, 110)
 		btn.focus_mode = Control.FOCUS_ALL
+		btn.add_theme_font_size_override("font_size", 19)
+		var normal := StyleBoxFlat.new()
+		normal.bg_color = Color(.075, .095, .13)
+		normal.set_border_width_all(1)
+		normal.border_color = Color(.25, .30, .37)
+		normal.set_corner_radius_all(6)
+		btn.add_theme_stylebox_override("normal", normal)
+		var hover := normal.duplicate() as StyleBoxFlat
+		hover.bg_color = Color(.16, .20, .25)
+		hover.border_color = Color(.80, .66, .39)
+		btn.add_theme_stylebox_override("hover", hover)
+		btn.add_theme_stylebox_override("focus", hover)
+		btn.add_theme_stylebox_override("pressed", hover)
 		
 		# Connect click
 		var idx: int = i
@@ -164,12 +189,13 @@ func _update_grid_highlights() -> void:
 		else:
 			btn.modulate = Color(0.85, 0.85, 0.85)
 			
-		btn.text = base_name + tags
+		btn.text = base_name + "\n" + (tags.strip_edges() if tags != "" else data.get("title", ""))
 
 func _update_p1_display() -> void:
 	if p1_index < 0 or p1_index >= character_ids.size():
 		return
 	var id: String = character_ids[p1_index]
+	if preview_p1: preview_p1.show_character(id)
 	var data: Dictionary = RosterData.get_character(id)
 	
 	if p1_name_label:
@@ -191,6 +217,7 @@ func _update_p2_display() -> void:
 	if p2_index < 0 or p2_index >= character_ids.size():
 		return
 	var id: String = character_ids[p2_index]
+	if preview_p2: preview_p2.show_character(id)
 	var data: Dictionary = RosterData.get_character(id)
 	
 	if p2_name_label:

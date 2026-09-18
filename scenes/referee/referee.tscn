@@ -3,37 +3,14 @@
 [ext_resource type="Script" path="res://scripts/referee/referee.gd" id="1_script"]
 [ext_resource type="PackedScene" path="res://assets/models/referee_cobra.glb" id="2_model"]
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_halo"]
-albedo_color = Color(1, 0.85, 0.2, 1)
-metallic = 0.2
-roughness = 0.1
-emission_enabled = true
-emission = Color(1, 0.85, 0.2, 1)
-emission_energy_multiplier = 3.0
-
-[sub_resource type="TorusMesh" id="TorusMesh_halo"]
-material = SubResource("StandardMaterial3D_halo")
-inner_radius = 0.3
-outer_radius = 0.38
-rings = 24
-ring_segments = 16
-
-[node name="Referee" type="Node3D" node_paths=PackedStringArray("halo_node", "mesh_instance", "count_label_3d")]
+[node name="Referee" type="Node3D" node_paths=PackedStringArray("mesh_instance", "count_label_3d")]
 script = ExtResource("1_script")
-halo_node = NodePath("HaloAnchor")
 mesh_instance = NodePath("ModelAnchor")
 count_label_3d = NodePath("CountLabel3D")
 
 [node name="ModelAnchor" type="Node3D" parent="."]
 
 [node name="Model" parent="ModelAnchor" instance=ExtResource("2_model")]
-
-[node name="HaloAnchor" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.3, 0)
-
-[node name="HaloMesh" type="MeshInstance3D" parent="HaloAnchor"]
-mesh = SubResource("TorusMesh_halo")
-surface_material_override/0 = SubResource("StandardMaterial3D_halo")
 
 [node name="CountLabel3D" type="Label3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.7, 0)

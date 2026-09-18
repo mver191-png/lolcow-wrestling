@@ -1,13 +1,23 @@
 @echo off
-title LOLCOW WRESTLING: OFFLINE MAYHEM
+setlocal
 cd /d "%~dp0"
-echo Starting LOLCOW WRESTLING: OFFLINE MAYHEM...
-
-set "GODOT_EXE=C:\Users\mauri\AppData\Local\Microsoft\WinGet\Packages\GodotEngine.GodotEngine_Microsoft.Winget.Source_8wekyb3d8bbwe\Godot_v4.7.2-stable_win64.exe"
-if exist "%GODOT_EXE%" (
-    start "" "%GODOT_EXE%" --path "%CD%"
-    exit /b 0
+if defined GODOT_BIN (
+  "%GODOT_BIN%" --path "%CD%" %*
+  exit /b %errorlevel%
 )
-
-start "" "godot.exe" --path "%CD%"
-exit /b 0
+for %%G in (Godot_v*_win64.exe Godot_v*_win64_console.exe godot.exe) do (
+  if exist "%%G" (
+    "%%G" --path "%CD%" %*
+    exit /b
+  )
+)
+where godot >nul 2>&1
+if not errorlevel 1 (
+  godot --path "%CD%" %*
+  exit /b
+)
+echo Godot was not found. Place Godot 4.7.2 beside this launcher,
+echo add godot to PATH, or set GODOT_BIN to the executable path.
+echo This launcher opens the source project; it is not a Windows export.
+pause
+exit /b 1

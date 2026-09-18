@@ -3,21 +3,21 @@
 [ext_resource type="Script" path="res://scripts/ui/match_hud.gd" id="1_script"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_p1_hp"]
-bg_color = Color(0.85, 0.15, 0.2, 1)
+bg_color = Color(0.56, 0.25, 0.30, 1)
 corner_radius_top_left = 4
 corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_p1_sta"]
-bg_color = Color(0.2, 0.75, 0.35, 1)
+bg_color = Color(0.27, 0.61, 0.60, 1)
 corner_radius_top_left = 2
 corner_radius_top_right = 2
 corner_radius_bottom_right = 2
 corner_radius_bottom_left = 2
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hype"]
-bg_color = Color(0.85, 0.65, 0.1, 1)
+bg_color = Color(0.80, 0.65, 0.34, 1)
 corner_radius_top_left = 2
 corner_radius_top_right = 2
 corner_radius_bottom_right = 2
@@ -178,19 +178,19 @@ horizontal_alignment = 2
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
-anchor_top = 0.5
+anchor_top = 0.0
 anchor_right = 0.5
-anchor_bottom = 0.5
+anchor_bottom = 0.0
 offset_left = -300.0
-offset_top = -120.0
+offset_top = 30.0
 offset_right = 300.0
-offset_bottom = -40.0
+offset_bottom = 100.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_colors/font_color = Color(1, 0.9, 0.2, 1)
+theme_override_colors/font_color = Color(0.85, 0.76, 0.56, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 12
-theme_override_font_sizes/font_size = 48
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 32
 text = "COUNT: 1!"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -199,13 +199,13 @@ vertical_alignment = 1
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
-anchor_top = 0.5
+anchor_top = 1.0
 anchor_right = 0.5
-anchor_bottom = 0.5
+anchor_bottom = 1.0
 offset_left = -250.0
-offset_top = 20.0
+offset_top = -135.0
 offset_right = 250.0
-offset_bottom = 90.0
+offset_bottom = -65.0
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -215,7 +215,7 @@ theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 8
 theme_override_font_sizes/font_size = 20
-text = "TAP [SPACE] / [NUM0] TO KICK OUT!"
+text = "HOLD OR TAP [SPACE] / [NUM0] TO RESIST"
 horizontal_alignment = 1
 
 [node name="ProgressBar" type="ProgressBar" parent="PinEscapeContainer"]

@@ -2,6 +2,8 @@
 
 [ext_resource type="PackedScene" path="res://assets/models/ring_arena.glb" id="1_arena"]
 
+[ext_resource type="Script" path="res://scripts/ring/venue.gd" id="2_venue"]
+
 [sub_resource type="BoxShape3D" id="BoxShape3D_mat"]
 size = Vector3(8, 0.4, 8)
 
@@ -12,6 +14,7 @@ size = Vector3(8, 2, 0.2)
 size = Vector3(0.2, 2, 8)
 
 [node name="RingArena" type="Node3D"]
+script = ExtResource("2_venue")
 
 [node name="Model" parent="." instance=ExtResource("1_arena")]
 
