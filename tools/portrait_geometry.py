@@ -85,10 +85,11 @@ class Portrait:
         """Front skin surface in the actor's original Y-up, -Z coordinate frame."""
         p=self.p;rx,rz=self.dim(t)
         # More planar facial mask, rounded sides and distinct jaw/temple profiles.
-        q=min(.999,abs(x)/max(rx,.001))
-        z=-rz*math.sqrt(max(.001,1-q*q))
+        q=min(1.0,abs(x)/max(rx,.001))
+        z=-rz*math.sqrt(max(0.0,1-q*q))
         fade=(1-q*q)**1.7
         z=lerp(z,-rz*(1-.18*q*q),fade)
+        base_z=z
         # Integrated nose including tip, bridge and alae, not an attached sphere.
         n=p['nose_level'];nw=p['nose_width'];projection=p['nose_projection']
         nose=projection*g(x,t,0,n,nw,.050)
@@ -114,6 +115,10 @@ class Portrait:
         z+=.0025*g(x,t,0,m-.075,p['mouth_width']*.73,.024)
         # Soft philtrum columns connect nasal base to the cupid's bow.
         z-=.0015*(g(x,t,.007,m+.044,.003,.023)+g(x,t,-.007,m+.044,.003,.023))
+        # Fade features to the true elliptical boundary. Clamping q to .999
+        # left a 6–7 mm crack at the duplicated UV seam on every old head.
+        # At q=1 both hemispheres must meet exactly, with no nasal/cheek offset.
+        z=base_z+(z-base_z)*smooth((1-q)/.13)
         return z+.009
 
     def head(self):
@@ -129,6 +134,9 @@ class Portrait:
                 # remaining an art choice rather than a likeness measurement.
                 x+=.0012*math.sin(t*5.0)*max(0,-math.sin(theta))
                 row.append((x,self.y(t),z))
+            # Duplicate POSITION, not an independently evaluated sin(2*pi)
+            # endpoint. UV 0/1 remain separate; normals can weld correctly.
+            row[-1]=row[0]
             rows.append(row)
         s.grid(rows,'portrait_skin',head,'head',cap=True)
         # Blend under-jaw into the unchanged neck with a small fitted chin support.
@@ -252,18 +260,31 @@ class Portrait:
         # Hair is a conforming patch with many varied fibers, not a sphere below
         # the chin. Stubble stays translucent in coverage by leaving skin exposed.
         if long:
+            # Blend a rounded beard shell out of the chin. The old fixed-width
+            # patch protruded beyond the narrow lower head and made a flat black
+            # shelf. This surface stays inside its attachment cross-section and
+            # moves backward under the chin instead of extruding straight down.
             rows=[]
             length=p.get('beard_length',.052 if dense else .040)
-            width=.079 if dense else .034
-            for j in range(14):
-                u=j/13;yy=lerp(self.y0-length,self.y(m-.045),u)
-                half=width*(.19+.81*math.sin(u*math.pi*.66));row=[]
-                for k in range(25):
-                    q=k/12-1;x=q*half
-                    t=max(0,(yy-self.y0)/self.h)
-                    z=self.front(x,t)-.005-.010*(1-q*q)
-                    if yy<self.y0:z=lerp(-self.d*.40,self.front(x,0)-.006,u/.47 if u<.47 else 1.)
-                    row.append((x,yy,z))
+            width=min(.070 if dense else .032,self.w*.44)
+            top=self.y(m-.052)
+            for j in range(21):
+                u=j/20
+                yy=lerp(self.y0-length,top,u)
+                t=max(0.0,(yy-self.y0)/self.h)
+                half=width*(.10+.90*smooth(u/.78))
+                # At/below the chin, attach within its narrowest source surface.
+                half=min(half,self.dim(t)[0]*.94)
+                row=[]
+                for k in range(33):
+                    q=k/16-1.0
+                    x=q*half
+                    root=smooth((top-yy)/.019)
+                    under=smooth((self.y0-yy)/max(length,.001))
+                    z=self.front(x,t)-.0005-.0045*root*(1-q*q)+.024*under
+                    # Slight rounded/tapered end, not a ruler-straight fringe.
+                    y=yy+.005*(q*q)*(1-u)
+                    row.append((x,y,z))
                 rows.append(row)
             s.grid(rows,'beard_surface',head,'beard',wrap=False)
         count=100 if dense else 60 if style=='short_stubble' else 35
@@ -273,17 +294,28 @@ class Portrait:
             t=.03+v*(m+.015)
             if abs(x)<p['mouth_width']*1.03 and t>m-.035:continue
             if style in ('chin_shadow','goatee') and abs(x)>.048:continue
+            x=max(-self.dim(t)[0]*.90,min(self.dim(t)[0]*.90,x))
             yy=self.y(t);z=self.front(x,t)-.0015
-            length=.007 if dense else .0018 if style in ('short_stubble','light_stubble') else .0025
-            path=[(x,yy,z),(x+.0015*math.sin(i),yy-length*.5,z-.001),(x+.003*math.sin(i),yy-length,z-.001)]
+            fiber_length=.007 if dense else .0018 if style in ('short_stubble','light_stubble') else .0025
+            path=[(x,yy,z),(x+.0015*math.sin(i),yy-fiber_length*.5,z-.001),(x+.003*math.sin(i),yy-fiber_length,z-.001)]
             s.tube(path,[.00040,.00028,.0001], 'beard_highlight' if i%9==0 else 'facial_hair',head,'beard_strand',5)
         if long:
-            # Tapering chin fibers break the straight patch silhouette.
-            for i in range(55):
-                u=i/54*2-1;length=p.get('beard_length',.052 if dense else .040)*(1-.60*abs(u))+.003*math.sin(i*3.1);x=u*(.072 if dense else .033)
-                y0=self.y(.105);z0=self.front(x,.105)-.012
-                path=[(x,lerp(y0,self.y0-length,j/8),z0+.018*(j/8)**2+.004*math.sin(i+j*.6)) for j in range(9)]
-                s.tube(path,[.0010*(1-j/9)+.0001 for j in range(9)],'beard_highlight' if i%8==0 else 'facial_hair',head,'beard_strand',6)
+            # Fine strands follow the rounded shell; no thick free-floating
+            # curtain at its root. Deterministic variation softens the silhouette.
+            for i in range(65):
+                q=i/64*2-1
+                strand_length=length*(1-.28*abs(q))+.002*math.sin(i*3.1)
+                path=[]
+                for j in range(12):
+                    u=j/11
+                    yy=lerp(self.y(m-.065),self.y0-strand_length,u)
+                    t=max(0.0,(yy-self.y0)/self.h)
+                    width_here=min(width*(1-.80*smooth(u)),self.dim(t)[0]*.92)
+                    x=q*width_here+.0004*math.sin(i+j*.6)
+                    under=smooth((self.y0-yy)/max(length,.001))
+                    z=self.front(x,t)-.0015-.004*(1-q*q)+.024*under
+                    path.append((x,yy,z))
+                s.tube(path,[.00032*(1-j/12)+.00006 for j in range(12)],'facial_hair',head,'beard_strand',5)
         # Moustache left/right patches follow the upper lip and philtrum.
         if style not in ('light_stubble','chin_shadow'):
             for sign in [-1,1]:

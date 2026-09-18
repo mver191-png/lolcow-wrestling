@@ -215,7 +215,7 @@ theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 8
 theme_override_font_sizes/font_size = 20
-text = "HOLD OR TAP [SPACE] / [NUM0] TO RESIST"
+text = "P1: HOLD/TAP [SPACE]  |  P2: HOLD/TAP [0] TO RESIST"
 horizontal_alignment = 1
 
 [node name="ProgressBar" type="ProgressBar" parent="PinEscapeContainer"]
@@ -239,7 +239,7 @@ theme_override_colors/font_color = Color(0.85, 0.85, 0.9, 0.9)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 6
 theme_override_font_sizes/font_size = 14
-text = "P1: WASD=Move | J=Strike | K=Grapple | L=Block | U=Reversal | SPACE=Pin  ||  P2: Arrows=Move | Num1=Strike | Num2=Grapple | Num3=Block | Num4=Reversal | Num0=Pin  ||  [R] Restart"
+text = "P1: WASD Move · J Strike · K Grapple · L Guard · U Reverse · Space Pin · I Finisher\nP2: Arrows Move · 1 Strike · 2 Grapple · 3 Guard · 4 Reverse · 0 Pin · 5 Finisher (keypad or top row) | R Restart | Esc Select"
 horizontal_alignment = 1
 vertical_alignment = 1
 

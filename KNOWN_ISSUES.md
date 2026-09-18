@@ -19,8 +19,18 @@
 - Two seeded normal CPU matches demonstrate termination, not balanced match length
   or human usability. Windows export, gamepads, target-GPU Forward+ performance
   and comprehensive human playtesting remain unverified.
-- Existing invalid-Unicode import diagnostics and virtual-driver VSync warnings
-  remain. Source checkouts contain baseline GLBs and need `python tools/build_roster.py`;
-  downloadable packages and CI artifacts contain the newly compiled assets.
+- Virtual-driver VSync warnings remain. The invalid-Unicode import warning was
+  traced to an invalid P2 keypad code and is fixed in this review. Source checkouts
+  contain baseline GLBs and need `python tools/build_roster.py`; downloadable
+  packages and CI artifacts contain the newly compiled assets.
 
 See `docs/PORTRAIT_REFINEMENT_V33.md`, `docs/REFERENCE_LIKENESS.md` and `docs/INTEGRATED_DEFORMATION.md` for scope.
+
+## Self-review update
+
+The P2 keypad mapping, recurring invalid-Unicode key-code warning, portrait seam
+cracks, detached beard roots, focused-arrow/right-click selection, repeated model
+initialization and residual disabled-shake problems are repaired and regression
+covered. Do not keep classifying those specific defects as unexplained or pending.
+The wider art/contact/platform limits above still apply. Synthetic input-event
+coverage is not a physical-device or comprehensive human playtest.

@@ -45,8 +45,11 @@ func _physics_process(delta: float) -> void:
 		midpoint.z * 0.2 + desired_dist
 	)
 	
+	# Disabling accessibility shake takes effect immediately, including residual trauma.
+	if not enable_shake:
+		trauma = 0.0
 	# Trauma shake calculation
-	if trauma > 0.0:
+	if enable_shake and trauma > 0.0:
 		trauma = max(0.0, trauma - trauma_decay * delta)
 		shake_time += delta * 30.0
 		var shake_intensity: float = trauma * trauma # Quadratic curve
@@ -54,7 +57,7 @@ func _physics_process(delta: float) -> void:
 		var offset_y: float = cos(shake_time * 1.7) * 0.22 * shake_intensity
 		desired_pos += Vector3(offset_x, offset_y, 0.0)
 		
-	global_position = global_position.lerp(desired_pos, smooth_speed * delta)
+	global_position = global_position.lerp(desired_pos, 1.0 - exp(-maxf(0.0, smooth_speed) * maxf(0.0, delta)))
 	
 	var look_target: Vector3 = Vector3(midpoint.x, 0.9, midpoint.z)
 	look_at(look_target, Vector3.UP)

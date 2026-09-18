@@ -25,6 +25,47 @@ class RosterAssets(unittest.TestCase):
             asset.mesh()
             cls.assets[key] = asset
 
+    def test_head_uv_seam_is_closed_with_matching_skin_and_normals(self):
+        for key,asset in self.assets.items():
+            with self.subTest(character=key):
+                head=asset.regions['head']
+                # The ring mesh has 97 rows and 129 vertices per row, including
+                # UV 0/1 duplicates. Cap vertices follow those rows.
+                self.assertEqual(len(head),97*129+2)
+                for row in range(97):
+                    material,i=head[row*129]
+                    material2,j=head[row*129+128]
+                    self.assertEqual(material,material2)
+                    part=asset.parts[material]
+                    self.assertLess(math.dist(part['v'][i],part['v'][j]),1e-7)
+                    self.assertLess(math.dist(part['n'][i],part['n'][j]),1e-7)
+                    self.assertEqual(part['j'][i],part['j'][j])
+                    self.assertEqual(part['w'][i],part['w'][j])
+                    self.assertEqual(part['uv'][i][0],0.)
+                    self.assertEqual(part['uv'][j][0],1.)
+
+    def test_beard_attachment_is_fitted_not_a_floating_shelf(self):
+        from portrait_geometry import Portrait
+        from unittest.mock import patch
+        for key,asset in self.assets.items():
+            if 'beard' not in asset.regions:
+                continue
+            with self.subTest(character=key):
+                # Query production geometry without rebuilding its textures or
+                # changing an already-exported asset's material collections.
+                with patch.object(Portrait,'materials',lambda self:None):
+                    portrait=Portrait(asset,None)
+                points=[tuple(c/asset.scale for c in asset.parts[m]['v'][i])
+                        for m,i in asset.regions['beard']]
+                top=max(v[1] for v in points)
+                for x,y,z in points:
+                    t=max(0.,(y-portrait.y0)/portrait.h)
+                    self.assertLessEqual(abs(x),portrait.dim(t)[0]*.95+1e-6)
+                    if y>top-.001:
+                        # A 1 mm maximum root lift replaces the former 5–15 mm
+                        # offset. Fibers remain a separate, bounded detail layer.
+                        self.assertLess(abs(z-portrait.front(x,t)),.001)
+
     def test_all_profiles_have_normalized_region_safe_weights(self):
         for key, asset in self.assets.items():
             with self.subTest(character=key):

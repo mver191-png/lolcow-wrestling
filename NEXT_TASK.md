@@ -1,14 +1,13 @@
-# Next: approve the reference-directed portraits in full matches
+# Next: measured usability and art acceptance, not more assertion-count claims
 
-Keep v3.3 asset surfaces, original texture maps and runtime/deformation contracts.
-Use the public-source register in `docs/PORTRAIT_REFINEMENT_V33.md` and request
-approved front/profile references before claiming exact likenesses, especially
-for the first Jupiter/AnacondaSin studies.
+Preserve the self-review input, UI, seam and lifecycle fixes. Read
+`docs/SELF_REVIEW.md` before repeating earlier readiness claims.
 
-Inspect all nine faces in front, profile and the normal match camera; revise hair
-clumps, static mouth/eye expressions and shoulder/fabric transitions. Do not hide
-weak anatomy with bloom, fake face photographs or untested physics changes.
+Run a broader seed/roster match sample to assess the unusually short CPU matches.
+Report distributions and obvious exploits; do not blindly tune a few seeded cases.
+Inspect actual gameplay camera views for hair/skin, collar/sleeve overlap and
+weight transfer. Add precise hit/contact work only with shared gameplay authority
+and regression coverage. Static expressions and subjective likeness approval
+remain open, as do Windows, gamepads and target-GPU performance.
 
-Continue full-body contact/rope-envelope and gamepad/Windows/human-playtest work.
-Maintain the distinction between headless assertions, actual rendered captures,
-subjective likeness approval and hardware performance. Keep PR #3 a draft.
+Keep the draft branch isolated from main. Rebuild raw-clone models before testing.

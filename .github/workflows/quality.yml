@@ -28,6 +28,7 @@ jobs:
           python3 -m py_compile tools/*.py tests/*.py
           python3 tools/build_roster.py 2>&1 | tee evidence/asset-build.log
           python3 tests/test_roster_assets.py 2>&1 | tee evidence/assets-tests.log
+          python3 tools/audit_portrait_seams.py > evidence/head-seams.json
       - name: Install the pinned project engine
         run: |
           set -euo pipefail
@@ -41,11 +42,11 @@ jobs:
         run: |
           set -euo pipefail
           .tools/godot --headless --editor --path . --import 2>&1 | tee evidence/import.log
-          for suite in test_suite test_pin_balance_scene test_visual_presentation test_overhaul test_contacts test_animation_polish test_contact_acceptance test_authored_moves test_clearance test_joint_deformation test_likeness_assets; do
+          for suite in test_suite test_pin_balance_scene test_visual_presentation test_overhaul test_contacts test_animation_polish test_contact_acceptance test_authored_moves test_clearance test_joint_deformation test_likeness_assets test_review_regressions; do
             .tools/godot --headless --fixed-fps 60 --path . -s "tests/${suite}.gd" 2>&1 | tee "evidence/${suite}.log"
           done
           .tools/godot --headless --fixed-fps 60 --path . -s tools/soak_match.gd 2>&1 | tee evidence/whole-matches.log
-          if grep -E 'SCRIPT ERROR:|Parse Error:|\[FAIL\]' evidence/*.log; then
+          if grep -E 'SCRIPT ERROR:|Parse Error:|Unicode parsing error|\[FAIL\]' evidence/*.log; then
             echo 'Script or assertion failure.' >&2
             exit 1
           fi
@@ -56,9 +57,10 @@ jobs:
           set -euo pipefail
           sudo apt-get update -qq
           sudo apt-get install -y xvfb libgl1-mesa-dri
-          for capture in capture_contact_acceptance capture_model_quality capture_deformation capture_integrated_match capture_likeness; do
+          for capture in capture_contact_acceptance capture_model_quality capture_deformation capture_integrated_match capture_likeness capture_self_review; do
             xvfb-run -a .tools/godot --path . --audio-driver Dummy --rendering-method gl_compatibility --disable-render-loop --fixed-fps 60 -s "tools/${capture}.gd" 2>&1 | tee "evidence/${capture}.log"
           done
+          xvfb-run -a .tools/godot --path . --audio-driver Dummy --rendering-method gl_compatibility --fixed-fps 60 -s tools/capture_selection_review.gd 2>&1 | tee evidence/capture_selection_review.log
           if grep -E 'ERROR:|Parse Error:|\[FAIL\]' evidence/capture_*.log; then
             echo 'Rendered smoke test failed.' >&2
             exit 1
@@ -78,6 +80,9 @@ jobs:
               assert all((root/folder/Path(e['file']).name).stat().st_size>10000 for e in entries)
           assert len(list((root/'integrated-match/frames').glob('*.png')))==173
           assert (root/'contact-acceptance-after/official-third-count-clean.png').stat().st_size>10000
+          seams=json.loads((root/'head-seams.json').read_text())['current']
+          assert len(seams)==9 and all(e['seam_pairs']==97 and e['maximum_gap_m']<1e-7 and e['maximum_normal_difference']<1e-6 for e in seams)
+          assert (root/'self-review/renders/selection-normal-loop.png').stat().st_size>10000
           print('Verified 36 portrait-study views, 51 roster views, 24 bend views, 173 match frames and final-count capture')
           PY
       - name: Package exact source, compiled models and verification evidence

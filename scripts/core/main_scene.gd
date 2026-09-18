@@ -8,15 +8,20 @@ extends Node3D
 @export var cpu_controller_p2: CPUController
 @export var match_manager: MatchManager
 
+func _enter_tree() -> void:
+	# Pick models before Fighter._ready builds its meshes and skin-bound caches.
+	# Re-loading both actors from MainScene._ready used to perform this expensive
+	# work twice and briefly constructed the wrong pair after roster selection.
+	var first := get_node_or_null("Tophiachu") as Fighter
+	var second := get_node_or_null("Cyraxx") as Fighter
+	if first:
+		first.character_id = MatchConfig.p1_character_id
+	if second:
+		second.character_id = MatchConfig.p2_character_id
+
 func _ready() -> void:
-	if fighter_1:
-		fighter_1.character_id = MatchConfig.p1_character_id
-		fighter_1.load_character_data()
 	if fighter_2:
-		fighter_2.character_id = MatchConfig.p2_character_id
 		fighter_2.is_cpu = MatchConfig.p2_is_cpu
-		fighter_2.load_character_data()
-		
 	if cpu_controller_p2 and fighter_2:
 		cpu_controller_p2.set_physics_process(fighter_2.is_cpu)
 
