@@ -1,5 +1,7 @@
 class_name FighterPresentation
 extends Node
+const CLEARANCE=preload("res://scripts/fighter/presentation_clearance.gd")
+var clearance:Node
 const CONTACT=preload("res://scripts/fighter/paired_contact.gd")
 const POLISH=preload("res://scripts/fighter/animation_polish.gd")
 const MATERIAL_POLISH=preload("res://scripts/fighter/material_polish.gd")
@@ -8,7 +10,7 @@ const LOOPING:=["idle","walk","run","downed","pinned","submission_attacker","sub
 const CORE:=["idle","walk","strike","knockdown","getup","throw_attacker","throw_defender","pinning","pinned","submission_attacker","submission_defender","victory","defeated"]
 var fighter:CharacterBody3D;var visual_root:Node3D;var anim_player:AnimationPlayer;var skeleton:Skeleton3D;var has_skeletal_rig:=false;var current_anim:="";var model:Node3D;var gait_clock:=0.;var actual_speed:=0.;var _previous_position:=Vector3.ZERO;var _previous_valid:=false;var _fall_already_played:=false;var _blend_elapsed:=1.;var _blend_duration:=.10;var _from_positions:Array[Vector3]=[];var _from_rotations:Array[Quaternion]=[];var _impact_time:=0.;var _chest:=-1;var _body_scale:=1.
 func setup(p_fighter:Fighter,p_visual_root:Node3D)->void:
- fighter=p_fighter;visual_root=p_visual_root;process_physics_priority=20;contact=CONTACT.new();contact.name="PairedContact";add_child(contact);contact.setup(self);polish=POLISH.new();polish.name="AnimationPolish";add_child(polish);polish.setup(self)
+ fighter=p_fighter;visual_root=p_visual_root;process_physics_priority=20;contact=CONTACT.new();contact.name="PairedContact";add_child(contact);contact.setup(self);polish=POLISH.new();polish.name="AnimationPolish";add_child(polish);polish.setup(self);clearance=CLEARANCE.new();clearance.name="PresentationClearance";add_child(clearance);clearance.setup(self)
 func _find_type(node:Node,wanted:StringName)->Node:
  if node.is_class(wanted):return node
  for child in node.get_children():
@@ -35,7 +37,7 @@ func load_model(character_id:String)->void:
   if anim_player.has_animation(clip):anim_player.get_animation(clip).loop_mode=Animation.LOOP_LINEAR
  anim_player.callback_mode_process=AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL;_chest=skeleton.find_bone("Chest");var hips:=skeleton.find_bone("Hips")
  if hips>=0:_body_scale=maxf(skeleton.get_bone_global_rest(hips).origin.y/.89,.5)
- contact.reset();polish.reset();play_state_animation(fighter.current_state)
+ contact.reset();polish.reset();clearance.reset();play_state_animation(fighter.current_state)
 func _capture_pose()->void:
  _from_positions.clear();_from_rotations.clear()
  if skeleton==null:return
