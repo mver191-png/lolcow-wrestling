@@ -25,10 +25,10 @@ static func _aim(skeleton: Skeleton3D, bone: int, from: Vector3, to: Vector3) ->
 	_world_rotation(skeleton, bone, Quaternion(from.normalized(), to.normalized()) * before)
 
 static func solve(skeleton: Skeleton3D, upper: int, middle: int, end: int,
-		target: Vector3, pole: Vector3, weight := 1.0) -> Dictionary:
-	if not is_instance_valid(skeleton) or min(upper, min(middle, end)) < 0 or not target.is_finite() or not pole.is_finite() or not is_finite(weight):
+		target: Vector3, pole: Vector3, weight := 1.0, max_flexion_degrees := 165.0) -> Dictionary:
+	if not is_instance_valid(skeleton) or min(upper, min(middle, end)) < 0 or not target.is_finite() or not pole.is_finite() or not is_finite(weight) or not is_finite(max_flexion_degrees):
 		return {"valid": false}
-	if maxi(upper,maxi(middle,end)) >= skeleton.get_bone_count():
+	if maxi(upper, maxi(middle, end)) >= skeleton.get_bone_count():
 		return {"valid": false}
 	if skeleton.get_bone_parent(middle) != upper or skeleton.get_bone_parent(end) != middle:
 		return {"valid": false}
@@ -41,14 +41,17 @@ static func solve(skeleton: Skeleton3D, upper: int, middle: int, end: int,
 	if minf(l1, l2) < 0.0001:
 		return {"valid": false}
 	if weight <= 0.0:
-		return {"valid": true, "error": endpoint.distance_to(target), "unreachable": 0.0, "upper_length": l1, "lower_length": l2}
+		return {"valid":true,"error":endpoint.distance_to(target),"unreachable":0.0,"upper_length":l1,"lower_length":l2,"joint_limited":false}
 	var requested := target
 	target = endpoint.lerp(target, clampf(weight, 0.0, 1.0))
 	var offset := target - start
 	var raw_distance := offset.length()
 	var direction := offset.normalized() if raw_distance > 0.00001 else Vector3.DOWN
-	# Keep a slight elbow bend. Unreachable requests are reported, not stretched.
-	var distance := clampf(raw_distance, absf(l1 - l2) + 0.001, l1 + l2 - 0.002)
+	# A minimum reach prevents the joint folding almost 180 degrees. This is a
+	# flexion bound only, not a full anatomical shoulder/twist constraint.
+	var maximum_bend := deg_to_rad(clampf(max_flexion_degrees, 5.0, 175.0))
+	var minimum_reach := sqrt(maxf(0.0, l1*l1+l2*l2+2.0*l1*l2*cos(maximum_bend)))
+	var distance := clampf(raw_distance, maxf(absf(l1-l2)+.001, minimum_reach), l1+l2-.002)
 	var bend := pole - start
 	bend -= direction * bend.dot(direction)
 	if bend.length_squared() < 0.000001:
@@ -64,7 +67,9 @@ static func solve(skeleton: Skeleton3D, upper: int, middle: int, end: int,
 	_aim(skeleton, middle, endpoint - elbow, reachable - elbow)
 	return {"valid": true, "error": point(skeleton, end).distance_to(requested),
 		"unreachable": maxf(0.0, raw_distance - (l1 + l2 - 0.002)),
-		"upper_length": l1, "lower_length": l2}
+		"upper_length": l1, "lower_length": l2,
+		"flexion_degrees": rad_to_deg(acos(clampf((distance*distance-l1*l1-l2*l2)/(2.0*l1*l2),-1.0,1.0))),
+		"joint_limited": raw_distance < minimum_reach}
 
 static func hand_basis(finger_direction: Vector3, palm_direction: Vector3) -> Basis:
 	var y := -finger_direction.normalized()

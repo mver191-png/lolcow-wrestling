@@ -20,14 +20,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Build original roster assets and verify exports
+      - name: Build deterministic roster and validate source
         run: |
           set -euo pipefail
           mkdir -p evidence
           python3 -m py_compile tools/*.py tests/*.py
           python3 tools/build_roster.py 2>&1 | tee evidence/asset-build.log
           python3 tests/test_roster_assets.py 2>&1 | tee evidence/assets-tests.log
-      - name: Install the project engine
+      - name: Install the pinned project engine
         run: |
           set -euo pipefail
           mkdir -p .tools
@@ -36,50 +36,47 @@ jobs:
           mv .tools/Godot_v${GODOT_VERSION}-stable_linux.x86_64 .tools/godot
           chmod +x .tools/godot
           .tools/godot --version | tee evidence/engine-version.txt
-      - name: Import and validate gameplay and presentation
+      - name: Validate integrated gameplay, deformation and whole matches
         run: |
           set -euo pipefail
           .tools/godot --headless --editor --path . --import 2>&1 | tee evidence/import.log
-          .tools/godot --headless --path . -s tests/test_suite.gd 2>&1 | tee evidence/unit.log
-          .tools/godot --headless --fixed-fps 60 --path . -s tests/test_pin_balance_scene.gd 2>&1 | tee evidence/integration.log
-          .tools/godot --headless --path . -s tests/test_visual_presentation.gd 2>&1 | tee evidence/presentation.log
-          .tools/godot --headless --fixed-fps 60 --path . -s tests/test_overhaul.gd 2>&1 | tee evidence/overhaul.log
-          .tools/godot --headless --fixed-fps 60 --path . -s tests/test_contacts.gd 2>&1 | tee evidence/contacts.log
-          .tools/godot --headless --fixed-fps 60 --path . -s tests/test_animation_polish.gd 2>&1 | tee evidence/animation-polish.log
-          .tools/godot --headless --fixed-fps 60 --path . -s tests/test_contact_acceptance.gd 2>&1 | tee evidence/contact-acceptance.log
-          if grep -E 'SCRIPT ERROR:|Parse Error:|\[FAIL\]' evidence/{import,unit,integration,presentation,overhaul,contacts,animation-polish,contact-acceptance}.log; then
-            echo 'Engine reported a script or assertion failure.' >&2
+          for suite in test_suite test_pin_balance_scene test_visual_presentation test_overhaul test_contacts test_animation_polish test_contact_acceptance test_authored_moves test_clearance test_joint_deformation; do
+            .tools/godot --headless --fixed-fps 60 --path . -s "tests/${suite}.gd" 2>&1 | tee "evidence/${suite}.log"
+          done
+          .tools/godot --headless --fixed-fps 60 --path . -s tools/soak_match.gd 2>&1 | tee evidence/whole-matches.log
+          if grep -E 'SCRIPT ERROR:|Parse Error:|\[FAIL\]' evidence/*.log; then
+            echo 'Script or assertion failure.' >&2
             exit 1
           fi
-      - name: Render contact smoke test with software OpenGL
+      - name: Render actual models, bend studies and match sequence
         env:
           LIBGL_ALWAYS_SOFTWARE: 1
         run: |
           set -euo pipefail
           sudo apt-get update -qq
           sudo apt-get install -y xvfb libgl1-mesa-dri
-          xvfb-run -a .tools/godot --path . --audio-driver Dummy --rendering-method gl_compatibility --disable-render-loop --fixed-fps 60 -s tools/capture_contact_acceptance.gd 2>&1 | tee evidence/render-smoke.log
-          if grep -E 'ERROR:|Parse Error:|\[FAIL\]' evidence/render-smoke.log; then
-            echo 'Rendered contact smoke test failed.' >&2
+          for capture in capture_contact_acceptance capture_model_quality capture_deformation capture_integrated_match; do
+            xvfb-run -a .tools/godot --path . --audio-driver Dummy --rendering-method gl_compatibility --disable-render-loop --fixed-fps 60 -s "tools/${capture}.gd" 2>&1 | tee "evidence/${capture}.log"
+          done
+          if grep -E 'ERROR:|Parse Error:|\[FAIL\]' evidence/capture_*.log; then
+            echo 'Rendered smoke test failed.' >&2
             exit 1
           fi
-          test -s evidence/contact-acceptance-after/official-third-count-clean.png
-          xvfb-run -a .tools/godot --path . --audio-driver Dummy --rendering-method gl_compatibility --disable-render-loop --fixed-fps 60 -s tools/capture_model_quality.gd 2>&1 | tee evidence/model-render.log
-          if grep -E 'ERROR:|Parse Error:|\[FAIL\]' evidence/model-render.log; then
-            echo 'Model render check failed.' >&2
-            exit 1
-          fi
-          python3 - <<'PYVERIFY'
+          python3 - <<'PY'
           import json
           from pathlib import Path
-          root=Path('evidence/model-quality')
-          entries=json.loads((root/'capture-manifest.json').read_text())
-          assert len(entries)==51, 'Incomplete model capture set'
-          assert len({e['character'] for e in entries})==9, 'Roster omitted from capture'
-          assert all((root/Path(e['file']).name).stat().st_size>10000 for e in entries), 'Empty render file'
-          print('51 actual model images across 9 characters verified')
-          PYVERIFY
-      - name: Package source, generated assets and logs
+          root=Path('evidence')
+          models=json.loads((root/'model-quality/capture-manifest.json').read_text())
+          bends=json.loads((root/'deformation-renders/manifest.json').read_text())
+          assert len(models)==51 and len({e['character'] for e in models})==9
+          assert len(bends)==24 and len({e['character'] for e in bends})==8
+          for entries,folder in [(models,'model-quality'),(bends,'deformation-renders')]:
+              assert all((root/folder/Path(e['file']).name).stat().st_size>10000 for e in entries)
+          assert len(list((root/'integrated-match/frames').glob('*.png')))==173
+          assert (root/'contact-acceptance-after/official-third-count-clean.png').stat().st_size>10000
+          print('Verified 51 roster views, 24 bend views, 173 match frames and final-count capture')
+          PY
+      - name: Package exact source, compiled models and verification evidence
         if: always()
         run: |
           python3 - <<'PY'
@@ -94,7 +91,8 @@ jobs:
           for p in files:
               if not p.is_file() or '__pycache__' in p.parts or p.suffix in ['.pyc','.import'] or p.name.endswith('_woven.png'):continue
               name=p.relative_to(root).as_posix();target=out/name;target.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(p,target);manifest[name]=hashlib.sha256(target.read_bytes()).hexdigest()
-          (out/'source-manifest.json').write_text(json.dumps(manifest,indent=2));print('Packaged',len(manifest),'files')
+          (out/'source-manifest.json').write_text(json.dumps(manifest,indent=2))
+          print('Packaged',len(manifest),'files. Check the job result before treating an artifact as validated.')
           PY
       - uses: actions/upload-artifact@v4
         if: always()

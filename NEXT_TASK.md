@@ -1,17 +1,20 @@
-# Next task: authored deformation and complete-match art acceptance
+# Next: authored full-body contact and human-match quality
 
-Preserve v3 geometry, the shared action clocks and single recovery contact owner.
-Use `tools/capture_model_quality.gd` and `tools/capture_contact_acceptance.gd` as
-repeatable review fixtures, not as substitutes for a human playtest.
+Continue from the integrated v3.1 review branch, not one of its older split parents.
+Preserve the new helper joints, original gameplay chains, action schedules and
+single recovery owner. Keep all draft PRs unmerged until acceptance.
 
-1. Inspect animated shoulder/hip deformation, collar/garment intersections and
-   complete skin clearance against the mat and ropes. Bone markers are insufficient.
-2. Refine acquisition, finger placement, joint limits and weight transfer for the
-   Tophiachu/Cyraxx pair using existing grip targets. Do not stretch bones to pass.
-3. Review all eight fictional ring interpretations against approved visual
-   references before calling their likenesses finished. The mesh pipeline is not
-   a substitute for that review.
-4. Validate a complete human match, gamepads, Windows export and target-GPU frames.
+1. Refine shoulder/armpit topology and grip acquisition with the existing same-camera
+   bend fixtures. Check actual skin overlap, not just joint-marker proximity.
+2. Add swept strike contact against explicit body regions, preserving per-action
+   budgets and missed-window/reversal behavior. Never let a cosmetic IK adjustment
+   silently become damage authority.
+3. Evaluate ordinary complete matches, especially early pinfall balance, controller
+   input and sustained gameplay. Add broader seeded CPU coverage but do not confuse
+   it with human playtesting.
+4. Verify Windows export, gamepads and identified target-hardware rendering.
 
-Keep PR #3 a draft. Do not expand tournament/multi-character modes before these
-fundamentals are accepted. Preserve main and the earlier review branches.
+Do not add tournament/online scope or increase clearance caps to conceal art issues.
+Source builds require `python tools/build_roster.py` before import; complete packages
+include the generated models. Document implemented, executed and visually reviewed
+work separately.

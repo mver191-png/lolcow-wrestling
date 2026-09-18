@@ -29,7 +29,7 @@ class RosterAssets(unittest.TestCase):
         for key, asset in self.assets.items():
             with self.subTest(character=key):
                 asset.validate()
-                self.assertEqual(len(asset.joint_names), 42)
+                self.assertEqual(len(asset.joint_names), 46)
                 for height in [.9, 1.08, 1.25, 1.4]:
                     joints, weights = asset.torso_w(height)
                     for joint, weight in zip(joints, weights):
@@ -86,6 +86,22 @@ class RosterAssets(unittest.TestCase):
             self.assertEqual(gear["baseColorFactor"],[1,1,1,1])
             self.assertIn("baseColorTexture",gear)
 
+    def test_helpers_preserve_core_chains_and_own_knee_pads(self):
+        for key, asset in self.assets.items():
+            with self.subTest(character=key):
+                self.assertEqual(list(asset.bones)[-4:], list(roster.DEFORM_JOINTS))
+                for helper, driver in roster.DEFORM_JOINTS.items():
+                    self.assertEqual(asset.parents[helper], asset.parents[driver])
+                    self.assertEqual(asset.world[helper], asset.world[driver])
+                for name, parent in [("Forearm.L","UpperArm.L"),("Hand.L","Forearm.L"),
+                                     ("Shin.R","Thigh.R"),("Foot.R","Shin.R")]:
+                    self.assertEqual(asset.parents[name],parent)
+                for region in ["kneepad","pad_insert"]:
+                    for material, index in asset.regions[region]:
+                        part=asset.parts[material]
+                        for bone,weight in zip(part["j"][index],part["w"][index]):
+                            if weight>0:self.assertTrue(asset.joint_names[bone].startswith("DeformKnee."))
+
     def test_exports_are_deterministic_and_complete(self):
         with tempfile.TemporaryDirectory() as directory:
             p1,p2=Path(directory)/"first.glb",Path(directory)/"second.glb"
@@ -97,12 +113,12 @@ class RosterAssets(unittest.TestCase):
             length,kind=struct.unpack_from("<I4s",content,12)
             self.assertEqual(kind,b"JSON")
             document=json.loads(content[20:20+length])
-            self.assertEqual(document["extras"]["schema_version"],3)
+            self.assertEqual(document["extras"]["schema_version"],4)
             self.assertEqual(len(document["animations"]),25)
             for animation in document["animations"]:
                 targets={(c["target"]["node"],c["target"]["path"]) for c in animation["channels"]}
-                self.assertEqual(len(targets),84)
-                self.assertEqual(len(animation["channels"]),84)
+                self.assertEqual(len(targets),92)
+                self.assertEqual(len(animation["channels"]),92)
             self.assertTrue(all("TEXCOORD_0" in p["attributes"] for p in document["meshes"][0]["primitives"]))
             self.assertEqual(len(document["images"]),4)
             self.assertTrue(document["extras"]["geometry_regions"]["eyelid"]>500)

@@ -107,7 +107,7 @@ func test_asset_loading_and_instance_isolation() -> void:
 	for id in RosterData.get_all_ids():
 		a.load_character_data(id)
 		await tick(2)
-		check(a.is_rigged() and a.presentation.skeleton.get_bone_count() == 42, "%s: complete 42-bone skinned actor" % id)
+		check(a.is_rigged() and a.presentation.skeleton.get_bone_count() == 46, "%s: 42 core bones plus four deformation helpers" % id)
 		check(a.presentation.anim_player.get_animation_list().size() >= 25, "%s: full animation vocabulary" % id)
 		check(a.visual_root.get_child_count() == 1, "%s: no duplicate models after reload" % id)
 		check(absf(a.presentation.anim_player.get_animation("throw_attacker").length - a.throw_duration) < .001, "%s: actual throw duration matches exported clip" % id)

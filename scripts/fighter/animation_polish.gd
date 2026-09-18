@@ -48,7 +48,7 @@ func _signature(style:Dictionary,power:float)->void:
 func _dedicated_recovery() -> bool:
  # One owner for recovering limbs and the loaded palm; other secondary animation
  # remains intact. The earlier recovery solution is retained only as a fallback.
- return fighter.current_state == Fighter.State.GETTING_UP and presentation.contact != null and presentation.contact.enabled and presentation.contact.recovery_enabled
+ return fighter.current_state == Fighter.State.GETTING_UP and not presentation.uses_authored_motion() and presentation.contact != null and presentation.contact.enabled and presentation.contact.recovery_enabled
 func _physics_process(delta:float)->void:
  diagnostics.clear()
  if presentation==null or not presentation.has_skeletal_rig or not is_instance_valid(fighter):return
@@ -61,7 +61,7 @@ func _physics_process(delta:float)->void:
  if fighter.current_state in [Fighter.State.IDLE,Fighter.State.MOVING]:
   var breath:=sin(time*(2.+mobility*.7)*float(style.tempo));rotate("Chest",Vector3(.010*breath,0,.006*sin(time*1.3)));rotate("Head",Vector3(-.006*breath,.012*sin(time*.8),0))
   if fighter.current_state==Fighter.State.MOVING:rotate("Chest",Vector3(0,.025*sin(time*(6.+mobility*4.)*float(style.tempo)),0))
- _signature(style,power)
+ if not (fighter.current_state==Fighter.State.STRIKING and presentation.uses_authored_motion()):_signature(style,power)
  if fighter.current_state==Fighter.State.STRIKING:
   var hit_phase:=clampf(fighter.state_timer/maxf(fighter.attack_total_time,.01),0,1);var brace:=sin(PI*hit_phase);rotate("Chest",Vector3(-.035*power*brace,.04*power*brace,0));curl_hand("R",.92,.03);curl_hand("L",.55,.06)
  elif fighter.current_state in [Fighter.State.BLOCKING,Fighter.State.REVERSAL_STANCE]:curl_hand("L",.64,.08);curl_hand("R",.64,.08)
@@ -69,7 +69,7 @@ func _physics_process(delta:float)->void:
  elif fighter.current_state in [Fighter.State.PINNED,Fighter.State.SUBMISSION_DEFENDER]:curl_hand("L",.38,.13);curl_hand("R",.38,.13)
  elif _dedicated_recovery():curl_hand("R",.28,.12)
  else:curl_hand("L",.28,.12);curl_hand("R",.28,.12)
- if fighter.current_state==Fighter.State.GETTING_UP and not _dedicated_recovery():
+ if fighter.current_state==Fighter.State.GETTING_UP and not _dedicated_recovery() and not presentation.uses_authored_motion():
   var p:=clampf(fighter.state_timer/.60,0,1);var hand_w:=1.-smoothstep(.48,.82,p);var knee_w:=smoothstep(.08,.30,p)*(1.-smoothstep(.72,.96,p))
   # Preserve the incoming fallback correction in articulated pelvis space.
   var hips := bone("Hips")
@@ -79,3 +79,6 @@ func _physics_process(delta:float)->void:
   var foot_target:=fighter.global_position+fighter.global_basis.x*(.20*body_scale)-fighter.global_basis.z*(.24*body_scale)+Vector3.UP*.055;var knee_pole:=fighter.global_position-fighter.global_basis.z*(.42*body_scale)+Vector3.UP*.26;_support_leg("R",foot_target,knee_pole,knee_w,"getup_foot");rotate("Head",Vector3(-.16*(1-p),0,0))
  if stamina_ratio<.25 and fighter.current_state in [Fighter.State.IDLE,Fighter.State.MOVING]:
   var fatigue:=(.25-stamina_ratio)/.25;rotate("Chest",Vector3(.06*fatigue,0,0));rotate("Head",Vector3(-.035*fatigue,0,0))
+
+ if presentation.uses_authored_motion() and fighter.current_state==Fighter.State.GETTING_UP:
+  diagnostics.append_array(presentation.authored_recovery_diagnostics)

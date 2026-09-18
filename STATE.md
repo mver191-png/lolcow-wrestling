@@ -1,22 +1,23 @@
-# Current model-quality branch
+# Current integrated v3.1 review build
 
-Work continues on `astra/model-quality-v3`, draft PR #3, stacked on the recovery
-follow-up. Main and the two predecessor review branches are unchanged.
+`astra/model-quality-v3` now reconciles model revision `8fc5dedd` with authored
+combat/clearance revision `0abb1ffe`. No draft PR or main merge is performed.
 
-The broken v3 compiler/test syntax is repaired. `tools/character_geometry.py`
-builds new actual meshes for all eight wrestlers and the neutral halo referee.
-Integrated faces, fitted eyes/lids/lips, scalp-following hair, garment panels,
-shoulder bridges, detailed palms, correctly spread fingers and medial thumbs are
-implemented. Main rig landmarks, gameplay stats, damage, clocks and rules remain.
-Neutral hand posture and bounded finger curls are improved; recovery has one owner.
+The v3 faces/hair/outfits/hands are retained. Four appended elbow/knee skin helpers
+and refined bend rings preserve crease shape without changing the original 42
+joint chains; knee pads follow the knee bend. Runtime helpers run after contact
+and before full-mesh clearance. Total rig: 46 joints, 25 complete-channel clips.
 
-Local checks pass: 408 mechanics, 126 scene physics, 35 presentation, 305 overhaul,
-1941 paired contact, 56 animation polish and 142 recovery/event assertions, plus
-7 Python tests. Counts overlap. Actual neutral-model and match captures are
-available through repeatable tools; CI repeats them for the published revision.
+The combined build includes Tophiachu's one-hit clothesline, Cyraxx's three-hit
+flurry sharing one damage/Hype budget, authored recovery for that pair, latched
+support for the remaining six, bounded mesh clearance, and the referee final slap.
 
-See `docs/MODEL_QUALITY_V3.md` for source-checkout rebuilding, exact scope,
-verification and remaining limitations. Compiled v3 GLBs are supplied in the CI
-artifact/download package; a raw source checkout must rebuild its baseline GLBs.
-No draft PR is merged, and no production-likeness, full-body collision or target-
-hardware performance acceptance is claimed.
+Local validation passes all 10 Godot suites, two normal CPU matches and 8 Python
+tests. Detailed counts, metric definitions and limitations are recorded in
+`docs/INTEGRATED_DEFORMATION.md`. CI rebuilds and repeats these with actual renders;
+consult the exact job result rather than assuming a published revision passed.
+
+Source checkout: run `python tools/build_roster.py` before Godot import. Downloaded
+packages include the compiled models. Main, PR #1 and PR #2 remain untouched.
+Not production likeness/art acceptance, whole-body collision certification or a
+hardware-performance/human-playtest sign-off.

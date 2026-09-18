@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-"""Compile original, region-weighted wrestling characters to self-contained glTF.
+"""Compile the integrated v3.1 roster with bend-preserving skin helpers.
 
-Python standard library only. Units are metres, Y up, -Z forward. The generated
-GLBs can be edited in Blender. Anatomical regions, not global X thresholds, own
-weights. Every animation samples every bone so poses cannot inherit stale tracks.
-These are stylized fictional ring interpretations, not verified likeness scans.
-Model-quality v3 increases deformation topology and adds character-specific gear geometry while preserving the gameplay rig.
+roster_base.py retains the preceding v3 writer, base poses and palette. This
+specialization adds four non-chain skin joints and refines only bend topology;
+existing facial, hair, outfit, input and gameplay contracts stay unchanged.
+Use roster_base.py separately to build the exact preceding art for A/B inspection.
 """
 from __future__ import annotations
 import argparse
@@ -13,270 +12,83 @@ import hashlib
 import json
 import math
 import struct
-import zlib
-from character_geometry import build_character, COSTUMES
 from pathlib import Path
+from roster_base import Asset as BaseAsset, PROFILES, DURATIONS, LOOPS
+from roster_base import add, mul, smooth, quat, linear_color
+from character_geometry import COSTUMES, _refine_sections
 
 ROOT = Path(__file__).resolve().parents[1]
-PROFILES = {
-    "tophiachu": dict(h=1.72, width=.43, depth=.31, arm=.135, leg=.175, skin=(.54,.34,.24), gear=(.32,.12,.48), trim=(.88,.61,.25), hair="curls", hair_color=(.09,.045,.025), face=1.12, role="heavy"),
-    "cyraxx": dict(h=1.57, width=.26, depth=.18, arm=.086, leg=.108, skin=(.68,.48,.34), gear=(.14,.29,.22), trim=(.85,.78,.60), hair="beanie", hair_color=(.05,.043,.04), face=.86, role="light"),
-    "novaonline": dict(h=1.86, width=.42, depth=.30, arm=.14, leg=.18, skin=(.74,.54,.41), gear=(.48,.075,.075), trim=(.88,.65,.22), hair="short", hair_color=(.16,.085,.04), face=1.10, role="heavy"),
-    "candy_rooks": dict(h=1.68, width=.40, depth=.285, arm=.126, leg=.166, skin=(.76,.55,.42), gear=(.57,.22,.37), trim=(.91,.82,.70), hair="bun", hair_color=(.26,.13,.055), face=1.06, role="heavy"),
-    "andy_ditch": dict(h=1.74, width=.445, depth=.32, arm=.142, leg=.18, skin=(.78,.57,.44), gear=(.15,.24,.41), trim=(.69,.73,.79), hair="short", hair_color=(.30,.18,.10), face=1.12, role="heavy"),
-    "jupiter_the_hybrid": dict(h=1.80, width=.32, depth=.22, arm=.105, leg=.132, skin=(.67,.46,.33), gear=(.20,.10,.33), trim=(.70,.73,.81), hair="long", hair_color=(.065,.045,.07), face=.96, role="balanced"),
-    "anacondasin": dict(h=1.67, width=.35, depth=.245, arm=.108, leg=.14, skin=(.65,.44,.31), gear=(.10,.31,.22), trim=(.78,.64,.22), hair="long", hair_color=(.08,.055,.035), face=1.0, role="balanced"),
-    "daniel_larson": dict(h=1.80, width=.265, depth=.19, arm=.087, leg=.11, skin=(.74,.52,.38), gear=(.68,.28,.055), trim=(.21,.25,.30), hair="short", hair_color=(.30,.18,.085), face=.90, role="light"),
-    "referee_cobra": dict(h=1.80, width=.30, depth=.21, arm=.102, leg=.13, skin=(.64,.44,.31), gear=(.78,.80,.79), trim=(.065,.07,.075), hair="long", hair_color=(.07,.035,.02), face=.94, role="referee"),
-}
-DURATIONS = {"idle":1.2, "walk":.9, "run":.6, "strike":.45, "knockdown":.6, "downed":1., "getup":.6, "block":.35, "reversal":.35, "grapple":.18, "throw_attacker":1.1, "throw_defender":1.1, "throw_leverage_attacker":1.1, "throw_leverage_defender":1.1, "pinning":1., "pinned":1., "submission_attacker":1., "submission_defender":1., "victory":1.5, "defeated":1., "hit_light":.22, "hit_heavy":.32, "kickout":.35, "ref_count":1.1, "ref_wave":.7}
-LOOPS = {"idle", "walk", "run", "downed", "pinned", "submission_attacker", "submission_defender"}
+DEFORM_JOINTS = {"DeformElbow.L": "Forearm.L", "DeformElbow.R": "Forearm.R",
+                 "DeformKnee.L": "Shin.L", "DeformKnee.R": "Shin.R"}
 
-def add(a, b): return tuple(x+y for x,y in zip(a,b))
-def sub(a, b): return tuple(x-y for x,y in zip(a,b))
-def mul(a, s): return tuple(x*s for x in a)
-def dot(a, b): return sum(x*y for x,y in zip(a,b))
-def cross(a, b): return (a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0])
-def norm(v):
-    d = math.sqrt(dot(v,v))
-    return mul(v,1/d) if d>1e-9 else (0,1,0)
-def smooth(t):
-    t = max(0.,min(1.,t))
-    return t*t*(3-2*t)
-def quat(x=0.,y=0.,z=0.):
-    cx,sx=math.cos(x/2),math.sin(x/2); cy,sy=math.cos(y/2),math.sin(y/2); cz,sz=math.cos(z/2),math.sin(z/2)
-    return (sx*cy*cz-cx*sy*sz,cx*sy*cz+sx*cy*sz,cx*cy*sz-sx*sy*cz,cx*cy*cz+sx*sy*sz)
-def linear_color(c):
-    """Author palettes are sRGB; glTF constant color factors are linear."""
-    return c / 12.92 if c <= .04045 else ((c + .055) / 1.055) ** 2.4
-
-def png(width, height, pixels):
-    def chunk(kind, data):
-        return struct.pack(">I",len(data))+kind+data+struct.pack(">I",zlib.crc32(kind+data)&0xffffffff)
-    scan=b"".join(b"\0"+bytes(pixels[y*width*3:(y+1)*width*3]) for y in range(height))
-    return b"\x89PNG\r\n\x1a\n"+chunk(b"IHDR",struct.pack(">2I5B",width,height,8,2,0,0,0))+chunk(b"IDAT",zlib.compress(scan,9))+chunk(b"IEND",b"")
-
-class Asset:
+class Asset(BaseAsset):
     def __init__(self,key,profile):
-        self.key,self.p=key,profile
-        self.scale=profile["h"]/1.8
-        self.doc={"asset":{"version":"2.0","generator":"Offline Mayhem model-quality compiler 3.0"},"scene":0,"scenes":[{"nodes":[0]}],"nodes":[{"name":key,"children":[]}],"meshes":[],"materials":[],"bufferViews":[],"accessors":[],"animations":[],"skins":[],"images":[],"textures":[],"samplers":[{"magFilter":9729,"minFilter":9987,"wrapS":10497,"wrapT":10497}]}
-        self.buf=bytearray(); self.bones={}; self.world={}; self.parents={}; self.parts={}; self.regions={}
-        self.setup_rig(); self.materials()
-
-    def view(self,data,target=None):
-        self.buf.extend(b"\0"*((-len(self.buf))%4))
-        view={"buffer":0,"byteOffset":len(self.buf),"byteLength":len(data)}
-        if target: view["target"]=target
-        self.buf.extend(data); self.doc["bufferViews"].append(view)
-        return len(self.doc["bufferViews"])-1
-
-    def accessor(self,values,kind="VEC3",component=5126,target=None):
-        size={"SCALAR":1,"VEC2":2,"VEC3":3,"VEC4":4,"MAT4":16}[kind]
-        flat=values if size==1 else [v for row in values for v in row]
-        code={5126:"f",5123:"H",5125:"I"}[component]
-        a={"bufferView":self.view(struct.pack("<"+code*len(flat),*flat),target),"componentType":component,"count":len(values),"type":kind}
-        if component==5126 and kind in ("VEC3","SCALAR"):
-            rows=[(v,) for v in values] if size==1 else values
-            a["min"]=[min(r[i] for r in rows) for i in range(size)]
-            a["max"]=[max(r[i] for r in rows) for i in range(size)]
-        self.doc["accessors"].append(a)
-        return len(self.doc["accessors"])-1
-
-    def bone(self,name,parent,pos):
-        pos=mul(pos,self.scale); idx=len(self.doc["nodes"])
-        self.bones[name]=idx; self.world[name]=pos; self.parents[name]=parent
-        self.doc["nodes"].append({"name":name,"translation":list(sub(pos,self.world[parent]) if parent else pos),"children":[]})
-        self.doc["nodes"][self.bones[parent] if parent else 0]["children"].append(idx)
+        super().__init__(key,profile)
+        self.doc["asset"]["generator"] = "Offline Mayhem model-quality compiler 3.1"
 
     def setup_rig(self):
-        width=self.p["width"]; shoulder=width+.055
-        for name,parent,pos in [("Root",None,(0,0,0)),("Hips","Root",(0,.89,0)),("Spine","Hips",(0,1.09,0)),("Chest","Spine",(0,1.35,0)),("Neck","Chest",(0,1.48,0)),("Head","Neck",(0,1.56,0))]:
-            self.bone(name,parent,pos)
-        for side,sign in [("L",1),("R",-1)]:
-            for name,parent,pos in [("Clavicle","Chest",(sign*.12,1.40,0)),("UpperArm","Clavicle",(sign*shoulder,1.39,0)),("Forearm","UpperArm",(sign*shoulder,1.10,0)),("Hand","Forearm",(sign*shoulder,.85,0))]:
-                self.bone(name+"."+side,parent if parent=="Chest" else parent+"."+side,pos)
-            # Fingers span palm width (X), with a medial thumb. Arm, wrist and
-            # all gameplay/contact landmarks remain at their existing positions.
-            for finger in range(5):
-                x=sign*(shoulder + (finger-1.5)*.029)
-                y=.768 + (.007 if finger==3 else 0.)
-                z=-.004
-                if finger==4:
-                    x=sign*(shoulder-.062);y=.805;z=-.011
-                length=.037 if finger in (0,1,2) else .030
-                self.bone(f"Finger{finger}.{side}","Hand."+side,(x,y,z))
-                self.bone(f"Finger{finger}Tip.{side}",f"Finger{finger}.{side}",
-                          (x+(-sign*.012 if finger==4 else 0),y-length,z-.002))
-            for name,parent,pos in [("Thigh","Hips",(sign*width*.47,.89,0)),("Shin","Thigh",(sign*width*.47,.51,0)),("Foot","Shin",(sign*width*.47,.115,0)),("Toe","Foot",(sign*width*.47,.045,-.19))]:
-                self.bone(name+"."+side,parent if parent=="Hips" else parent+"."+side,pos)
+        super().setup_rig()
+        # Original 42 indices and IK parents remain unchanged. Helpers are
+        # appended siblings of the lower limb, coincident with the actual joint.
+        for helper, driver in DEFORM_JOINTS.items():
+            self.bone(helper,self.parents[driver],mul(self.world[driver],1/self.scale))
+            # Sibling bind data must coincide exactly; avoid a second scale
+            # round-trip leaving tiny, platform-dependent differences.
+            self.world[helper]=self.world[driver]
+            self.doc["nodes"][self.bones[helper]]["translation"]=list(
+                self.doc["nodes"][self.bones[driver]]["translation"])
         self.joint_names=list(self.bones)
         self.joint_index={name:i for i,name in enumerate(self.joint_names)}
 
-    def weights(self,a,b=None,t=0.):
-        if b is None: return [self.joint_index[a],0,0,0],[1.,0.,0.,0.]
-        t=max(0.,min(1.,t))
-        return [self.joint_index[a],self.joint_index[b],0,0],[1-t,t,0.,0.]
-
-    def torso_w(self,y):
-        if y<1.09: return self.weights("Hips","Spine",smooth((y-.88)/.21))
-        return self.weights("Spine","Chest",smooth((y-1.09)/.26))
-
-    def limb_w(self,side,y,arm):
-        a,b,c=("UpperArm","Forearm","Hand") if arm else ("Thigh","Shin","Foot")
-        joint,end=(1.10,.85) if arm else (.51,.115)
-        if y>joint+.08: return self.weights(a+"."+side)
-        if y>joint-.09: return self.weights(a+"."+side,b+"."+side,smooth((joint+.08-y)/.17))
-        if y>end+.07: return self.weights(b+"."+side)
-        return self.weights(b+"."+side,c+"."+side,smooth((end+.07-y)/.14))
-
-    def material(self,name,color,rough=.7,texture=False,metal=0.,emission=None):
-        m={"name":name,"pbrMetallicRoughness":{"baseColorFactor":[*[linear_color(c) for c in color],1.],"metallicFactor":metal,"roughnessFactor":rough},"doubleSided":False}
-        if texture:
-            pixels=[]
-            for y in range(96):
-                for x in range(96):
-                    weave=.94+.035*math.sin(x*math.pi/2)*math.sin(y*math.pi/2)+.018*math.sin(x*12.9898+y*78.233)
-                    if self.p["role"]=="referee" and name=="gear": weave*=.10 if (x//12)%2 else 1.
-                    pixels.extend(int(max(0,min(255,255*c*weave))) for c in color)
-            self.doc["images"].append({"bufferView":self.view(png(96,96,pixels)),"mimeType":"image/png","name":name+"_woven"})
-            self.doc["textures"].append({"sampler":0,"source":len(self.doc["images"])-1})
-            m["pbrMetallicRoughness"]["baseColorFactor"]=[1,1,1,1]
-            m["pbrMetallicRoughness"]["baseColorTexture"]={"index":len(self.doc["textures"])-1}
-        if emission: m["emissiveFactor"]=list(emission)
-        self.doc["materials"].append(m)
-        return len(self.doc["materials"])-1
-
-    def materials(self):
-        p=self.p
-        self.mat={"skin":self.material("skin",p["skin"],.62),"gear":self.material("gear",p["gear"],.82,True),"trim":self.material("trim",p["trim"],.45,True),"hair":self.material("hair",p["hair_color"],.88),"boots":self.material("boots",(.035,.045,.058),.48,True),"wrap":self.material("wrap",(.80,.79,.72),.9,True),"white":self.material("eyes",(.86,.83,.76),.30),"iris":self.material("iris",(.14,.095,.055),.33),"dark":self.material("pupil",(.009,.012,.014),.36),"mouth":self.material("lips",tuple(c*k for c,k in zip(p["skin"],(.80,.63,.60))),.61),"halo":self.material("halo",(.90,.62,.16),.35,False,.35,(.8,.48,.08))}
-
-        self.mat["nail"]=self.material("nail",tuple(min(1,c*.82+.13) for c in p["skin"]),.52)
-        self.mat["hair_highlight"]=self.material("hair_highlight",tuple(min(1,c*1.25+.013) for c in p["hair_color"]),.79)
-
-    def part(self,material):
-        return self.parts.setdefault(self.mat[material],{k:[] for k in ("v","uv","n","j","w","i")})
-
     def loft(self,rings,material,weight,region,segments=24):
-        """Build a UV-seamed loft with explicit region and normalized skin weights."""
-        part=self.part(material); start=len(part["v"])
-        for ri,(center,rx,rz) in enumerate(rings):
-            for j in range(segments+1):
-                a=math.tau*j/segments
-                point=(center[0]+rx*math.cos(a),center[1],center[2]+rz*math.sin(a))
-                bones,weights=weight(point,ri)
-                part["v"].append(mul(point,self.scale)); part["uv"].append((j/segments,ri/max(1,len(rings)-1))); part["j"].append(bones); part["w"].append(weights)
-        for r in range(len(rings)-1):
-            for j in range(segments):
-                a=start+r*(segments+1)+j; b=a+segments+1
-                part["i"].extend([a,b,b+1,a,b+1,a+1])
-        for ri,top in [(0,False),(len(rings)-1,True)]:
-            center=rings[ri][0]; bones,weights=weight(center,ri); ci=len(part["v"])
-            part["v"].append(mul(center,self.scale)); part["uv"].append((.5,.5)); part["j"].append(bones); part["w"].append(weights)
-            for j in range(segments):
-                a=start+ri*(segments+1)+j
-                part["i"].extend([ci,a+1,a] if top else [ci,a,a+1])
-        self.regions.setdefault(region,[]).extend((self.mat[material],i) for i in range(start,len(part["v"])))
+        if region in ("arm","leg"):
+            rows=list(rings)
+            if region=="arm":
+                # Explicit crease ring, not a polycount-only subdivision.
+                center=rows[0][0]
+                rows.append(((center[0],1.10,center[2]),self.p["arm"]*.8074,self.p["arm"]*.8074*.90))
+                rows.sort(key=lambda row:row[0][1])
+            x,z=rows[0][0][0],rows[0][0][2]
+            profile=[(c[1],rx,rz) for c,rx,rz in rows]
+            rings=[((x,y,z),rx,rz) for y,rx,rz in _refine_sections(profile,3)]
+        super().loft(rings,material,weight,region,segments)
 
     def ellipsoid(self,center,radii,material,bone,region="detail",segments=16,rings=10):
-        rows=[]
-        for i in range(rings+1):
-            angle=-math.pi/2+math.pi*i/rings; scale=max(.015,math.cos(angle))
-            rows.append(((center[0],center[1]+radii[1]*math.sin(angle),center[2]),radii[0]*scale,radii[2]*scale))
-        self.loft(rows,material,lambda point,i:self.weights(bone),region,segments)
+        if region in ("kneepad","pad_insert"):
+            # Knee protection follows the bend center, not the full shin swing.
+            side=bone.rsplit(".",1)[-1]
+            front=.77 if region=="kneepad" else .94
+            center=(center[0],.510,-self.p["leg"]*front)
+            bone="DeformKnee."+side
+        super().ellipsoid(center,radii,material,bone,region,segments,rings)
 
-    def mesh(self):
-        """Build version-three anatomical surfaces on the compatible humanoid rig."""
-        build_character(self)
+    def limb_w(self,side,y,arm):
+        """Region-aware bend weights; joint ring follows a half-angle helper.
 
-    def finish_mesh(self):
-        primitives=[]
-        for material,part in self.parts.items():
-            normals=[(0.,0.,0.) for _ in part["v"]]
-            for i in range(0,len(part["i"]),3):
-                a,b,c=part["i"][i:i+3]; n=cross(sub(part["v"][b],part["v"][a]),sub(part["v"][c],part["v"][a]))
-                for j in [a,b,c]: normals[j]=add(normals[j],n)
-            groups={}
-            for i,vertex in enumerate(part["v"]):
-                key=tuple(round(x,6) for x in vertex); groups[key]=add(groups.get(key,(0,0,0)),normals[i])
-            part["n"]=[norm(groups[tuple(round(x,6) for x in vertex)]) for vertex in part["v"]]
-            attrs={key:self.accessor(part[k],kind,component,34962) for key,k,kind,component in [("POSITION","v","VEC3",5126),("NORMAL","n","VEC3",5126),("TEXCOORD_0","uv","VEC2",5126),("JOINTS_0","j","VEC4",5123),("WEIGHTS_0","w","VEC4",5126)]}
-            primitives.append({"attributes":attrs,"indices":self.accessor(part["i"],"SCALAR",5125,34963),"material":material})
-        self.doc["meshes"].append({"name":self.key+"_skinned","primitives":primitives})
-        matrices=[]
-        for name in self.joint_names:
-            x,y,z=self.world[name]; matrices.append([1.,0.,0.,0.,0.,1.,0.,0.,0.,0.,1.,0.,-x,-y,-z,1.])
-        self.doc["skins"].append({"name":"HumanoidSkin","joints":[self.bones[n] for n in self.joint_names],"skeleton":self.bones["Root"],"inverseBindMatrices":self.accessor(matrices,"MAT4")})
-        self.doc["nodes"][0]["children"].append(len(self.doc["nodes"]))
-        self.doc["nodes"].append({"name":"Body","mesh":0,"skin":0})
+        At the crease, a single rigid helper avoids the LBS averaging that
+        flattens an elbow. Adjacent rings taper back to the limb bones. Driver
+        joints are siblings of the original lower bones, not changes to IK chains.
+        """
+        a,b,c=("UpperArm","Forearm","Hand") if arm else ("Thigh","Shin","Foot")
+        joint,end=(1.10,.85) if arm else (.51,.115)
+        helper=("DeformElbow." if arm else "DeformKnee.")+side
+        extent=.095 if arm else .100
+        if abs(y-joint)<=extent:
+            blend=smooth(abs(y-joint)/extent)
+            return self.weights(helper,(a if y>=joint else b)+"."+side,blend)
+        if y>joint:return self.weights(a+"."+side)
+        if y>end+.07:return self.weights(b+"."+side)
+        return self.weights(b+"."+side,c+"."+side,smooth((end+.07-y)/.14))
 
-    def pose(self,clip,t,duration):
-        rotations={n:(0.,0.,0.) for n in self.joint_names}
-        offsets={n:(0.,0.,0.) for n in self.joint_names}
-        r,o=rotations,offsets; p=t/max(.001,duration)
-        for side,sign in [("L",1),("R",-1)]:
-            r["UpperArm."+side]=(.50,0,sign*.22); r["Forearm."+side]=(1.60,0,0)
-            r["Hand."+side]=(0,sign*1.15,0)
-            for j in range(5): r[f"Finger{j}.{side}"]=(.18,0,0); r[f"Finger{j}Tip.{side}"]=(.16,0,0)
-        r["Chest"]=(.045,0,0); r["Head"]=(-.035,0,0)
-        if clip=="idle":
-            o["Hips"]=(0,.006*math.sin(math.tau*p),0)
-            r["Chest"]=(.045+.015*math.sin(math.tau*p),.02*math.sin(math.tau*p),0)
-        elif clip in ("walk","run"):
-            speed=1.5 if clip=="walk" else 4.2; stance=.60 if clip=="walk" else .38
-            o["Hips"]=(0,-.11+(.012 if clip=="walk" else .027)*math.sin(4*math.pi*p),0)
-            for side,phase_offset in [("L",0),("R",.5)]:
-                phase=(p+phase_offset)%1; travel=speed*duration*stance; start=-travel/2
-                if phase<stance: z=start+travel*(phase/stance); height=.02
-                else:
-                    u=(phase-stance)/(1-stance); z=start+travel*(1-smooth(u)); height=.02+(.10 if clip=="walk" else .20)*math.sin(math.pi*u)
-                dy=.89+o["Hips"][1]-(.115+height); a=.38; b=.395
-                distance=max(.05,min(a+b-.001,math.hypot(dy,z)))
-                knee=-math.acos(max(-1,min(1,(distance*distance-a*a-b*b)/(2*a*b))))
-                hip=math.atan2(-z,dy)+math.acos(max(-1,min(1,(a*a+distance*distance-b*b)/(2*a*distance))))
-                r["Thigh."+side]=(hip,0,0); r["Shin."+side]=(knee,0,0); r["Foot."+side]=(-hip-knee,0,0)
-                r["UpperArm."+side]=(-.42*math.sin(math.tau*phase),0,.10 if side=="L" else -.10); r["Forearm."+side]=(.65,0,0)
-            r["Chest"]=(-.08 if clip=="walk" else -.20,0,0)
-        elif clip=="strike":
-            attack=math.sin(math.pi*min(1,t/.27)) if t<.27 else 0
-            r["UpperArm.R"]=(.2+1.32*attack,0,-.23); r["Forearm.R"]=(.35+.7*(1-attack),0,0); r["Chest"]=(.06,.24*attack,0)
-            # A single committed strike: multi-hit gameplay is not falsely implied.
-        elif clip in ("block","reversal","grapple"):
-            q=smooth(min(1,t/.12)); r["UpperArm.L"]=(.5+q*.9,0,.15); r["UpperArm.R"]=(.5+q*.9,0,-.15)
-            for side in ["L","R"]: r["Forearm."+side]=(1.15 if clip=="block" else .35,0,0)
-        elif clip in ("hit_light","hit_heavy"):
-            q=math.sin(math.pi*p); r["Chest"]=(-.23*q,.08*q,0); r["Head"]=(-.20*q,0,0)
-        elif clip in ("throw_attacker","throw_leverage_attacker"):
-            q=math.sin(math.pi*min(1,t/.60)); o["Hips"]=(0,-.065*q,0); r["Chest"]=(.16*q,0,0)
-            for side in ["L","R"]: r["UpperArm."+side]=(.5+1.75*q,0,.14 if side=="L" else -.14); r["Forearm."+side]=(.48,0,0)
-        elif clip in ("throw_defender","throw_leverage_defender"):
-            # World lift belongs to Fighter; do not add a second positive-Y lift.
-            q=smooth(min(1,t/.22)); r["Hips"]=(math.pi/2*q,0,0); o["Hips"]=(0,(-.70+.10*smooth((t-.40)/.20))*q,0)
-            for side in ["L","R"]: r["UpperArm."+side]=(.18,0,.7 if side=="L" else -.7)
-        elif clip in ("knockdown","downed","pinned","defeated","submission_defender","kickout"):
-            q=smooth(min(1,t/.40)) if clip=="knockdown" else 1.
-            r["Hips"]=(math.pi/2*q,0,0); o["Hips"]=(0,-.60*q,0); r["Chest"]=(0,0,0); r["Head"]=(0,0,0)
-            if clip in ("pinned","submission_defender","kickout"):
-                q=math.sin(t*9)*.045; r["Thigh.L"]=(.35+q,0,.1); r["Shin.L"]=(-.65,0,0); r["Thigh.R"]=(.22-q,0,-.1); r["Shin.R"]=(-.4,0,0)
-            for side,sign in [("L",1),("R",-1)]: r["UpperArm."+side]=(0,0,sign*.6)
-        elif clip=="getup":
-            q=smooth(p); r["Hips"]=(math.pi/2*(1-q),0,.28*math.sin(math.pi*p)); o["Hips"]=(0,-.60*(1-q),0)
-            r["UpperArm.L"]=(1.15*math.sin(math.pi*p),0,.5*(1-q)); r["Forearm.L"]=(.5*math.sin(math.pi*p),0,0)
-            r["Thigh.R"]=(.75*math.sin(math.pi*p),0,0); r["Shin.R"]=(-1.3*math.sin(math.pi*p),0,0); r["Foot.R"]=(.55*math.sin(math.pi*p),0,0)
-        elif clip=="pinning":
-            o["Hips"]=(0,-.16,0); r["Hips"]=(-math.pi/2,0,0); r["Chest"]=(.12,0,0)
-            r["Thigh.L"]=(-.4,0,.20); r["Thigh.R"]=(-.5,0,-.20); r["Shin.L"]=(.6,0,0); r["Shin.R"]=(.6,0,0)
-            for side in ["L","R"]: r["UpperArm."+side]=(.9,0,.5 if side=="L" else -.5); r["Forearm."+side]=(.6,0,0)
-        elif clip in ("submission_attacker","ref_count"):
-            bend=1.20 if clip=="ref_count" else .80
-            o["Hips"]=(0,-.39,0); r["Hips"]=(-bend,0,0); r["Chest"]=(-.18,0,0)
-            for side in ["L","R"]:
-                r["Thigh."+side]=(bend,0,0); r["Shin."+side]=(-math.pi/2,0,0); r["Foot."+side]=(math.pi/2,0,0)
-                r["UpperArm."+side]=(bend+.18,0,0); r["Forearm."+side]=(0,0,0)
-            if clip=="ref_count": r["UpperArm.R"]=(bend+.18-1.1*math.sin(math.pi*p),0,0)
-        elif clip in ("victory","ref_wave"):
-            for side,sign in [("L",1),("R",-1)]: r["UpperArm."+side]=(.3+2.45*smooth(p),0,sign*.25); r["Forearm."+side]=(.15,0,0)
-        return r,o
+    @staticmethod
+    def rotation_sample(pose, bone):
+        driver=DEFORM_JOINTS.get(bone)
+        if not driver:return quat(*pose[0][bone])
+        q=quat(*pose[0][driver])
+        if q[3]<0:q=tuple(-v for v in q)
+        half=(q[0],q[1],q[2],q[3]+1.)
+        length=math.sqrt(sum(v*v for v in half))
+        return tuple(v/length for v in half)
 
     def animations(self):
         for name,duration in DURATIONS.items():
@@ -285,7 +97,7 @@ class Asset:
             full_time=self.accessor(times,"SCALAR"); short_time=self.accessor([0.,duration],"SCALAR"); channels=[]; samplers=[]
             for bone in self.joint_names:
                 rest=self.doc["nodes"][self.bones[bone]]["translation"]
-                tracks=[("rotation","VEC4",[quat(*pose[0][bone]) for pose in poses]),("translation","VEC3",[add(rest,mul(pose[1][bone],self.scale)) for pose in poses])]
+                tracks=[("rotation","VEC4",[self.rotation_sample(pose, bone) for pose in poses]),("translation","VEC3",[add(rest,mul(pose[1][bone],self.scale)) for pose in poses])]
                 for path,kind,values in tracks:
                     constant=all(all(abs(x-y)<1e-8 for x,y in zip(v,values[0])) for v in values)
                     output=self.accessor([values[0],values[-1]] if constant else values,kind)
@@ -294,7 +106,7 @@ class Asset:
             self.doc["animations"].append({"name":name,"channels":channels,"samplers":samplers,"extras":{"loop":name in LOOPS,"impact_time":.60 if name.startswith("throw") else .13 if name=="strike" else None}})
 
     def validate(self):
-        if len(self.bones)!=42: raise ValueError("Invalid humanoid hierarchy")
+        if len(self.bones)!=46 or any(n not in self.bones for n in DEFORM_JOINTS): raise ValueError("Invalid humanoid hierarchy")
         for part in self.parts.values():
             if not len(part["v"])==len(part["j"])==len(part["w"]): raise ValueError("Mismatched skin arrays")
             if not all(abs(sum(w)-1)<1e-6 and all(x>=0 for x in w) for w in part["w"]): raise ValueError("Unnormalized weights")
@@ -308,12 +120,12 @@ class Asset:
     def save(self,path):
         self.mesh(); self.animations(); self.validate()
         self.doc["buffers"]=[{"byteLength":len(self.buf)}]
-        self.doc["extras"]={"schema_version":3,"character":self.key,"style":"original stylized ring interpretation","authoring_forward":"-Z","walk_speed":1.5*self.scale,"run_speed":4.2*self.scale,"rig_bones":len(self.bones),"grip_support":"runtime paired contact; skin intersection not certified", "costume":COSTUMES[self.key][0], "geometry_regions":{n:len(v) for n,v in self.regions.items()}}
+        self.doc["extras"]={"schema_version":4,"core_bones":42,"deformation_helpers":DEFORM_JOINTS,"character":self.key,"style":"original stylized ring interpretation","authoring_forward":"-Z","walk_speed":1.5*self.scale,"run_speed":4.2*self.scale,"rig_bones":len(self.bones),"grip_support":"runtime paired contact; skin intersection not certified", "costume":COSTUMES[self.key][0], "geometry_regions":{n:len(v) for n,v in self.regions.items()}}
         js=json.dumps(self.doc,separators=(",",":")).encode(); js+=b" "*((-len(js))%4)
         binary=bytes(self.buf); binary+=b"\0"*((-len(binary))%4)
         data=struct.pack("<4sII",b"glTF",2,28+len(js)+len(binary))+struct.pack("<I4s",len(js),b"JSON")+js+struct.pack("<I4s",len(binary),b"BIN\0")+binary
         path.parent.mkdir(parents=True,exist_ok=True); path.write_bytes(data)
-        return {"file":path.name,"sha256":hashlib.sha256(data).hexdigest(),"bones":len(self.bones),"clips":len(self.doc["animations"]),"vertices":sum(len(p["v"]) for p in self.parts.values()),"triangles":sum(len(p["i"])//3 for p in self.parts.values()),"bytes":len(data),"visual_acceptance":"model-quality-v3 candidate; render inspection required"}
+        return {"file":path.name,"sha256":hashlib.sha256(data).hexdigest(),"bones":len(self.bones),"clips":len(self.doc["animations"]),"vertices":sum(len(p["v"]) for p in self.parts.values()),"triangles":sum(len(p["i"])//3 for p in self.parts.values()),"bytes":len(data),"visual_acceptance":"v3.1 integrated deformation; see docs/INTEGRATED_DEFORMATION.md"}
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
