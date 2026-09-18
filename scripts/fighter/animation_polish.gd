@@ -56,10 +56,8 @@ func _physics_process(delta:float)->void:
  else:curl_hand("L",.28,.12);curl_hand("R",.28,.12)
  if fighter.current_state==Fighter.State.GETTING_UP:
   var p:=clampf(fighter.state_timer/.60,0,1);var hand_w:=1.-smoothstep(.48,.82,p);var foot_w:=smoothstep(.08,.30,p)*(1.-smoothstep(.72,.96,p))
-  # Brace the left hand on the wrestler's own left thigh while the right foot
-  # plants on the canvas. This is reachable across every roster proportion and
-  # reads as a supported push-up without stretching the arm to a fake floor hit.
+  # Thigh-braced recovery. The boot sole, not the ankle center, meets the mat.
   var thigh_target:=IK.point(skeleton,bone("Thigh.L"))+fighter.global_basis.z*(-.045*body_scale)+Vector3.UP*(.035*body_scale);var hand_pole:=thigh_target-fighter.global_basis.z*.30+fighter.global_basis.x*(-.22)+Vector3.UP*.18;_support_arm("L",thigh_target,hand_pole,hand_w,"getup_hand")
-  var foot_target:=fighter.global_position+fighter.global_basis.x*(.20*body_scale)-fighter.global_basis.z*(.24*body_scale)+Vector3.UP*.055;var knee_pole:=fighter.global_position-fighter.global_basis.z*(.42*body_scale)+Vector3.UP*.26;_support_leg("R",foot_target,knee_pole,foot_w,"getup_foot");rotate("Head",Vector3(-.16*(1-p),0,0))
+  var foot_target:=fighter.global_position+fighter.global_basis.x*(.20*body_scale)-fighter.global_basis.z*(.24*body_scale)+Vector3.UP*(.137*body_scale);var knee_pole:=fighter.global_position-fighter.global_basis.z*(.42*body_scale)+Vector3.UP*.26;_support_leg("R",foot_target,knee_pole,foot_w,"getup_foot");IK._world_rotation(skeleton,bone("Foot.R"),IK.world_pose(skeleton,bone("Foot.R")).basis.orthonormalized().get_rotation_quaternion().slerp(fighter.global_basis.orthonormalized().get_rotation_quaternion(),foot_w));rotate("Head",Vector3(-.16*(1-p),0,0))
  if stamina_ratio<.25 and fighter.current_state in [Fighter.State.IDLE,Fighter.State.MOVING]:
   var fatigue:=(.25-stamina_ratio)/.25;rotate("Chest",Vector3(.06*fatigue,0,0));rotate("Head",Vector3(-.035*fatigue,0,0))
