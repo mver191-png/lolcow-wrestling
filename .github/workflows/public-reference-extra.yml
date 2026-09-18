@@ -1,0 +1,50 @@
+name: Public portrait reference supplement
+on:
+  push:
+    branches: [astra/model-quality-v3]
+    paths: [.github/workflows/public-reference-extra.yml]
+permissions:
+  contents: read
+jobs:
+  references:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - run: |
+          mkdir -p reference-supplement
+          python3 - <<'PY'
+          from pathlib import Path
+          from urllib.request import Request,urlopen
+          from urllib.parse import urljoin
+          from html.parser import HTMLParser
+          import json
+          sources=[('tophiachu','https://tenor.com/view/tophia-tophiachu-28-smirk-devious-gif-11870591702852091627'),('andy_ditch','https://tenor.com/view/andrew-ditch-ditch-poopsquatch-andy-ditch-andy-gif-16852068161994619749'),('jupiter_the_hybrid','https://i.ytimg.com/vi/ZQlVB0y5Hhs/maxresdefault.jpg'),('anacondasin','https://kick.com/anacondasin/about')]
+          class Meta(HTMLParser):
+            def __init__(self):super().__init__();self.images=[]
+            def handle_starttag(self,tag,attrs):
+              a=dict(attrs)
+              if tag=='meta' and a.get('property',a.get('name','')) in ('og:image','twitter:image'):self.images.append(a.get('content',''))
+          def get(url):
+            with urlopen(Request(url,headers={'User-Agent':'Mozilla/5.0'}),timeout=20) as r:return r.read(5000000),r.headers.get('Content-Type','')
+          result=[]
+          for key,url in sources:
+            row={'slot':key,'source_page':url,'images':[]}
+            try:
+              data,kind=get(url)
+              if kind.startswith('image/'):images=[url]
+              else:
+                parser=Meta();parser.feed(data.decode('utf8','replace'));images=parser.images[:1]
+              for i,image in enumerate(images):
+                raw,kind=get(urljoin(url,image))
+                if not kind.startswith('image/'):continue
+                ext='gif' if 'gif' in kind else 'png' if 'png' in kind else 'jpg'
+                name=key+'.'+ext;Path('reference-supplement',name).write_bytes(raw);row['images'].append(name)
+            except Exception as e:row['error']=str(e)
+            result.append(row)
+          Path('reference-supplement/sources.json').write_text(json.dumps(result,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: public-reference-supplement
+          path: reference-supplement/
+          retention-days: 1
