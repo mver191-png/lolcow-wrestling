@@ -1,19 +1,22 @@
-# Current recovery follow-up state
+# Current model-quality branch
 
-Work is isolated on `astra/recovery-contact-followup` in draft PR #2, targeting the original overhaul review branch (PR #1), not main. Incoming animation-polish changes through `61562cc9` are reconciled without force-updating that moving branch.
+Work continues on `astra/model-quality-v3`, draft PR #3, stacked on the recovery
+follow-up. Main and the two predecessor review branches are unchanged.
 
-## Implemented
+The broken v3 compiler/test syntax is repaired. `tools/character_geometry.py`
+builds new actual meshes for all eight wrestlers and the neutral halo referee.
+Integrated faces, fitted eyes/lids/lips, scalp-following hair, garment panels,
+shoulder bridges, detailed palms, correctly spread fingers and medial thumbs are
+implemented. Main rig landmarks, gameplay stats, damage, clocks and rules remain.
+Neutral hand posture and bounded finger curls are improved; recovery has one owner.
 
-- Preserved the full skinned roster, venue, paired grips, lateral covers, wrist control, character-specific secondary stance/tempo accents, finger curls and gameplay authority.
-- Added latched left-palm and phased ankle supports during the existing 0.60-second recovery. The secondary polish layer does not re-solve these limbs or close the loaded palm afterward.
-- Added solver input/chain validation, true zero-weight no-op and contact-disable cleanup.
-- Referee transitions blend; the final slap remains visible for 0.08 seconds after the result, without delaying or changing it.
-- Added real-scene recovery/event checks and capture tooling. Compatibility retains authored embedded materials after runtime overrides exposed renderer errors. CI now also renders real software-OpenGL frames.
+Local checks pass: 408 mechanics, 126 scene physics, 35 presentation, 305 overhaul,
+1941 paired contact, 56 animation polish and 142 recovery/event assertions, plus
+7 Python tests. Counts overlap. Actual neutral-model and match captures are
+available through repeatable tools; CI repeats them for the published revision.
 
-## Executed verification
-
-Local Godot 4.7.2 checks: 408 mechanics, 126 scene physics, 35 presentation, 305 overhaul, 1,941 paired-contact, 142 recovery/event, and 56 secondary-animation/ownership assertions passed. Three Python asset-compiler tests passed. Counts overlap. CI runs the same suites; consult the workflow artifact for its exact commit and result.
-
-All eight bodies at two orientations passed loaded recovery-marker checks within 2.5 cm. This is not skin collision or anatomical correctness. Actual scripted Godot frames were captured with Xvfb/Mesa llvmpipe. Final Compatibility captures have no engine errors; an unsupported VSync warning remains. These are not performance benchmarks or comprehensive human playtests.
-
-See `docs/CONTACT_ACCEPTANCE.md` and `KNOWN_ISSUES.md`. Full-body clearance, natural authored transitions, distinct move mechanics, Windows export, gamepads and target-GPU Forward+ behavior remain open. Do not auto-merge either draft PR.
+See `docs/MODEL_QUALITY_V3.md` for source-checkout rebuilding, exact scope,
+verification and remaining limitations. Compiled v3 GLBs are supplied in the CI
+artifact/download package; a raw source checkout must rebuild its baseline GLBs.
+No draft PR is merged, and no production-likeness, full-body collision or target-
+hardware performance acceptance is claimed.

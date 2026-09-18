@@ -1,31 +1,88 @@
-# Model quality v3
+# Model quality v3 — implementation and verification
 
-Base: validated recovery/contact revision `5c11c236`. This branch changes character art only after the existing animation/contact behavior is protected.
+Base: `f9f8353` on `astra/model-quality-v3` (draft PR #3). The base failed before
+building any assets: literal escaped newlines corrupted two Python source files.
+Some advertised torso/head replacements had not applied. Both defects are repaired.
 
-## Goal
+## Implemented art
 
-Replace the current simple procedural silhouettes with higher-quality stylized wrestling characters while retaining the canonical roster, gameplay roots, 42-bone humanoid contract, named animation library, deterministic export, and all existing contact tests.
+`tools/character_geometry.py` now builds the actual meshes rather than changing a
+polycount label. It includes dense, region-weighted torso/elbow/knee surfaces,
+separate blended shoulder bridges, integrated jaw/cheek/nasal/eye-socket surfaces,
+fitted eyelids and lips, scalp-following hair caps and curved hair locks, garment
+panels that follow torso curvature, original ring emblems, boot/pad details,
+modeled palms, medial thumbs, knuckles, tapered fingers and nails.
 
-## Required art changes
+Four fingers now span palm width instead of being stacked through its depth.
+The main humanoid bones and hand/foot gameplay-contact landmarks stay unchanged.
+The rig remains 42 bones with 25 complete-channel clips. The 0.60-second recovery,
+1.10-second throw, damage, input, match rules and roster stats are unchanged.
 
-- Denser head and torso topology with better shoulder, hip, knee and elbow deformation loops.
-- Better hands: palm volume, knuckles, tapered fingers, separated thumb silhouette and enough geometry for the existing finger curl.
-- Better faces: jaw/chin, cheek, brow, eyelid and lip forms. Keep likeness claims conservative; these remain stylized ring interpretations, not scans.
-- Character-specific clothing geometry and silhouette details rather than relying only on color: singlet/tank/trunks/apron/tights/jacket/referee shirt profiles, seams, cuffs and pads.
-- Character-specific hair silhouettes with enough geometry to read from gameplay camera distance.
-- Preserve region-owned normalized skin weights. Torso vertices may not be captured by arm bones.
+Author palette constants are sRGB and now get converted to linear glTF color
+factors. Embedded texture pixels remain sRGB. This fixes the overly pale skin and
+hair response caused by treating the authored palette as linear values.
 
-## Acceptance
+Ready poses bring the hands toward the chest with inward-facing palms. Runtime
+finger curls use bounded target rotations, not an additional full curl multiplied
+onto already-curled animation. Dedicated recovery keeps ownership of the loaded
+palm. All existing contact/referee work is preserved.
 
-1. Python compiler remains deterministic and all committed GLBs match the manifest.
-2. Rig remains compatible with the presentation/contact system.
-3. Existing mechanics, scene, presentation, overhaul, contact, animation-polish and recovery suites remain green.
-4. Add model-geometry checks for per-character vertex/triangle floors, hand topology, face detail, finite normals/weights, unique silhouettes and material/region coverage.
-5. Render fixed-camera full-body and portrait turntables for every wrestler under neutral light plus normal match lighting.
-6. Inspect shoulder raise, elbow bend, fist curl, squat, knockdown, get-up, throw grip, cover and wrist-control poses. A successful import is not visual acceptance.
-7. Do not increase bloom/fog to disguise geometry. Keep a neutral-light comparison.
-8. Do not change stats, damage, reach, collision, clocks or terminal rules to fit art.
+These are original stylized ring interpretations, NOT likeness-approved scans.
+There is no claim of final production art or eight newly implemented finishers.
 
-## Scope honesty
+## Local verification actually executed
 
-Procedural geometry can be substantially improved, but it is not equivalent to a manually sculpted, likeness-approved production character. If a topology problem cannot be solved cleanly in the deterministic generator, preserve the editable GLB/Blender handoff and mark that character for dedicated DCC refinement rather than claiming completion.
+Godot 4.7.2 Linux, fixed-60-Hz test stepping; Python standard library. Existing
+mechanics (408), scene physics (126), presentation (35), overhaul (305), paired
+contact (1,941), animation polish (56) and recovery/event (142) assertions passed
+with zero failures. The seven Python tests cover normalized region-safe weights,
+actual geometry signatures, detailed regions, finger layout, stable landmarks,
+palette conversion, deterministic GLBs and output-manifest checksums. Counts
+include overlap and repeated invariants; they are not human playtests.
+
+The new capture tool uses real Fighter scenes and ordinary physics updates. It
+captures six views/states per wrestler plus three referee views: 51 PNGs, including
+neutral full-body, three-quarter, portrait, strike, supported recovery and ready
+again. It rejects uniform/blank frames. The first implementation exposed a stale
+viewport/camera frame; the tool now waits for scene updates before explicitly
+rendering. Generated image files alone are not aesthetic approval.
+
+Before/after views use the same tool/camera/light; the before models come from
+validated revision `5c11c236`. The new actor palette and geometry both differ.
+A separate contact fixture renders the actual match arena and paired actions.
+Software OpenGL (Xvfb/Mesa llvmpipe) reports an unsupported VSync warning. Import
+retains the pre-existing Unicode parsing diagnostic; its source is not isolated.
+No target-GPU performance claim is made. CI repeats the build, all suites and both
+render fixtures; consult its result for the exact published revision.
+
+## Run and reproduce
+
+Downloaded game packages include compiled GLBs. Open `project.godot` in Godot
+4.7.2 and run F5. They are source projects, not standalone Windows executables.
+
+A raw GitHub source checkout needs an asset rebuild: the committed older binary
+models are retained as baseline data; the compiler/CI artifact is authoritative for
+v3. Run from the repository root before importing the project:
+
+```sh
+python tools/build_roster.py
+python tests/test_roster_assets.py
+godot --headless --editor --path . --import
+godot --headless --fixed-fps 60 --path . -s tests/test_contacts.gd
+godot --path . --audio-driver Dummy --rendering-method gl_compatibility --disable-render-loop --fixed-fps 60 -s tools/capture_model_quality.gd
+```
+
+No Blender or external Python package is needed to compile these original assets.
+GLBs contain their textures and can be imported into Blender for further editing.
+CI remains read-only and does not silently commit generated assets or merge PRs.
+
+## Open art and platform work
+
+- Marker contact tests do not validate whole-skin, clothing or rope collisions.
+- Shoulder transitions, collar/panel intersections, hair silhouette and facial
+  likeness still need art review; material/normal changes are not a substitute.
+- The short get-up is still an arcade transition, not motion-captured recovery.
+- Most named attacks still share underlying mechanics. This is an art and hand-
+  presentation upgrade, not a moveset-completion claim.
+- Hardware Forward+, gamepads, Windows export and a full human match are not tested.
+- Finer authored grips, weight transfer and full-body clearance remain next steps.

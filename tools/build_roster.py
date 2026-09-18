@@ -4,7 +4,8 @@
 Python standard library only. Units are metres, Y up, -Z forward. The generated
 GLBs can be edited in Blender. Anatomical regions, not global X thresholds, own
 weights. Every animation samples every bone so poses cannot inherit stale tracks.
-These are stylized fictional ring interpretations, not verified likeness scans.\nModel-quality v3 increases deformation topology and adds character-specific gear geometry while preserving the gameplay rig.
+These are stylized fictional ring interpretations, not verified likeness scans.
+Model-quality v3 increases deformation topology and adds character-specific gear geometry while preserving the gameplay rig.
 """
 from __future__ import annotations
 import argparse
@@ -13,6 +14,7 @@ import json
 import math
 import struct
 import zlib
+from character_geometry import build_character, COSTUMES
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -44,6 +46,10 @@ def smooth(t):
 def quat(x=0.,y=0.,z=0.):
     cx,sx=math.cos(x/2),math.sin(x/2); cy,sy=math.cos(y/2),math.sin(y/2); cz,sz=math.cos(z/2),math.sin(z/2)
     return (sx*cy*cz-cx*sy*sz,cx*sy*cz+sx*cy*sz,cx*cy*sz-sx*sy*cz,cx*cy*cz+sx*sy*sz)
+def linear_color(c):
+    """Author palettes are sRGB; glTF constant color factors are linear."""
+    return c / 12.92 if c <= .04045 else ((c + .055) / 1.055) ** 2.4
+
 def png(width, height, pixels):
     def chunk(kind, data):
         return struct.pack(">I",len(data))+kind+data+struct.pack(">I",zlib.crc32(kind+data)&0xffffffff)
@@ -90,11 +96,18 @@ class Asset:
         for side,sign in [("L",1),("R",-1)]:
             for name,parent,pos in [("Clavicle","Chest",(sign*.12,1.40,0)),("UpperArm","Clavicle",(sign*shoulder,1.39,0)),("Forearm","UpperArm",(sign*shoulder,1.10,0)),("Hand","Forearm",(sign*shoulder,.85,0))]:
                 self.bone(name+"."+side,parent if parent=="Chest" else parent+"."+side,pos)
+            # Fingers span palm width (X), with a medial thumb. Arm, wrist and
+            # all gameplay/contact landmarks remain at their existing positions.
             for finger in range(5):
-                z=(finger-1.5)*.025; x=sign*shoulder
-                if finger==4: x+=sign*.052; z=-.01
-                self.bone(f"Finger{finger}.{side}","Hand."+side,(x,.765 if finger<4 else .805,z))
-                self.bone(f"Finger{finger}Tip.{side}",f"Finger{finger}.{side}",(x,.715 if finger<4 else .770,z-.003))
+                x=sign*(shoulder + (finger-1.5)*.029)
+                y=.768 + (.007 if finger==3 else 0.)
+                z=-.004
+                if finger==4:
+                    x=sign*(shoulder-.062);y=.805;z=-.011
+                length=.037 if finger in (0,1,2) else .030
+                self.bone(f"Finger{finger}.{side}","Hand."+side,(x,y,z))
+                self.bone(f"Finger{finger}Tip.{side}",f"Finger{finger}.{side}",
+                          (x+(-sign*.012 if finger==4 else 0),y-length,z-.002))
             for name,parent,pos in [("Thigh","Hips",(sign*width*.47,.89,0)),("Shin","Thigh",(sign*width*.47,.51,0)),("Foot","Shin",(sign*width*.47,.115,0)),("Toe","Foot",(sign*width*.47,.045,-.19))]:
                 self.bone(name+"."+side,parent if parent=="Hips" else parent+"."+side,pos)
         self.joint_names=list(self.bones)
@@ -118,7 +131,7 @@ class Asset:
         return self.weights(b+"."+side,c+"."+side,smooth((end+.07-y)/.14))
 
     def material(self,name,color,rough=.7,texture=False,metal=0.,emission=None):
-        m={"name":name,"pbrMetallicRoughness":{"baseColorFactor":[*color,1.],"metallicFactor":metal,"roughnessFactor":rough},"doubleSided":False}
+        m={"name":name,"pbrMetallicRoughness":{"baseColorFactor":[*[linear_color(c) for c in color],1.],"metallicFactor":metal,"roughnessFactor":rough},"doubleSided":False}
         if texture:
             pixels=[]
             for y in range(96):
@@ -137,6 +150,9 @@ class Asset:
     def materials(self):
         p=self.p
         self.mat={"skin":self.material("skin",p["skin"],.62),"gear":self.material("gear",p["gear"],.82,True),"trim":self.material("trim",p["trim"],.45,True),"hair":self.material("hair",p["hair_color"],.88),"boots":self.material("boots",(.035,.045,.058),.48,True),"wrap":self.material("wrap",(.80,.79,.72),.9,True),"white":self.material("eyes",(.86,.83,.76),.30),"iris":self.material("iris",(.14,.095,.055),.33),"dark":self.material("pupil",(.009,.012,.014),.36),"mouth":self.material("lips",tuple(c*k for c,k in zip(p["skin"],(.80,.63,.60))),.61),"halo":self.material("halo",(.90,.62,.16),.35,False,.35,(.8,.48,.08))}
+
+        self.mat["nail"]=self.material("nail",tuple(min(1,c*.82+.13) for c in p["skin"]),.52)
+        self.mat["hair_highlight"]=self.material("hair_highlight",tuple(min(1,c*1.25+.013) for c in p["hair_color"]),.79)
 
     def part(self,material):
         return self.parts.setdefault(self.mat[material],{k:[] for k in ("v","uv","n","j","w","i")})
@@ -170,83 +186,8 @@ class Asset:
         self.loft(rows,material,lambda point,i:self.weights(bone),region,segments)
 
     def mesh(self):
-        p=self.p; w=p["width"]; d=p["depth"]; sh=w+.055
-        body=[(.80,.78,.83),(.88,.95,.98),(.98,1.04,1.03),(1.10,1.,1.08),(1.22,.95,1.),(1.34,1.03,.98),(1.42,.90,.82),(1.47,.36,.55)]
-        self.loft([((0,y,0),w*rx,d*rz) for y,rx,rz in body],"gear",lambda pt,i:self.torso_w(pt[1]),"torso",32)
-        # Character-specific clothing geometry keeps silhouettes readable even in neutral materials.
-        if self.key=="candy_rooks":
-            self.loft([((0,y,-d*1.07),w*rx,.018) for y,rx in [(.79,.70),(.90,.86),(1.05,.83),(1.22,.72),(1.36,.62)]],"trim",lambda pt,i:self.torso_w(pt[1]),"gear_detail",32)
-        elif self.key=="daniel_larson":
-            for sign in [-1,1]: self.loft([((sign*w*.38,y,-d*1.025),.018,.022) for y in [.83,1.40]],"trim",lambda pt,i:self.torso_w(pt[1]),"gear_detail",12)
-        elif self.key=="referee_cobra":
-            self.loft([((0,y,-d*1.03),w*.06,.014) for y in [.82,1.43]],"trim",lambda pt,i:self.torso_w(pt[1]),"gear_detail",12)
-        elif self.key in ("tophiachu","andy_ditch"):
-            for sign in [-1,1]: self.loft([((sign*w*.42,y,-d*.94),w*.10,.018) for y in [1.18,1.44]],"trim",lambda pt,i:self.torso_w(pt[1]),"gear_detail",12)
-        for y,rx,rz in [(.86,.94,.99),(1.425,.84,.81)]:
-            self.loft([((0,y-.015,0),w*rx+.006,d*rz+.006),((0,y+.015,0),w*rx+.006,d*rz+.006)],"trim",lambda pt,i:self.torso_w(pt[1]),"seam",32)
-        self.loft([((0,1.45,0),.115,.105),((0,1.60,0),.105,.105)],"skin",lambda pt,i:self.weights("Neck","Head",smooth((pt[1]-1.49)/.09)),"neck")
-        face=p["face"]; head=[(1.535,.095,.105),(1.565,.130,.135),(1.625,.175,.158),(1.68,.183,.165),(1.74,.171,.158),(1.81,.145,.133),(1.85,.075,.070)]
-        self.loft([((0,y,-.007),rx*face,rz) for y,rx,rz in head],"skin",lambda pt,i:self.weights("Head"),"head",32)
-        for sign in [-1,1]:
-            self.ellipsoid((sign*.186*face,1.671,0),(.035,.063,.026),"skin","Head")
-            self.ellipsoid((sign*.073*face,1.699,-.147),(.052,.029,.023),"white","Head",segments=18)
-            self.ellipsoid((sign*.073*face,1.699,-.167),(.019,.021,.007),"iris","Head")
-            self.ellipsoid((sign*.073*face,1.699,-.173),(.009,.013,.004),"dark","Head")
-            self.ellipsoid((sign*.073*face-.006,1.707,-.176),(.003,.003,.002),"white","Head",segments=8,rings=6)
-            self.ellipsoid((sign*.073*face,1.735,-.147),(.056,.012,.015),"hair","Head")
-            self.ellipsoid((sign*.10*face,1.644,-.137),(.056,.036,.025),"skin","Head")
-        self.ellipsoid((0,1.681,-.168),(.027,.050,.036),"skin","Head")
-        self.ellipsoid((0,1.655,-.188),(.039,.023,.028),"skin","Head")
-        self.ellipsoid((0,1.607,-.149),(.063,.013,.014),"mouth","Head")
-        self.ellipsoid((0,1.606,-.160),(.052,.003,.003),"dark","Head",rings=6)
-        for side,sign in [("L",1),("R",-1)]:
-            arm=p["arm"]; leg=p["leg"]; x=sign*sh; lx=sign*w*.47
-            self.loft([((x,y,0),arm*r,arm*r*.91) for y,r in [(.84,.62),(.94,.76),(1.07,.77),(1.11,.82),(1.20,1.02),(1.32,1.08),(1.40,.88)]],"skin",lambda pt,i,s=side:self.limb_w(s,pt[1],True),"arm",28)
-            self.loft([((x,y,0),arm*.69,arm*.65) for y in [.855,.925]],"wrap",lambda pt,i,s=side:self.limb_w(s,pt[1],True),"wrap",20)
-            self.loft([((x,y,-.010),rx,rz) for y,rx,rz in [(.755,.045,.027),(.785,.064,.035),(.815,.071,.039),(.842,.058,.034)]],"skin",lambda pt,i,s=side:self.weights("Hand."+s),"hand",20)\n            self.ellipsoid((x+sign*.050,.815,-.018),(.028,.040,.024),"skin","Hand."+side,"thumb_base",14,8)\n            for knuckle,zoff in enumerate([-.037,-.012,.013,.038]): self.ellipsoid((x+sign*.018,.775,zoff),(.015,.012,.014),"skin","Hand."+side,"knuckle",10,6)
-            for j in range(5):
-                bone=f"Finger{j}.{side}"; tip=f"Finger{j}Tip.{side}"; pos=mul(self.world[bone],1/self.scale); end=mul(self.world[tip],1/self.scale)
-                self.loft([((end[0],end[1]-.035,end[2]-.007),.010,.011),(end,.012,.014),(pos,.013,.014)],"skin",lambda pt,i,a=bone,b=tip:self.weights(a,b,1. if i<1 else (.65 if i==1 else 0.)),"finger",12)
-            self.loft([((lx,y,0),leg*r,leg*r*.95) for y,r in [(.30,.70),(.42,.68),(.51,.75),(.62,.90),(.76,1.02),(.88,1.02)]],"skin",lambda pt,i,s=side:self.limb_w(s,pt[1],False),"leg",30)
-            self.loft([((lx,y,0),leg*r+.005,leg*r*.95+.005) for y,r in [(.63,.91),(.77,1.03),(.88,1.03)]],"gear",lambda pt,i,s=side:self.limb_w(s,pt[1],False),"shorts",24)
-            if self.key in ("daniel_larson","referee_cobra"):
-                self.loft([((x,y,0),arm*1.08,arm*.96) for y in [1.315,1.37]],"gear",lambda pt,i,s=side:self.weights("UpperArm."+s),"gear_detail",24)
-            if self.key in ("jupiter_the_hybrid","anacondasin","novaonline","candy_rooks"):
-                self.loft([((lx,y,0),leg*1.04,leg*.99) for y in [.60,.635]],"trim",lambda pt,i,s=side:self.limb_w(s,pt[1],False),"gear_detail",26)
-            self.ellipsoid((lx,.50,-leg*.70),(leg*.76,.082,.026),"boots","Shin."+side,"kneepad")
-            self.loft([((lx,y,-.02),.105*leg/.14,rz) for y,rz in [(.055,.18),(.105,.17),(.18,.105),(.29,.103)]],"boots",lambda pt,i,s=side:self.weights("Foot."+s,"Shin."+s,smooth((pt[1]-.12)/.14)),"boot",24)
-            self.ellipsoid((lx,.055,-.094),(.115*leg/.14,.037,.185),"boots","Foot."+side,"sole",20)
-            for j in range(5): self.ellipsoid((lx,.15+j*.021,-.119),(.062,.004,.005),"trim","Foot."+side,"lacing",10,6)
-        style=p["hair"]
-        if style=="curls":
-            for i in range(36):
-                a=i*2.399963; y=1.72+.22*(i%7)/6; radius=.17+.034*math.sin(i*2)
-                self.ellipsoid((math.cos(a)*radius*face,y,math.sin(a)*radius+.022),(.047,.050,.048),"hair","Head","hair",12,8)
-        elif style=="beanie":
-            self.loft([((0,y,0),rx*face,rz) for y,rx,rz in [(1.739,.19,.179),(1.79,.19,.17),(1.85,.155,.14),(1.89,.035,.035)]],"boots",lambda pt,i:self.weights("Head"),"hat",28)
-            self.loft([((0,y,0),.194*face,.183) for y in [1.731,1.762]],"trim",lambda pt,i:self.weights("Head"),"hat_trim",28)
-        else:
-            self.ellipsoid((0,1.812,.025),(.174*face,.078,.152),"hair","Head","hair",24,12)
-            if style in ("long","bun"):
-                for sign in [-1,1]: self.ellipsoid((sign*.17*face,1.63,.05),(.045,.17,.12),"hair","Head","hair",16,10)
-                self.ellipsoid((0,1.67,.116),(.158,.18,.063),"hair","Head","hair",20,10)
-            if style=="bun": self.ellipsoid((0,1.84,.138),(.087,.075,.070),"hair","Head","hair")
-        if p["role"]=="referee":
-            for sign in [-1,1]:
-                for y in [1.674,1.724]: self.ellipsoid((sign*.075,y,-.179),(.061,.005,.006),"dark","Head","glasses",12,6)
-                for x in [sign*.020,sign*.128]: self.ellipsoid((x,1.699,-.179),(.005,.025,.006),"dark","Head","glasses",8,6)
-            self.ellipsoid((0,1.584,-.105),(.096,.045,.065),"hair","Head","beard")
-            part=self.part("halo"); start=len(part["v"]); segments=48
-            for i in range(segments+1):
-                a=i*math.tau/segments
-                for j in range(9):
-                    b=j*math.tau/8; radius=.245+.014*math.cos(b); point=(radius*math.cos(a),2.035+.014*math.sin(b),radius*math.sin(a))
-                    bones,weights=self.weights("Head")
-                    part["v"].append(mul(point,self.scale)); part["uv"].append((i/segments,j/8)); part["j"].append(bones); part["w"].append(weights)
-            for i in range(segments):
-                for j in range(8):
-                    a=start+i*9+j; b=a+9; part["i"].extend([a,a+1,b+1,a,b+1,b])
-        self.finish_mesh()
+        """Build version-three anatomical surfaces on the compatible humanoid rig."""
+        build_character(self)
 
     def finish_mesh(self):
         primitives=[]
@@ -274,8 +215,9 @@ class Asset:
         offsets={n:(0.,0.,0.) for n in self.joint_names}
         r,o=rotations,offsets; p=t/max(.001,duration)
         for side,sign in [("L",1),("R",-1)]:
-            r["UpperArm."+side]=(.15,0,sign*.12); r["Forearm."+side]=(1.5,0,0)
-            for j in range(5): r[f"Finger{j}.{side}"]=(.52,0,0); r[f"Finger{j}Tip.{side}"]=(.50,0,0)
+            r["UpperArm."+side]=(.50,0,sign*.22); r["Forearm."+side]=(1.60,0,0)
+            r["Hand."+side]=(0,sign*1.15,0)
+            for j in range(5): r[f"Finger{j}.{side}"]=(.18,0,0); r[f"Finger{j}Tip.{side}"]=(.16,0,0)
         r["Chest"]=(.045,0,0); r["Head"]=(-.035,0,0)
         if clip=="idle":
             o["Hips"]=(0,.006*math.sin(math.tau*p),0)
@@ -366,7 +308,7 @@ class Asset:
     def save(self,path):
         self.mesh(); self.animations(); self.validate()
         self.doc["buffers"]=[{"byteLength":len(self.buf)}]
-        self.doc["extras"]={"schema_version":3,"character":self.key,"style":"original stylized ring interpretation","authoring_forward":"-Z","walk_speed":1.5*self.scale,"run_speed":4.2*self.scale,"rig_bones":len(self.bones),"grip_support":"paired contact refinement pending"}
+        self.doc["extras"]={"schema_version":3,"character":self.key,"style":"original stylized ring interpretation","authoring_forward":"-Z","walk_speed":1.5*self.scale,"run_speed":4.2*self.scale,"rig_bones":len(self.bones),"grip_support":"runtime paired contact; skin intersection not certified", "costume":COSTUMES[self.key][0], "geometry_regions":{n:len(v) for n,v in self.regions.items()}}
         js=json.dumps(self.doc,separators=(",",":")).encode(); js+=b" "*((-len(js))%4)
         binary=bytes(self.buf); binary+=b"\0"*((-len(binary))%4)
         data=struct.pack("<4sII",b"glTF",2,28+len(js)+len(binary))+struct.pack("<I4s",len(js),b"JSON")+js+struct.pack("<I4s",len(binary),b"BIN\0")+binary
@@ -378,6 +320,7 @@ def main():
     parser.add_argument("--character",choices=PROFILES)
     parser.add_argument("--output",type=Path,default=ROOT/"assets/models")
     args=parser.parse_args()
+    args.output.mkdir(parents=True,exist_ok=True)
     manifest_path=args.output/"roster_manifest.json"
     previous=json.loads(manifest_path.read_text()).get("entries",[]) if args.character and manifest_path.exists() else []
     results={entry["file"]:entry for entry in previous}

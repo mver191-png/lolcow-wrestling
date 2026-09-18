@@ -1,20 +1,17 @@
-# Next task: authored contact transitions and body clearance
+# Next task: authored deformation and complete-match art acceptance
 
-Keep the tested contact solver and simulation/presentation separation. The recovery
-follow-up adds latched palm/ankle support and final-count pose retention; see
-`docs/CONTACT_ACCEPTANCE.md` for measurements and reproduction commands.
+Preserve v3 geometry, the shared action clocks and single recovery contact owner.
+Use `tools/capture_model_quality.gd` and `tools/capture_contact_acceptance.gd` as
+repeatable review fixtures, not as substitutes for a human playtest.
 
-1. Author Tophiachu/Cyraxx grip acquisition, finger curl and leverage-specific
-   poses using the established contact markers. Reduce extreme joint bends rather
-   than increasing reach or hiding errors with body offsets.
-2. Add full-body rope and floor-clearance sampling through complete paired and
-   recovery sequences. Refine the short recovery's hand-to-foot weight transfer;
-   marker proximity is not proof of anatomical support or collision-free clothing.
-3. Improve referee approach anticipation without delaying official counts. Review
-   first-count contact in an uninterrupted match; retain the final-slap fix.
-4. Run a human match and inspect multiple camera views before marking art accepted.
-   Verify gamepads, Windows export and performance on identified target hardware.
+1. Inspect animated shoulder/hip deformation, collar/garment intersections and
+   complete skin clearance against the mat and ropes. Bone markers are insufficient.
+2. Refine acquisition, finger placement, joint limits and weight transfer for the
+   Tophiachu/Cyraxx pair using existing grip targets. Do not stretch bones to pass.
+3. Review all eight fictional ring interpretations against approved visual
+   references before calling their likenesses finished. The mesh pipeline is not
+   a substitute for that review.
+4. Validate a complete human match, gamepads, Windows export and target-GPU frames.
 
-Do not claim new unique finishers or tournament readiness from marker-distance
-assertions. Preserve roster stats, shared action clocks and terminal rules.
-Keep PR #1 a draft and main unchanged pending visual/platform acceptance.
+Keep PR #3 a draft. Do not expand tournament/multi-character modes before these
+fundamentals are accepted. Preserve main and the earlier review branches.

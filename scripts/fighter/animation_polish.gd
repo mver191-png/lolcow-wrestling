@@ -17,10 +17,20 @@ func rotate(name:String,euler:Vector3,weight:=1.)->void:
  var i:=bone(name)
  if i<0:return
  var base:=skeleton.get_bone_pose_rotation(i);skeleton.set_bone_pose_rotation(i,base.slerp(base*Quaternion.from_euler(euler),clampf(weight,0,1)))
-func curl_hand(side:String,amount:float,spread:=0.)->void:
- amount=clampf(amount,0,1)
+func curl_hand(side: String, amount: float, spread := 0.0) -> void:
+ # Replace finger rotations rather than multiplying an authored curl by a second
+ # curl. Bounded targets prevent knuckles from folding through the palm.
+ amount = clampf(amount, 0.0, 1.0)
+ var sign_value := 1.0 if side == "L" else -1.0
  for j in range(5):
-  var thumb:=j==4;rotate("Finger%d.%s"%[j,side],Vector3((.78 if thumb else 1.05)*amount,0,(spread*(j-1.5)) if not thumb else -.42*amount));rotate("Finger%dTip.%s"%[j,side],Vector3((.68 if thumb else .92)*amount,0,0))
+  var thumb := j == 4
+  var proximal := bone("Finger%d.%s" % [j,side])
+  var distal := bone("Finger%dTip.%s" % [j,side])
+  if proximal < 0 or distal < 0:
+   continue
+  var splay := sign_value * spread * (j-1.5) if not thumb else sign_value*.18*(1.0-amount)
+  skeleton.set_bone_pose_rotation(proximal,Quaternion.from_euler(Vector3((.55 if thumb else 1.12)*amount,0,splay)))
+  skeleton.set_bone_pose_rotation(distal,Quaternion.from_euler(Vector3((.52 if thumb else .94)*amount,0,0)))
 func _support_arm(side:String,target:Vector3,pole:Vector3,weight:float,kind:String)->void:
  var result:=IK.solve(skeleton,bone("UpperArm."+side),bone("Forearm."+side),bone("Hand."+side),target,pole,weight)
  if result.get("valid",false):result.merge({"kind":kind,"side":side,"target":target,"actual":IK.point(skeleton,bone("Hand."+side)),"weight":weight},true);diagnostics.append(result)

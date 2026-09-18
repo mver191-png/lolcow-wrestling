@@ -24,6 +24,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p evidence
+          python3 -m py_compile tools/*.py tests/*.py
           python3 tools/build_roster.py 2>&1 | tee evidence/asset-build.log
           python3 tests/test_roster_assets.py 2>&1 | tee evidence/assets-tests.log
       - name: Install the project engine
@@ -63,6 +64,21 @@ jobs:
             exit 1
           fi
           test -s evidence/contact-acceptance-after/official-third-count-clean.png
+          xvfb-run -a .tools/godot --path . --audio-driver Dummy --rendering-method gl_compatibility --disable-render-loop --fixed-fps 60 -s tools/capture_model_quality.gd 2>&1 | tee evidence/model-render.log
+          if grep -E 'ERROR:|Parse Error:|\[FAIL\]' evidence/model-render.log; then
+            echo 'Model render check failed.' >&2
+            exit 1
+          fi
+          python3 - <<'PYVERIFY'
+          import json
+          from pathlib import Path
+          root=Path('evidence/model-quality')
+          entries=json.loads((root/'capture-manifest.json').read_text())
+          assert len(entries)==51, 'Incomplete model capture set'
+          assert len({e['character'] for e in entries})==9, 'Roster omitted from capture'
+          assert all((root/Path(e['file']).name).stat().st_size>10000 for e in entries), 'Empty render file'
+          print('51 actual model images across 9 characters verified')
+          PYVERIFY
       - name: Package source, generated assets and logs
         if: always()
         run: |
