@@ -1,14 +1,30 @@
 # Open issues
 
-This is a playable review branch, not a production-art sign-off.
+The review branch is playable but is not a production-art sign-off.
 
-- A geometry-derived final pass now protects the current skinned meshes against the canvas plane and square rope envelope in the tested poses. It is not collision against rope cylinders, pads, the opponent or the referee. Blend shapes, cloth simulation, unskinned accessories and shader displacement are outside its contract.
-- Clearance offsets are cosmetic and capped: 0.30 m upward and 1.20 m per horizontal axis. Impossible fits are reported rather than scaled away. Safety can take precedence over smoothing at entry; visible bodies can differ from gameplay origins. Hovering and poorly authored weight-bearing poses still need refinement.
-- IK now limits excessive flexion and preserves limb lengths. Complete anatomical shoulder/twist constraints, exact finger contact and clothing intersections remain open.
-- Shared choreography still underlies most named moves. Character-specific finishers, traits and fully authored recovery transitions remain incomplete.
-- Original stylized faces are not approved likeness scans. Detailed face topology, hair, clothing folds and visible shoulder seams remain art tasks. This pass did not rebuild the character geometry.
-- Referee first-count choreography can remain incomplete after late arrival. Counts and outcomes remain independent of travel and animation.
-- Compatibility/Mobile use imported PBR materials instead of the optional runtime overrides that produced invalid material diagnostics under OpenGL. Forward+ overrides have not been hardware-verified here.
-- Windows exports, gamepads, target-GPU performance and a full human playtest remain unverified. Software rendering reports an unsupported VSync warning. A short create/free smoke fixture also reported two ObjectDB instances at shutdown, including with material polish disabled; its origin is not isolated. Do not use fixed-FPS captures as a performance benchmark.
+- Tophiachu and Cyraxx now have distinct primary-strike choreography and hit
+  schedules, not unique finishers. Cyraxx's flurry deliberately splits the former
+  single-hit damage/Hype budget. Practical matchup balance needs human playtests.
+- Strike contact still uses the existing logical forward/range envelope. Accurate
+  swept limb volumes and body-specific hurtboxes remain work; matching a hit window
+  is not proof of visual hand contact at the edge of reach.
+- The first two characters have authored, supported recovery. The other six keep
+  the current baseline. The short arcade get-up and early pose transition still
+  need more art refinement; reduced correction does not prove perfect foot planting.
+- Full-mesh clearance protects the current linear-skinned geometry against canvas
+  and a square rope envelope. It is not collision with rope cylinders, turnbuckles,
+  the referee, opponents, shader displacement, cloth or future blend shapes.
+- Bounded cosmetic offsets remain separate from gameplay roots. The safeguard can
+  prevent penetration while still producing hovering or noticeable displacement.
+- Grip markers and constant limb lengths do not prove collision-free fingers or
+  clothing. Shoulder/elbow seams, extreme joints, detailed faces and hair remain
+  visible art limitations. The stylized models are not approved likeness scans.
+- Referee approach/first-count anticipation and distinct finisher/trait mechanics
+  are still pending. No tournament/online mode was added.
+- Windows export, gamepads, Forward+ target-GPU performance and a comprehensive
+  human match playtest remain unverified. Software rendering has an unsupported
+  VSync warning. Previous Unicode import diagnostics and a small create/free smoke
+  fixture's shutdown instances have not been fully isolated.
 
-See `docs/CLEARANCE_PASS.md`, `docs/CONTACT_PASS.md` and `REVIEW.md` for scope, measured results and reproduction commands.
+See `docs/AUTHORED_MOTION_PASS.md`, `docs/CLEARANCE_PASS.md`,
+`docs/CONTACT_PASS.md` and `REVIEW.md` for implemented scope and evidence.
