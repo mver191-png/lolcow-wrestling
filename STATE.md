@@ -1,23 +1,25 @@
-# Current integrated v3.1 review build
+# Current source-guided model branch
 
-`astra/model-quality-v3` now reconciles model revision `8fc5dedd` with authored
-combat/clearance revision `0abb1ffe`. No draft PR or main merge is performed.
+Active work: `astra/model-quality-v3`, draft PR #3; main and predecessor review
+branches are not merged or force-updated. Base gameplay/deformation is integrated
+v3.1 (`c5e0ca33`).
 
-The v3 faces/hair/outfits/hands are retained. Four appended elbow/knee skin helpers
-and refined bend rings preserve crease shape without changing the original 42
-joint chains; knee pads follow the knee bend. Runtime helpers run after contact
-and before full-mesh clearance. Total rig: 46 joints, 25 complete-channel clips.
+The v3.2 art pass uses source-labelled public portrait studies for seven slots.
+Original head/hair/glasses/beard geometry, fitted eyes/lips, original procedural
+head albedo and more restrained clothing palettes are implemented. Jupiter the
+Hybrid and AnacondaSin have insufficient unambiguous references and remain
+provisional; there is no guessed likeness attribution.
 
-The combined build includes Tophiachu's one-hit clothesline, Cyraxx's three-hit
-flurry sharing one damage/Hype budget, authored recovery for that pair, latched
-support for the remaining six, bounded mesh clearance, and the referee final slap.
+The 46-joint rig, contact landmarks, 25 clips, authored first-pair attacks,
+recovery, whole-mesh visual clearance and referee rules are preserved. No new
+finisher mechanics or photorealism claim is made.
 
-Local validation passes all 10 Godot suites, two normal CPU matches and 8 Python
-tests. Detailed counts, metric definitions and limitations are recorded in
-`docs/INTEGRATED_DEFORMATION.md`. CI rebuilds and repeats these with actual renders;
-consult the exact job result rather than assuming a published revision passed.
+Tests and render fixtures are part of the same CI job. New import checks verify
+that the loaded skin actually uses tint and embedded head texture. There are 36
+neutral portrait views in addition to the established model/deformation/match
+captures. Consult exact artifact results rather than assuming implementation means
+visual approval. See `docs/REFERENCE_LIKENESS.md` and its public-source manifest.
 
-Source checkout: run `python tools/build_roster.py` before Godot import. Downloaded
-packages include the compiled models. Main, PR #1 and PR #2 remain untouched.
-Not production likeness/art acceptance, whole-body collision certification or a
-hardware-performance/human-playtest sign-off.
+Downloaded packages contain compiled models. Raw source checkouts must first run
+`python tools/build_roster.py`. Keep PR #3 a draft. Human likeness approval,
+comprehensive playtesting, Windows/gamepads and hardware Forward+ remain pending.

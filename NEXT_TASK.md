@@ -1,20 +1,12 @@
-# Next: authored full-body contact and human-match quality
+# Next visual task
 
-Continue from the integrated v3.1 review branch, not one of its older split parents.
-Preserve the new helper joints, original gameplay chains, action schedules and
-single recovery owner. Keep all draft PRs unmerged until acceptance.
+Review the source-guided seven portraits and supply unambiguous individual front/
+side references for Jupiter the Hybrid and AnacondaSin before changing their
+likenesses. Keep artistic controls separate from alleged physical measurements.
 
-1. Refine shoulder/armpit topology and grip acquisition with the existing same-camera
-   bend fixtures. Check actual skin overlap, not just joint-marker proximity.
-2. Add swept strike contact against explicit body regions, preserving per-action
-   budgets and missed-window/reversal behavior. Never let a cosmetic IK adjustment
-   silently become damage authority.
-3. Evaluate ordinary complete matches, especially early pinfall balance, controller
-   input and sustained gameplay. Add broader seeded CPU coverage but do not confuse
-   it with human playtesting.
-4. Verify Windows export, gamepads and identified target-hardware rendering.
+Refine hair and facial expression, shoulder/sleeve transitions and game-lighting
+self-shadows using the same before/after cameras plus ordinary match footage.
+Preserve all runtime contact, deformation, authored attack and terminal contracts.
+Do not increase clearance caps or change gameplay anatomy to hide art problems.
 
-Do not add tournament/online scope or increase clearance caps to conceal art issues.
-Source builds require `python tools/build_roster.py` before import; complete packages
-include the generated models. Document implemented, executed and visually reviewed
-work separately.
+Keep main and the earlier review branches unchanged. PR #3 remains a draft.

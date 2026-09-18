@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""Compile the integrated v3.1 roster with bend-preserving skin helpers.
+"""Compile v3.2 source-guided portraits on the integrated wrestling rig.
 
-roster_base.py retains the preceding v3 writer, base poses and palette. This
-specialization adds four non-chain skin joints and refines only bend topology;
-existing facial, hair, outfit, input and gameplay contracts stay unchanged.
-Use roster_base.py separately to build the exact preceding art for A/B inspection.
+46-joint deformation and main gameplay landmarks are preserved. Seven visual
+slots use manually authored source-guided head/hair/outfit studies; two remain
+explicitly provisional. Albedo textures are original procedural art, not photos.
 """
 from __future__ import annotations
 import argparse
@@ -13,7 +12,9 @@ import json
 import math
 import struct
 from pathlib import Path
-from roster_base import Asset as BaseAsset, PROFILES, DURATIONS, LOOPS
+from roster_base import Asset as BaseAsset, PROFILES as BASE_PROFILES, DURATIONS, LOOPS
+from likeness_profiles import STUDIES, apply_visual_profiles
+PROFILES = apply_visual_profiles(BASE_PROFILES)
 from roster_base import add, mul, smooth, quat, linear_color
 from character_geometry import COSTUMES, _refine_sections
 
@@ -23,8 +24,35 @@ DEFORM_JOINTS = {"DeformElbow.L": "Forearm.L", "DeformElbow.R": "Forearm.R",
 
 class Asset(BaseAsset):
     def __init__(self,key,profile):
+        self.reference_study = True
         super().__init__(key,profile)
-        self.doc["asset"]["generator"] = "Offline Mayhem model-quality compiler 3.1"
+        self.doc["asset"]["generator"] = "Offline Mayhem source-guided portrait compiler 3.2"
+
+    def finish_mesh(self):
+        super().finish_mesh()
+        # Original, low-amplitude vertex tint. Never samples a photograph.
+        # GLTF color channels are linear multipliers on the existing skin material.
+        for primitive,(material,part) in zip(self.doc['meshes'][0]['primitives'],self.parts.items()):
+            if material == self.mat.get('beard_surface',-1):
+                study=STUDIES[self.key];top=study['chin']+study['height']*(study['mouth_level']-.045)
+                colors=[]
+                for point in part['v']:
+                    y=point[1]/self.scale
+                    blend=smooth((top-y)/.022)
+                    colors.append((*[linear_color(skin)*(1-blend)+linear_color(hair*.93)*blend for skin,hair in zip(study['skin'],study['hair_color'])],1.))
+                primitive['attributes']['COLOR_0']=self.accessor(colors,'VEC4',5126,34962)
+                continue
+            if material != self.mat['skin']:
+                primitive['attributes']['COLOR_0']=self.accessor([(1.,1.,1.,1.)]*len(part['v']),'VEC4',5126,34962)
+                continue
+            colors=[]
+            for point in part['v']:
+                x,y,z=(v/self.scale for v in point)
+                noise=math.sin(x*311.7+y*237.3+z*179.3)*math.sin(x*67.1-y*141.1+z*89.7)
+                blush=math.exp(-((abs(x)-.11)/.055)**2-((y-1.67)/.04)**2)*max(0.,min(1.,-z*8.))
+                tint=[.980+.009*noise,.968+.011*noise-.018*blush,.955+.011*noise-.018*blush]
+                colors.append((*tint,1.))
+            primitive['attributes']['COLOR_0']=self.accessor(colors,'VEC4',5126,34962)
 
     def setup_rig(self):
         super().setup_rig()
@@ -120,12 +148,12 @@ class Asset(BaseAsset):
     def save(self,path):
         self.mesh(); self.animations(); self.validate()
         self.doc["buffers"]=[{"byteLength":len(self.buf)}]
-        self.doc["extras"]={"schema_version":4,"core_bones":42,"deformation_helpers":DEFORM_JOINTS,"character":self.key,"style":"original stylized ring interpretation","authoring_forward":"-Z","walk_speed":1.5*self.scale,"run_speed":4.2*self.scale,"rig_bones":len(self.bones),"grip_support":"runtime paired contact; skin intersection not certified", "costume":COSTUMES[self.key][0], "geometry_regions":{n:len(v) for n,v in self.regions.items()}}
+        self.doc["extras"]={"schema_version":4,"portrait_revision":"3.2","reference_status":STUDIES[self.key]["status"],"core_bones":42,"deformation_helpers":DEFORM_JOINTS,"character":self.key,"style":"original stylized ring interpretation","authoring_forward":"-Z","walk_speed":1.5*self.scale,"run_speed":4.2*self.scale,"rig_bones":len(self.bones),"grip_support":"runtime paired contact; skin intersection not certified", "costume":COSTUMES[self.key][0], "geometry_regions":{n:len(v) for n,v in self.regions.items()}}
         js=json.dumps(self.doc,separators=(",",":")).encode(); js+=b" "*((-len(js))%4)
         binary=bytes(self.buf); binary+=b"\0"*((-len(binary))%4)
         data=struct.pack("<4sII",b"glTF",2,28+len(js)+len(binary))+struct.pack("<I4s",len(js),b"JSON")+js+struct.pack("<I4s",len(binary),b"BIN\0")+binary
         path.parent.mkdir(parents=True,exist_ok=True); path.write_bytes(data)
-        return {"file":path.name,"sha256":hashlib.sha256(data).hexdigest(),"bones":len(self.bones),"clips":len(self.doc["animations"]),"vertices":sum(len(p["v"]) for p in self.parts.values()),"triangles":sum(len(p["i"])//3 for p in self.parts.values()),"bytes":len(data),"visual_acceptance":"v3.1 integrated deformation; see docs/INTEGRATED_DEFORMATION.md"}
+        return {"file":path.name,"sha256":hashlib.sha256(data).hexdigest(),"bones":len(self.bones),"clips":len(self.doc["animations"]),"vertices":sum(len(p["v"]) for p in self.parts.values()),"triangles":sum(len(p["i"])//3 for p in self.parts.values()),"bytes":len(data),"visual_acceptance":"source-guided v3.2; likeness approximation, see docs/REFERENCE_LIKENESS.md"}
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)

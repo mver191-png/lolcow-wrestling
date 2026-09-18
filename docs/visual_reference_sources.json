@@ -1,0 +1,16 @@
+{
+  "reference_date": "2026-09-18",
+  "reference_images_in_game": false,
+  "references": [
+    {"character":"tophiachu","status":"source_attributed_study","source_pages":["https://knowyourmeme.com/memes/people/tophiachu-tiktok-lolcow","https://tenor.com/view/tophia-tophiachu-28-smirk-devious-gif-11870591702852091627"]},
+    {"character":"novaonline","status":"source_attributed_study","source_pages":["https://knowyourmeme.com/memes/people/nova-online-tiktok-lolcow","https://www.youtube.com/watch?v=ZGQoShXI2Ho"]},
+    {"character":"cyraxx","status":"source_attributed_study","source_pages":["https://tenor.com/view/cyraxx-chance-wilkins-psyraxx-43-gif-7870491556437349690"]},
+    {"character":"candy_rooks","status":"source_attributed_study","source_pages":["https://open.spotify.com/episode/1cdZ9Rc2SO3ukrnMlHwerB"]},
+    {"character":"andy_ditch","status":"source_attributed_study","source_pages":["https://tenor.com/view/andrew-ditch-ditch-poopsquatch-andy-ditch-andy-gif-16852068161994619749"]},
+    {"character":"daniel_larson","status":"source_attributed_study","source_pages":["https://knowyourmeme.com/photos/2345829-daniel-larson","https://tenor.com/view/daniel-larson-danderson-daniellarson-daniel-larson-gif-14768455700226943549"]},
+    {"character":"referee_cobra","status":"source_attributed_study","source_pages":["https://www.indy100.com/news/kingcobrajfs-youtuber-musician-cause-of-death-investigation-explained"]},
+    {"character":"jupiter_the_hybrid","status":"needs_unambiguous_reference","source_pages":[],"notes":"Interview thumbnail contains multiple people; individual attribution not established."},
+    {"character":"anacondasin","status":"needs_unambiguous_reference","source_pages":[],"notes":"Available profile images were generic logos or missing-photo placeholders."}
+  ],
+  "scope":"Source-labelled stills inspected manually. Approximate artistic interpretations, not biometric matches or approved scans. No reference photograph is embedded in assets."
+}

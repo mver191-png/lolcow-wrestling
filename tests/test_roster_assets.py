@@ -120,8 +120,41 @@ class RosterAssets(unittest.TestCase):
                 self.assertEqual(len(targets),92)
                 self.assertEqual(len(animation["channels"]),92)
             self.assertTrue(all("TEXCOORD_0" in p["attributes"] for p in document["meshes"][0]["primitives"]))
-            self.assertEqual(len(document["images"]),4)
+            self.assertEqual(len(document["images"]),5)
             self.assertTrue(document["extras"]["geometry_regions"]["eyelid"]>500)
+
+    def test_reference_status_and_original_embedded_textures(self):
+        from likeness_profiles import STUDIES
+        source_count=0
+        for key,asset in self.assets.items():
+            status=STUDIES[key]['status']
+            with self.subTest(character=key):
+                if status=='source_attributed_study':
+                    source_count+=1
+                    self.assertTrue(STUDIES[key]['sources'])
+                    self.assertIn('portrait_skin',asset.mat)
+                    self.assertEqual(len(asset.doc['images']),5)
+                    portrait=asset.doc['materials'][asset.mat['portrait_skin']]['pbrMetallicRoughness']
+                    self.assertIn('baseColorTexture',portrait)
+                    if STUDIES[key]['glasses']!='none':self.assertIn('glasses_frame',asset.regions)
+                    if STUDIES[key]['hair']=='close_bald':self.assertNotIn('hair_cap',asset.regions)
+                    if key=='cyraxx':self.assertNotIn('hat',asset.regions)
+                else:
+                    self.assertEqual(status,'needs_unambiguous_reference')
+                    self.assertEqual(STUDIES[key]['sources'],[])
+                    self.assertNotIn('portrait_skin',asset.mat)
+                    self.assertEqual(len(asset.doc['images']),4)
+                # Images are procedurally generated buffer data, never runtime URLs.
+                for image in asset.doc['images']:
+                    self.assertIn('bufferView',image)
+                    self.assertNotIn('uri',image)
+                for primitive in asset.doc['meshes'][0]['primitives']:
+                    colors=asset.doc['accessors'][primitive['attributes']['COLOR_0']]
+                    vertices=asset.doc['accessors'][primitive['attributes']['POSITION']]
+                    self.assertEqual(colors['count'],vertices['count'])
+                if key=='referee_cobra':self.assertEqual(len(asset.regions['halo']),717)
+                else:self.assertNotIn('halo',asset.regions)
+        self.assertEqual(source_count,7)
 
     def test_built_assets_match_manifest(self):
         manifest=json.loads((ROOT/"assets/models/roster_manifest.json").read_text())
