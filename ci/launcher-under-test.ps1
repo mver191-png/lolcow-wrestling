@@ -16,7 +16,6 @@ $ExpectedSha256='731980f9608d61333e5baf54a2ef17210acc7a538446c0cb9969f002aca1e95
 
 function Invoke-Engine {
     param([string]$Executable,[string[]]$EngineArguments,[string]$LogName)
-    # Controlled switches and filesystem paths; none ends in a backslash.
     $quoted=($EngineArguments | ForEach-Object { '"'+$_+'"' }) -join ' '
     $stdout=Join-Path $LogDir ($LogName+'-stdout.log')
     $stderr=Join-Path $LogDir ($LogName+'-stderr.log')
@@ -87,6 +86,7 @@ try {
     foreach ($id in @('tophiachu','novaonline','cyraxx','candy_rooks','andy_ditch','jupiter_the_hybrid','anacondasin','daniel_larson','referee_cobra','ring_arena')) {
         if (-not (Test-Path -LiteralPath (Join-Path $ProjectRoot ('assets\models\'+$id+'.glb')) -PathType Leaf)) { throw ('Missing model: '+$id+'. Extract the complete ZIP again.') }
     }
+    if (-not (Test-Path -LiteralPath (Join-Path $ProjectRoot 'tools\validate_installation.gd') -PathType Leaf)) { throw 'Missing installation validator. Extract the complete package again.' }
     New-Item -ItemType Directory -Path $LogDir -Force | Out-Null
     Set-Content -LiteralPath (Join-Path $LogDir '.gdignore') -Value '' -Encoding ASCII
     $godot=Find-Engine
@@ -99,6 +99,13 @@ try {
     Invoke-Engine $godot @('--headless','--editor','--path',$ProjectRoot,'--rendering-method',$Renderer,'--import','--log-file',$importLog) 'import'
     $errors=@(@($importLog,(Join-Path $LogDir 'import-stdout.log'),(Join-Path $LogDir 'import-stderr.log')) | Where-Object { Test-Path -LiteralPath $_ } | Select-String -Pattern 'SCRIPT ERROR:|Parse Error:|^ERROR:')
     if ($errors.Count -gt 0) { $errors | Select-Object -First 15 | ForEach-Object { Write-Host $_.Line }; throw ('Import failed. The game was not started. Logs: '+$LogDir) }
+    $validationLog=Join-Path $LogDir 'validation-engine.log'
+    if (Test-Path -LiteralPath $validationLog) { Remove-Item -LiteralPath $validationLog -Force }
+    try {
+        Invoke-Engine $godot @('--headless','--path',$ProjectRoot,'--script','res://tools/validate_installation.gd','--log-file',$validationLog) 'validation'
+    } catch { throw ('Runtime validation failed. The game was not started. '+$_.Exception.Message) }
+    $errors=@(@($validationLog,(Join-Path $LogDir 'validation-stdout.log'),(Join-Path $LogDir 'validation-stderr.log')) | Where-Object { Test-Path -LiteralPath $_ } | Select-String -Pattern 'SCRIPT ERROR:|Parse Error:|^ERROR:')
+    if ($errors.Count -gt 0) { throw ('Runtime validation failed. The game was not started. Logs: '+$LogDir) }
     if ($ValidateOnly) { Write-Host 'Validation completed; gameplay was not started.'; exit 0 }
     Write-Host 'Starting OFFLINE MAYHEM. Escape pauses; F1 shows controls.'
     Invoke-Engine $godot @('--path',$ProjectRoot,'--rendering-method',$Renderer,'--log-file',(Join-Path $LogDir 'game-engine.log')) 'game'
