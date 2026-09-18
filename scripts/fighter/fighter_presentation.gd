@@ -1,5 +1,12 @@
 class_name FighterPresentation
 extends Node
+const AUTHORED = preload("res://scripts/fighter/authored_motion.gd")
+var authored_motion_enabled := true
+var authored_recovery_diagnostics: Array[Dictionary] = []
+
+func uses_authored_motion() -> bool:
+ return authored_motion_enabled and AUTHORED.supported(fighter.character_id)
+
 const CLEARANCE=preload("res://scripts/fighter/presentation_clearance.gd")
 var clearance:Node
 const CONTACT=preload("res://scripts/fighter/paired_contact.gd")
@@ -77,7 +84,17 @@ func _physics_process(delta:float)->void:
  elif state==Fighter.State.KNOCKED_DOWN and (_fall_already_played or t>.60):_play("downed",.04)
  var animation:=anim_player.get_animation(current_anim)
  if animation==null:return
- var length:=maxf(animation.length,.001);var sample_time:=fposmod(t,length) if current_anim in LOOPING else clampf(t,0.,length);anim_player.seek(sample_time,true);_blend_elapsed+=delta;var alpha:=smoothstep(0.,maxf(_blend_duration,.001),_blend_elapsed)
+ var length:=maxf(animation.length,.001)
+ var sample_time:=fposmod(t,length) if current_anim in LOOPING else clampf(t,0.,length)
+ anim_player.seek(sample_time,true)
+ authored_recovery_diagnostics.clear()
+ if uses_authored_motion():
+  if state == Fighter.State.GETTING_UP:
+   authored_recovery_diagnostics = AUTHORED.recovery(skeleton,fighter,clampf(t/.60,0,1),_body_scale)
+  elif state == Fighter.State.STRIKING:
+   AUTHORED.strike(skeleton,fighter.strike_move if not fighter.strike_move.is_empty() else StrikeMoves.definition(fighter.character_id),t)
+ _blend_elapsed+=delta
+ var alpha:=smoothstep(0.,maxf(_blend_duration,.001),_blend_elapsed)
  if alpha<1. and _from_positions.size()==skeleton.get_bone_count():
   for bone in range(skeleton.get_bone_count()):skeleton.set_bone_pose_position(bone,_from_positions[bone].lerp(skeleton.get_bone_pose_position(bone),alpha));skeleton.set_bone_pose_rotation(bone,_from_rotations[bone].slerp(skeleton.get_bone_pose_rotation(bone),alpha))
  if _impact_time>0. and _chest>=0 and state in [Fighter.State.IDLE,Fighter.State.MOVING,Fighter.State.STRIKING,Fighter.State.BLOCKING]:_impact_time=maxf(0.,_impact_time-delta);var recoil:=Quaternion(Vector3.RIGHT,-.12*sin(PI*_impact_time/.16));skeleton.set_bone_pose_rotation(_chest,skeleton.get_bone_pose_rotation(_chest)*recoil)
