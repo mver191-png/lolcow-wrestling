@@ -1,20 +1,12 @@
-# Next task: authored contact transitions and body clearance
+# Next: human-facing balance and close-view art review
 
-Keep the tested contact solver and simulation/presentation separation. The recovery
-follow-up adds latched palm/ankle support and final-count pose retention; see
-`docs/CONTACT_ACCEPTANCE.md` for measurements and reproduction commands.
+Preserve independent CPU/audio randomness, complete pre-physics commands, resource
+recovery hysteresis, invalid-hold cleanup and final-bounds camera framing.
 
-1. Author Tophiachu/Cyraxx grip acquisition, finger curl and leverage-specific
-   poses using the established contact markers. Reduce extreme joint bends rather
-   than increasing reach or hiding errors with body offsets.
-2. Add full-body rope and floor-clearance sampling through complete paired and
-   recovery sequences. Refine the short recovery's hand-to-foot weight transfer;
-   marker proximity is not proof of anatomical support or collision-free clothing.
-3. Improve referee approach anticipation without delaying official counts. Review
-   first-count contact in an uninterrupted match; retain the final-slap fix.
-4. Run a human match and inspect multiple camera views before marking art accepted.
-   Verify gamepads, Windows export and performance on identified target hardware.
+Use the match-audit tool to review fast/high-vitality pinfalls before changing
+escape or damage tuning. Do not infer fairness from two seeds or eliminate every
+upset. Review close-view shoulder/hair/finger/contact artifacts through full matches;
+no new face geometry or dynamic expression has been delivered by this pass.
 
-Do not claim new unique finishers or tournament readiness from marker-distance
-assertions. Preserve roster stats, shared action clocks and terminal rules.
-Keep PR #1 a draft and main unchanged pending visual/platform acceptance.
+Main remains unchanged. Keep the PR a draft until human usability, exact likeness
+approval and platform/physical-controller testing establish stronger acceptance.

@@ -2,13 +2,14 @@ extends SubViewportContainer
 ## Selection preview uses the same imported model as the match.
 var viewport: SubViewport
 var world_root: Node3D
+var camera: Camera3D
 var model: Node3D
 var animation: AnimationPlayer
 var current_id := ""
 var clock := 0.0
 
 func _ready() -> void:
-	custom_minimum_size = Vector2(220, 235)
+	custom_minimum_size = Vector2(220, 340)
 	stretch = true
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	viewport = SubViewport.new()
@@ -19,11 +20,11 @@ func _ready() -> void:
 	add_child(viewport)
 	world_root = Node3D.new()
 	viewport.add_child(world_root)
-	var camera := Camera3D.new()
+	camera = Camera3D.new()
 	world_root.add_child(camera)
-	camera.position = Vector3(1.4, 1.20, -3.1)
-	camera.look_at(Vector3(0, .96, 0), Vector3.UP)
-	camera.fov = 37
+	camera.position = Vector3(.35, 1.45, -2.55)
+	camera.look_at(Vector3(0, 1.26, 0), Vector3.UP)
+	camera.fov = 32
 	camera.current = true
 	var environment := WorldEnvironment.new()
 	environment.environment = Environment.new()
@@ -33,16 +34,30 @@ func _ready() -> void:
 	environment.environment.ambient_light_energy = .5
 	world_root.add_child(environment)
 	var key := DirectionalLight3D.new()
-	key.rotation_degrees = Vector3(-40, -35, 0)
-	key.light_color = Color(1, .91, .78)
-	key.light_energy = .8
+	key.rotation_degrees = Vector3(-25, 150, 0)
+	key.light_color = Color(1, .96, .91)
+	key.light_energy = .85
 	world_root.add_child(key)
+	var fill := DirectionalLight3D.new()
+	fill.rotation_degrees = Vector3(-30, -25, 0)
+	fill.light_color = Color(.83, .90, 1.0)
+	fill.light_energy = .40
+	world_root.add_child(fill)
 
 func _find_animation(node: Node) -> AnimationPlayer:
 	if node is AnimationPlayer: return node
 	for child in node.get_children():
 		var found := _find_animation(child)
 		if found: return found
+	return null
+
+func _find_skeleton(node: Node) -> Skeleton3D:
+	if node is Skeleton3D:
+		return node
+	for child in node.get_children():
+		var result := _find_skeleton(child)
+		if result:
+			return result
 	return null
 
 func show_character(id: String) -> void:
@@ -53,10 +68,24 @@ func show_character(id: String) -> void:
 	animation = null
 	current_id = id
 	clock = 0.0
-	var packed := load("res://assets/models/%s.glb" % id) as PackedScene
+	var path := "res://assets/models/%s.glb" % id
+	if not ResourceLoader.exists(path):
+		current_id = ""
+		return
+	var packed := load(path) as PackedScene
 	if packed == null: return
 	model = packed.instantiate() as Node3D
 	world_root.add_child(model)
+	# A readable upper-body view, scaled from the same imported rig used in play.
+	# It does not alter the model, rig or animation; full-body render tests remain.
+	var rig := _find_skeleton(model)
+	var body_scale := 1.0
+	if rig:
+		var hips := rig.find_bone("Hips")
+		if hips >= 0:
+			body_scale = maxf(.5, rig.get_bone_global_rest(hips).origin.y / .89)
+	camera.position = Vector3(.35, 1.45, -2.55) * body_scale
+	camera.look_at(Vector3(0, 1.26, 0) * body_scale, Vector3.UP)
 	animation = _find_animation(model)
 	if animation and animation.has_animation("idle"):
 		animation.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL

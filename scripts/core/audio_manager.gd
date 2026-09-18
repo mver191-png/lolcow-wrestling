@@ -6,6 +6,7 @@ extends Node
 ## ring bell, referee slaps, strikes, ropes, crowd reactions, and announcer stingers.
 
 static var instance: AudioManager
+var _audio_rng := RandomNumberGenerator.new()
 
 var sfx_players: Array[AudioStreamPlayer] = []
 var crowd_player: AudioStreamPlayer
@@ -64,21 +65,21 @@ func play_ring_bell() -> void:
 	_play_sfx(snd_bell, 2.0, 1.0)
 
 func play_mat_slam(is_heavy: bool = true) -> void:
-	var pitch: float = randf_range(0.85, 1.05) if not is_heavy else randf_range(0.75, 0.9)
+	var pitch: float = _audio_rng.randf_range(0.85, 1.05) if not is_heavy else _audio_rng.randf_range(0.75, 0.9)
 	var vol: float = 4.0 if is_heavy else 1.0
 	_play_sfx(snd_mat_slam, vol, pitch)
 
 func play_strike(is_blocked: bool = false) -> void:
 	if is_blocked:
-		_play_sfx(snd_strike_blocked, -2.0, randf_range(0.9, 1.1))
+		_play_sfx(snd_strike_blocked, -2.0, _audio_rng.randf_range(0.9, 1.1))
 	else:
-		_play_sfx(snd_strike_clean, 2.0, randf_range(0.95, 1.05))
+		_play_sfx(snd_strike_clean, 2.0, _audio_rng.randf_range(0.95, 1.05))
 
 func play_referee_slap() -> void:
-	_play_sfx(snd_ref_slap, 3.0, randf_range(0.98, 1.02))
+	_play_sfx(snd_ref_slap, 3.0, _audio_rng.randf_range(0.98, 1.02))
 
 func play_rope_twang() -> void:
-	_play_sfx(snd_rope, 0.0, randf_range(0.9, 1.1))
+	_play_sfx(snd_rope, 0.0, _audio_rng.randf_range(0.9, 1.1))
 
 func play_crowd_cheer() -> void:
 	if crowd_player:
@@ -169,7 +170,7 @@ func _synthesize_mat_slam() -> AudioStreamWAV:
 		var freq: float = lerp(90.0, 35.0, clamp(t / 0.35, 0.0, 1.0))
 		var sub: float = sin(TAU * freq * t) * 0.75
 		var noise_env: float = exp(-35.0 * t)
-		var noise: float = (randf() * 2.0 - 1.0) * noise_env * 0.45
+		var noise: float = (_audio_rng.randf() * 2.0 - 1.0) * noise_env * 0.45
 		var sample_val: float = (sub + noise) * env * 0.98
 		var int16: int = clampi(int(sample_val * 32767.0), -32768, 32767)
 		bytes.encode_s16(i * 2, int16)
@@ -188,7 +189,7 @@ func _synthesize_strike_clean() -> AudioStreamWAV:
 		var env: float = exp(-18.0 * t)
 		var snap_env: float = exp(-45.0 * t)
 		var punch: float = sin(TAU * 160.0 * t) * 0.55
-		var snap: float = (randf() * 2.0 - 1.0) * snap_env * 0.65
+		var snap: float = (_audio_rng.randf() * 2.0 - 1.0) * snap_env * 0.65
 		var sample_val: float = (punch + snap) * env * 0.95
 		var int16: int = clampi(int(sample_val * 32767.0), -32768, 32767)
 		bytes.encode_s16(i * 2, int16)
@@ -221,7 +222,7 @@ func _synthesize_ref_slap() -> AudioStreamWAV:
 	for i in range(num_samples):
 		var t: float = float(i) / rate
 		var env: float = exp(-14.0 * t)
-		var slap_noise: float = (randf() * 2.0 - 1.0) * exp(-40.0 * t) * 0.7
+		var slap_noise: float = (_audio_rng.randf() * 2.0 - 1.0) * exp(-40.0 * t) * 0.7
 		var low_thump: float = sin(TAU * 120.0 * t) * 0.45
 		var sample_val: float = (slap_noise + low_thump) * env * 0.95
 		var int16: int = clampi(int(sample_val * 32767.0), -32768, 32767)
@@ -255,7 +256,7 @@ func _synthesize_crowd(is_cheer: bool) -> AudioStreamWAV:
 	var last_noise: float = 0.0
 	for i in range(num_samples):
 		var t: float = float(i) / rate
-		var raw_noise: float = randf() * 2.0 - 1.0
+		var raw_noise: float = _audio_rng.randf() * 2.0 - 1.0
 		last_noise = lerp(last_noise, raw_noise, 0.12)
 		var env: float = 1.0
 		if is_cheer:
@@ -356,7 +357,7 @@ func _synthesize_count_tone(count: int) -> AudioStreamWAV:
 		var t: float = float(i) / rate
 		var env: float = min(t / 0.015, 1.0) * exp(-7.5 * t)
 		var tone: float = sin(TAU * base_freq * t) * 0.6 + sin(TAU * (base_freq * 2.0) * t) * 0.3
-		var transient_noise: float = (randf() * 2.0 - 1.0) * exp(-40.0 * t) * 0.3
+		var transient_noise: float = (_audio_rng.randf() * 2.0 - 1.0) * exp(-40.0 * t) * 0.3
 		var sample_val: float = (tone + transient_noise) * env * 0.95
 		var int16: int = clampi(int(sample_val * 32767.0), -32768, 32767)
 		bytes.encode_s16(i * 2, int16)

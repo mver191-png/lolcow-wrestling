@@ -1,5 +1,6 @@
 class_name Referee
 extends Node3D
+const DEFORM = preload("res://scripts/fighter/joint_deformation.gd")
 const CONTACT_IK = preload("res://scripts/fighter/contact_ik.gd")
 var hand_contacts: Array[Dictionary] = []
 var _skeleton: Skeleton3D
@@ -109,6 +110,11 @@ func _physics_process(delta: float) -> void:
 		if clip == "ref_count" and _skeleton != null:
 			_count_contacts(fposmod(sample,length)/length)
 		_blend_transition(delta, show_count_contact and not moving)
+		for name in DEFORM.DRIVERS:
+			var h := _skeleton.find_bone(name)
+			var d := _skeleton.find_bone(DEFORM.DRIVERS[name])
+			if h >= 0 and d >= 0:
+				_skeleton.set_bone_pose_rotation(h,Quaternion.IDENTITY.slerp(_skeleton.get_bone_pose_rotation(d),0.5))
 
 func on_pin_started(pin_position: Vector3) -> void:
 	current_state = RefereeState.COUNTING_PIN

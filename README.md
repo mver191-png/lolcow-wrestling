@@ -10,9 +10,9 @@ scans. Named moves and traits remain partly design metadata; they are not all
 unique implemented mechanics. See [REVIEW.md](REVIEW.md) for tested changes and
 remaining limits.
 
-## Run
+## Run the downloaded package
 
-Open `project.godot` in **Godot 4.7.2** and press F6/F5, or run:
+Open `project.godot` in **Godot 4.7.2** and press F5, or run:
 
 ```sh
 godot --path .
@@ -23,25 +23,37 @@ PATH, or set `GODOT_BIN` to its path. Double-click the batch launcher. This is a
 source project launcher, not a standalone exported Windows executable. On
 systems without Forward+ support, use `--rendering-method gl_compatibility`.
 
-Compiled GLBs are included; Blender and Python are **not** required to play.
-After cloning, let Godot finish its initial asset import.
+The downloadable CI/package build includes the current compiled GLBs. Python and
+Blender are **not** required to play that package.
+
+**A raw GitHub clone is different:** its checked-in binary models are older
+baseline assets. Before opening a clone in Godot, rebuild them with:
+
+```sh
+python tools/build_roster.py
+```
+
+Then let Godot finish asset import. CI rebuilds the same models from source and
+ships the rebuilt files in its artifact; it does not push generated binaries.
 
 ## Controls
 
 | Action | Player 1 | Player 2 |
 |---|---|---|
 | Move | W/A/S/D | Arrow keys |
-| Strike | J | Numpad 1 |
-| Grapple; submission on grounded opponent | K | Numpad 2 |
-| Block | L | Numpad 3 |
-| Reversal | U | Numpad 4 |
-| Pin; tap or hold to resist | Space | Numpad 0 |
-| Finisher | I | Numpad 5 |
+| Strike | J | Numpad 1 or top-row 1 |
+| Grapple; submission on grounded opponent | K | Numpad 2 or top-row 2 |
+| Block | L | Numpad 3 or top-row 3 |
+| Reversal | U | Numpad 4 or top-row 4 |
+| Pin; tap or hold to resist | Space | Numpad 0 or top-row 0 |
+| Finisher | I | Numpad 5 or top-row 5 |
 
 Character selection supports the same movement keys. C changes Player 2 between
 human and CPU. Space/Enter starts the match. Mouse click selects Player 1;
-Shift-click selects Player 2. Escape returns from a match to selection; R
-restarts the match. Keyboard-only controls are the currently verified input path.
+Right-click or Shift-click selects Player 2. Navigation also works while a roster
+button has keyboard focus. Escape returns from a match to selection; R
+restarts the match. The reviewed tests dispatch raw key and mouse events through Godot. They are not
+physical gamepad or Windows-hardware validation.
 
 ## Roster
 
@@ -52,7 +64,7 @@ gold halo. The halo remains visible without bloom.
 
 ## What changed
 
-- All eight wrestlers and the referee have a consistent **42-bone** skinned rig,
+- All eight wrestlers and the referee have a **46-joint** skinned rig (42 original joints plus four skin-deformation helpers),
   articulated fingers, differentiated proportions and gear, facial details,
   original embedded cloth textures, and a **25-clip animation library**.
 - `tools/build_roster.py` is a deterministic, standard-library-only glTF asset
@@ -107,5 +119,27 @@ godot --path . --fixed-fps 60 --rendering-method gl_compatibility --audio-driver
 
 The capture tool saves actual engine images under `evidence/`. They are
 repeatable diagnostic scenes, not proof of real-time performance. Target hardware
-performance, native Windows export, controller support, precise grip IK, and
-final likeness/art approval remain unverified.
+performance, native Windows export, gamepads, full-skin collision and
+final likeness/art approval remain unverified. Existing grip IK uses markers,
+not exact finger-to-skin collision.
+
+
+## Self-review repairs after v3.3
+
+The review found that action-only tests had missed incorrect keypad codes. The
+real Player 2 digit keys now work; arithmetic keys no longer trigger unintended
+actions. The invalid-key-code import diagnostics are gone. Selection uses larger,
+better-lit model previews; right-click/focused navigation work; repeated updates
+do not duplicate stat rows. Match entry builds each selected actor only once.
+
+Every portrait's UV seam is closed with matching normals/weights. Beard roots are
+fitted to the chin rather than a floating flat shelf. These are bounded repairs,
+not a claim of photorealism or finished likenesses. Camera shake can be disabled
+immediately, and camera easing does not overshoot after a long frame.
+
+See `docs/SELF_REVIEW.md` for reproduced defects, checks and remaining limitations.
+Run the new input/scene/camera suite with:
+
+```sh
+godot --headless --fixed-fps 60 --path . -s tests/test_review_regressions.gd
+```

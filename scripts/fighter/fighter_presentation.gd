@@ -1,5 +1,16 @@
 class_name FighterPresentation
 extends Node
+const AUTHORED = preload("res://scripts/fighter/authored_motion.gd")
+var authored_motion_enabled := true
+var authored_recovery_diagnostics: Array[Dictionary] = []
+
+func uses_authored_motion() -> bool:
+ return authored_motion_enabled and AUTHORED.supported(fighter.character_id)
+
+const DEFORMATION=preload("res://scripts/fighter/joint_deformation.gd")
+var deformation: Node
+const CLEARANCE=preload("res://scripts/fighter/presentation_clearance.gd")
+var clearance:Node
 const CONTACT=preload("res://scripts/fighter/paired_contact.gd")
 const POLISH=preload("res://scripts/fighter/animation_polish.gd")
 const MATERIAL_POLISH=preload("res://scripts/fighter/material_polish.gd")
@@ -8,7 +19,7 @@ const LOOPING:=["idle","walk","run","downed","pinned","submission_attacker","sub
 const CORE:=["idle","walk","strike","knockdown","getup","throw_attacker","throw_defender","pinning","pinned","submission_attacker","submission_defender","victory","defeated"]
 var fighter:CharacterBody3D;var visual_root:Node3D;var anim_player:AnimationPlayer;var skeleton:Skeleton3D;var has_skeletal_rig:=false;var current_anim:="";var model:Node3D;var gait_clock:=0.;var actual_speed:=0.;var _previous_position:=Vector3.ZERO;var _previous_valid:=false;var _fall_already_played:=false;var _blend_elapsed:=1.;var _blend_duration:=.10;var _from_positions:Array[Vector3]=[];var _from_rotations:Array[Quaternion]=[];var _impact_time:=0.;var _chest:=-1;var _body_scale:=1.
 func setup(p_fighter:Fighter,p_visual_root:Node3D)->void:
- fighter=p_fighter;visual_root=p_visual_root;process_physics_priority=20;contact=CONTACT.new();contact.name="PairedContact";add_child(contact);contact.setup(self);polish=POLISH.new();polish.name="AnimationPolish";add_child(polish);polish.setup(self)
+ fighter=p_fighter;visual_root=p_visual_root;process_physics_priority=20;contact=CONTACT.new();contact.name="PairedContact";add_child(contact);contact.setup(self);polish=POLISH.new();polish.name="AnimationPolish";add_child(polish);polish.setup(self);clearance=CLEARANCE.new();clearance.name="PresentationClearance";add_child(clearance);clearance.setup(self);deformation=DEFORMATION.new();deformation.name="JointDeformation";add_child(deformation);deformation.setup(self)
 func _find_type(node:Node,wanted:StringName)->Node:
  if node.is_class(wanted):return node
  for child in node.get_children():
@@ -35,7 +46,7 @@ func load_model(character_id:String)->void:
   if anim_player.has_animation(clip):anim_player.get_animation(clip).loop_mode=Animation.LOOP_LINEAR
  anim_player.callback_mode_process=AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL;_chest=skeleton.find_bone("Chest");var hips:=skeleton.find_bone("Hips")
  if hips>=0:_body_scale=maxf(skeleton.get_bone_global_rest(hips).origin.y/.89,.5)
- contact.reset();polish.reset();play_state_animation(fighter.current_state)
+ contact.reset();polish.reset();deformation.reset();clearance.reset();play_state_animation(fighter.current_state)
 func _capture_pose()->void:
  _from_positions.clear();_from_rotations.clear()
  if skeleton==null:return
@@ -75,7 +86,17 @@ func _physics_process(delta:float)->void:
  elif state==Fighter.State.KNOCKED_DOWN and (_fall_already_played or t>.60):_play("downed",.04)
  var animation:=anim_player.get_animation(current_anim)
  if animation==null:return
- var length:=maxf(animation.length,.001);var sample_time:=fposmod(t,length) if current_anim in LOOPING else clampf(t,0.,length);anim_player.seek(sample_time,true);_blend_elapsed+=delta;var alpha:=smoothstep(0.,maxf(_blend_duration,.001),_blend_elapsed)
+ var length:=maxf(animation.length,.001)
+ var sample_time:=fposmod(t,length) if current_anim in LOOPING else clampf(t,0.,length)
+ anim_player.seek(sample_time,true)
+ authored_recovery_diagnostics.clear()
+ if uses_authored_motion():
+  if state == Fighter.State.GETTING_UP:
+   authored_recovery_diagnostics = AUTHORED.recovery(skeleton,fighter,clampf(t/.60,0,1),_body_scale)
+  elif state == Fighter.State.STRIKING:
+   AUTHORED.strike(skeleton,fighter.strike_move if not fighter.strike_move.is_empty() else StrikeMoves.definition(fighter.character_id),t)
+ _blend_elapsed+=delta
+ var alpha:=smoothstep(0.,maxf(_blend_duration,.001),_blend_elapsed)
  if alpha<1. and _from_positions.size()==skeleton.get_bone_count():
   for bone in range(skeleton.get_bone_count()):skeleton.set_bone_pose_position(bone,_from_positions[bone].lerp(skeleton.get_bone_pose_position(bone),alpha));skeleton.set_bone_pose_rotation(bone,_from_rotations[bone].slerp(skeleton.get_bone_pose_rotation(bone),alpha))
  if _impact_time>0. and _chest>=0 and state in [Fighter.State.IDLE,Fighter.State.MOVING,Fighter.State.STRIKING,Fighter.State.BLOCKING]:_impact_time=maxf(0.,_impact_time-delta);var recoil:=Quaternion(Vector3.RIGHT,-.12*sin(PI*_impact_time/.16));skeleton.set_bone_pose_rotation(_chest,skeleton.get_bone_pose_rotation(_chest)*recoil)

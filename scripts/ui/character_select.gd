@@ -31,6 +31,7 @@ var p2_index: int = 2 # Default to Cyraxx
 var p2_is_cpu: bool = true
 
 var roster_buttons: Array[Button] = []
+var _starting_match := false
 const PreviewScript = preload("res://scripts/ui/character_preview.gd")
 var preview_p1: SubViewportContainer
 var preview_p2: SubViewportContainer
@@ -99,6 +100,7 @@ func _setup_grid() -> void:
 		# Connect click
 		var idx: int = i
 		btn.pressed.connect(func(): _on_roster_button_clicked(idx))
+		btn.gui_input.connect(func(event: InputEvent): _on_roster_mouse_input(event, idx, btn))
 		grid_container.add_child(btn)
 		roster_buttons.append(btn)
 
@@ -112,14 +114,27 @@ func _on_roster_button_clicked(idx: int) -> void:
 		_update_p1_display()
 	_update_grid_highlights()
 
-func _unhandled_input(event: InputEvent) -> void:
+func _on_roster_mouse_input(event: InputEvent, idx: int, button: Button) -> void:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
+		p2_index = idx
+		_update_p2_display()
+		_update_grid_highlights()
+		button.accept_event()
+
+func _input(event: InputEvent) -> void:
 	if not (event is InputEventKey and event.pressed and not event.echo):
 		return
 		
 	var num_chars: int = character_ids.size()
+	var columns: int = maxi(1, grid_container.columns) if grid_container else 4
 	if num_chars == 0:
 		return
 		
+	# Handle roster navigation before focused Buttons consume ui_left/ui_right.
+	# Tab/mouse focus remain available; menu hints explicitly reserve Enter/Space.
+	if event.keycode not in [KEY_A,KEY_D,KEY_W,KEY_S,KEY_LEFT,KEY_RIGHT,KEY_UP,KEY_DOWN,KEY_C,KEY_SPACE,KEY_ENTER,KEY_KP_ENTER]:
+		return
+	get_viewport().set_input_as_handled()
 	# P1 controls: A / D or W / S
 	if event.keycode in [KEY_A, KEY_D, KEY_W, KEY_S]:
 		if event.keycode == KEY_A:
@@ -127,9 +142,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.keycode == KEY_D:
 			p1_index = (p1_index + 1) % num_chars
 		elif event.keycode == KEY_W:
-			p1_index = (p1_index - 4 + num_chars) % num_chars
+			p1_index = (p1_index - columns + num_chars) % num_chars
 		elif event.keycode == KEY_S:
-			p1_index = (p1_index + 4) % num_chars
+			p1_index = (p1_index + columns) % num_chars
 		_update_p1_display()
 		_update_grid_highlights()
 		if AudioManager.instance:
@@ -142,9 +157,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.keycode == KEY_RIGHT:
 			p2_index = (p2_index + 1) % num_chars
 		elif event.keycode == KEY_UP:
-			p2_index = (p2_index - 4 + num_chars) % num_chars
+			p2_index = (p2_index - columns + num_chars) % num_chars
 		elif event.keycode == KEY_DOWN:
-			p2_index = (p2_index + 4) % num_chars
+			p2_index = (p2_index + columns) % num_chars
 		_update_p2_display()
 		_update_grid_highlights()
 		if AudioManager.instance:
@@ -155,7 +170,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		_on_cpu_toggle_pressed()
 		
 	# Start match: Space or Enter
-	elif event.keycode == KEY_SPACE or event.keycode == KEY_ENTER:
+	elif event.keycode in [KEY_SPACE, KEY_ENTER, KEY_KP_ENTER]:
 		_start_match()
 
 func _on_cpu_toggle_pressed() -> void:
@@ -177,18 +192,23 @@ func _update_grid_highlights() -> void:
 		var base_name: String = data.get("name", id)
 		
 		var tags: String = ""
+		var border := Color(.25,.30,.37)
 		if i == p1_index and i == p2_index:
 			tags = " [P1 & P2]"
-			btn.modulate = Color(1.0, 0.9, 0.4)
+			border = Color(1.0,.85,.40)
 		elif i == p1_index:
 			tags = " [P1]"
-			btn.modulate = Color(0.4, 0.8, 1.0)
+			border = Color(.40,.80,1.0)
 		elif i == p2_index:
 			tags = " [P2]"
-			btn.modulate = Color(1.0, 0.4, 0.4)
-		else:
-			btn.modulate = Color(0.85, 0.85, 0.85)
-			
+			border = Color(1.0,.45,.45)
+		# Tint the selection border, not the whole control and its text contrast.
+		btn.modulate = Color.WHITE
+		var style := btn.get_theme_stylebox("normal").duplicate() as StyleBoxFlat
+		style.border_color = border
+		style.set_border_width_all(2 if not tags.is_empty() else 1)
+		btn.add_theme_stylebox_override("normal",style)
+
 		btn.text = base_name + "\n" + (tags.strip_edges() if tags != "" else data.get("title", ""))
 
 func _update_p1_display() -> void:
@@ -239,6 +259,7 @@ func _render_stat_bars(container: VBoxContainer, stats: Dictionary) -> void:
 	if not container:
 		return
 	for child in container.get_children():
+		container.remove_child(child)
 		child.queue_free()
 		
 	var stat_keys: Array = [
@@ -274,6 +295,9 @@ func _render_stat_bars(container: VBoxContainer, stats: Dictionary) -> void:
 		container.add_child(row)
 
 func _start_match() -> void:
+	if _starting_match or character_ids.is_empty():
+		return
+	_starting_match = true
 	var p1_id: String = character_ids[p1_index]
 	var p2_id: String = character_ids[p2_index]
 	MatchConfig.set_match(p1_id, p2_id, p2_is_cpu)

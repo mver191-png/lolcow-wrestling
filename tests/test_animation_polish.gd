@@ -13,7 +13,7 @@ func run()->void:
 	for id in RosterData.get_all_ids():await test_character(id)
 	print("ANIMATION POLISH: %d passed, %d failed, %d total"%[total-failed,failed,total]);quit(1 if failed else 0)
 func test_character(id:String)->void:
-	var f:Fighter=SCENE.instantiate();f.character_id=id;f.use_external_input=true;root.add_child(f);await tick(3)
+	var f:Fighter=SCENE.instantiate();f.character_id=id;f.use_external_input=true;root.add_child(f);f.presentation.authored_motion_enabled=false;f.presentation.clearance.enabled=false;await tick(3)
 	check(f.presentation.polish!=null,"%s polish layer exists"%id)
 	var s:Skeleton3D=f.presentation.skeleton;var before:Array[Vector3]=[]
 	for i in range(s.get_bone_count()):before.append(s.get_bone_pose_position(i))

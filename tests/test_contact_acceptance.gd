@@ -25,6 +25,8 @@ func setup_fighter(id: String) -> Fighter:
 	f.character_id = id
 	f.use_external_input = true
 	root.add_child(f)
+	f.presentation.authored_motion_enabled = false
+	f.presentation.clearance.enabled = false
 	return f
 
 func run() -> void:
