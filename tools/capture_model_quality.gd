@@ -93,7 +93,19 @@ func shot(id: String, name: String, close := false) -> void:
 	if result != OK:
 		push_error("Could not save "+path)
 		quit(1)
-	inspection.append({"character":id,"pose":name,"file":path,"width":image.get_width(),"height":image.get_height()})
+	var entry := {"character":id,"pose":name,"file":path,"width":image.get_width(),"height":image.get_height()}
+	if character is Fighter:
+		var fighter := character as Fighter
+		entry["state"] = fighter.current_state
+		entry["state_time"] = fighter.state_timer
+		entry["clip"] = fighter.presentation.current_anim
+		if name == "strike":
+			var valid_action: bool = fighter.current_state == Fighter.State.STRIKING and not fighter.strike_move.is_empty() and fighter.presentation.current_anim == "strike"
+			entry["active_strike_verified"] = valid_action
+			if not valid_action:
+				push_error("Strike capture is not an initialized gameplay action: " + id)
+				quit(1)
+	inspection.append(entry)
 
 func run() -> void:
 	root.content_scale_size = Vector2i(0,0)
@@ -121,7 +133,7 @@ func run() -> void:
 		await shot(id,"portrait",true)
 		if character is Fighter:
 			var fighter := character as Fighter
-			fighter._set_state(Fighter.State.STRIKING)
+			fighter.apply_command({"strike": true})
 			await tick(8)
 			await shot(id,"strike")
 			fighter._set_state(Fighter.State.KNOCKED_DOWN)
