@@ -2,7 +2,7 @@ name: Game quality
 on:
   pull_request:
   push:
-    branches: [main, astra/character-animation-overhaul, astra/recovery-contact-followup]
+    branches: [main, astra/character-animation-overhaul, astra/recovery-contact-followup, astra/model-quality-v3]
   workflow_dispatch:
 permissions:
   contents: read
