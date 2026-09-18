@@ -1,10 +1,22 @@
-# Next task: authored motion and contact quality
+# Next task: precise strike contact and visible character refinement
 
-The mesh-clearance guard and full-vertex audit now complement the existing grip-marker tests. Preserve the tested authority separation, roster stats, shared clocks and input behavior.
+Keep the tested primary-strike metadata, one-action damage/Hype budgets, shared
+clocks, authored recovery and bounded clearance. Do not expand all named moves by
+copying the same visual clip.
 
-1. Author Tophiachu/Cyraxx recovery and leverage poses that require smaller model offsets. Review complete transitions, center of support, finger placement and shoulder bends from multiple angles. Do not call floor clearance alone a convincing get-up.
-2. Extend the current square-envelope protection to explicit turnbuckle, rope and opponent geometry where appropriate. Decide how any physical placement change is communicated to gameplay, rather than increasing cosmetic offset caps.
-3. Implement distinct signature-move choreography for the first two wrestlers, tied to actual move metadata and contact volumes. Preserve the same result authority and test both actor orders.
-4. Improve referee approach anticipation and perform an uninterrupted human match before art acceptance. Keep Windows, gamepad and target-GPU verification separate.
+1. Fit Tophiachu's clothesline and Cyraxx's flurry to gameplay-owned swept contact
+   volumes with body-specific hurtboxes. Define the volume from move data, not the
+   mutable cosmetic skeleton. Verify edge-of-reach misses and compare visible arm
+   contact at each hit. Preserve explicit hit IDs and counter/interruption behavior.
+2. Refine the first two characters' shoulder/elbow/knee surfaces and finger poses.
+   The rendered evidence exposes seams and awkward bends that numeric clearance
+   alone cannot solve. Use approved reference direction for likeness; no new
+   medical caricatures or unverified anatomy claims.
+3. Review full-speed recovery from throws, pin escapes and submission escapes from
+   multiple angles, then port accepted choreography to the remaining roster.
+4. Improve referee first-count approach anticipation and run an uninterrupted
+   human match. Keep Windows, controller and target-GPU verification separate.
 
-Use `tools/capture_clearance.gd` and `tests/test_clearance.gd` alongside the existing contact and gameplay suites. Record actual renders and residual errors; do not hide invalid poses with more bloom, stretched bones or inflated pass counts.
+Use `tests/test_authored_moves.gd` and `tools/capture_choreography.gd` with the
+existing contact/clearance suites. Do not mark a new finisher or final art accepted
+because a primary strike passes its hit-budget tests.
