@@ -135,7 +135,7 @@ func _plant_feet(f: Fighter, s: Skeleton3D, weight: float) -> void:
 		var rest := s.get_bone_global_rest(_bone("Foot."+side)).origin
 		var local := Vector3(rest.x, rest.y + .022*_scale, .045*_scale)
 		var target := f.global_transform * local
-		var pole := target - f.global_basis.z * .7 + Vector3.UP * .20
+		var pole := f.global_position - f.global_basis.z * .7 + Vector3.UP * (.95 * _scale)
 		var result := IK.solve(s, _bone("Thigh."+side), _bone("Shin."+side), _bone("Foot."+side), target, pole, weight)
 		if result.get("valid", false):
 			IK._world_rotation(s, _bone("Foot."+side), f.global_basis.orthonormalized().get_rotation_quaternion())
