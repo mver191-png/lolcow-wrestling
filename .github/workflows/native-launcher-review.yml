@@ -2,7 +2,7 @@ name: Native D-drive launcher review
 on:
   push:
     branches: [astra/review-v6-windows-launcher]
-    paths: ['ci/launcher-under-test.ps1', '.github/workflows/native-launcher-review.yml']
+    paths: ['ci/**', '.github/workflows/native-launcher-review.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -24,14 +24,17 @@ jobs:
           if ($hash -ne '731980f9608d61333e5baf54a2ef17210acc7a538446c0cb9969f002aca1e953') { throw 'Engine checksum mismatch' }
           Expand-Archive engine.zip engine
           Copy-Item ci/launcher-under-test.ps1 native-review/tested-launcher.ps1
+          Copy-Item ci/validate-installation.gd native-review/tested-validator.gd
           $hash | Set-Content native-review/engine-archive-sha256.txt
       - name: Build minimal import fixture, not the wrestling game
         shell: python
         run: |
-          import json, struct
+          import json, struct, shutil
           from pathlib import Path
           root=Path('D:/lolcow-wrestling')
           (root/'assets/models').mkdir(parents=True,exist_ok=True)
+          (root/'tools').mkdir(exist_ok=True)
+          shutil.copyfile('ci/validate-installation.gd',root/'tools/validate_installation.gd')
           (root/'project.godot').write_text('config_version=5\n[application]\nconfig/name="Launcher Import Fixture"\nrun/main_scene="res://probe.tscn"\n[rendering]\nrenderer/rendering_method="gl_compatibility"\n')
           (root/'probe.gd').write_text('extends Node\nfunc _ready():\n\tFileAccess.open("res://GAME_WAS_STARTED.txt",FileAccess.WRITE).store_string("started")\n\tget_tree().quit()\n')
           (root/'probe.tscn').write_text('[gd_scene load_steps=2 format=3]\n[ext_resource type="Script" path="res://probe.gd" id="1"]\n[node name="Probe" type="Node"]\nscript=ExtResource("1")\n')
@@ -61,6 +64,7 @@ jobs:
               $ok=$p.ExitCode -eq $expected -and $text.Contains($needle)
               [void]$cases.Add(@{name=$name;exit_code=$p.ExitCode;expected=$expected;passed=$ok;root=$root})
               $cases | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $evidence 'cases.json')
+              if (Test-Path -LiteralPath (Join-Path $root '.launch-logs')) { Copy-Item -LiteralPath (Join-Path $root '.launch-logs') -Destination (Join-Path $evidence ($name+'-engine-logs')) -Recurse -Force }
               if (-not $ok) { Get-Content $stdout,$stderr; throw ('Case failed: '+$name) }
           }
           Probe 'd-drive-from-other-cwd' 'D:\lolcow-wrestling' 0 'Validation completed'
@@ -76,13 +80,13 @@ jobs:
           Probe 'partial-extraction' 'D:\launcher review space' 1 'Missing model: cyraxx'
           Copy-Item 'D:\lolcow-wrestling\assets\models\cyraxx.glb' 'D:\launcher review space\assets\models\cyraxx.glb'
           'this is intentionally invalid GDScript' | Set-Content 'D:\launcher review space\probe.gd'
-          Probe 'script-error-blocks-start' 'D:\launcher review space' 1 'Import failed'
-          Copy-Item 'D:\lolcow-wrestling\.launch-logs' (Join-Path $evidence 'successful-import') -Recurse
-          Copy-Item 'D:\launcher review space\.launch-logs' (Join-Path $evidence 'rejected-import') -Recurse
+          Probe 'script-error-blocks-start' 'D:\launcher review space' 1 'Runtime validation failed'
+          if (Test-Path 'D:\launcher review space\GAME_WAS_STARTED.txt') { throw 'Rejected fixture started gameplay' }
           @{
               scope='Native PowerShell 5.1 launcher validation against a minimal import fixture. NOT a full wrestling-game or graphical Windows playtest.'
               passed=$cases.Count
               launcher_sha256=(Get-FileHash $launcher -Algorithm SHA256).Hash.ToLowerInvariant()
+              validator_sha256=(Get-FileHash 'ci/validate-installation.gd' -Algorithm SHA256).Hash.ToLowerInvariant()
               windows=[Environment]::OSVersion.VersionString
               powershell=$PSVersionTable.PSVersion.ToString()
               engine_sha256=(Get-FileHash $validEngine -Algorithm SHA256).Hash.ToLowerInvariant()
