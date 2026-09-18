@@ -45,7 +45,8 @@ jobs:
           .tools/godot --headless --fixed-fps 60 --path . -s tests/test_overhaul.gd 2>&1 | tee evidence/overhaul.log
           .tools/godot --headless --fixed-fps 60 --path . -s tests/test_contacts.gd 2>&1 | tee evidence/contacts.log
           .tools/godot --headless --fixed-fps 60 --path . -s tests/test_animation_polish.gd 2>&1 | tee evidence/animation-polish.log
-          if grep -E 'SCRIPT ERROR:|Parse Error:|\[FAIL\]' evidence/{import,unit,integration,presentation,overhaul,contacts,animation-polish}.log; then
+          .tools/godot --headless --fixed-fps 60 --path . -s tests/test_clearance.gd 2>&1 | tee evidence/clearance.log
+          if grep -E 'SCRIPT ERROR:|Parse Error:|\[FAIL\]' evidence/{import,unit,integration,presentation,overhaul,contacts,animation-polish,clearance}.log; then
             echo 'Engine reported a script or assertion failure.' >&2
             exit 1
           fi
