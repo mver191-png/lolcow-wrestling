@@ -13,7 +13,7 @@ func check(ok:bool,message:String) -> void:
 func run() -> void:
     for spec in [["tophiachu","cyraxx",91707],["cyraxx","tophiachu",91708]]:
         seed(spec[2])
-        MatchConfig.set_match(spec[0],spec[1],true)
+        MatchConfig.set_match(spec[0],spec[1],true,spec[2])
         var scene:Node3D=load("res://scenes/main.tscn").instantiate()
         var audio:=scene.get_node("AudioManager")
         scene.remove_child(audio);audio.free();AudioManager.instance=null

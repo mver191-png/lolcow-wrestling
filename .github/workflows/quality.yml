@@ -42,10 +42,21 @@ jobs:
         run: |
           set -euo pipefail
           .tools/godot --headless --editor --path . --import 2>&1 | tee evidence/import.log
-          for suite in test_suite test_pin_balance_scene test_visual_presentation test_overhaul test_contacts test_animation_polish test_contact_acceptance test_authored_moves test_clearance test_joint_deformation test_likeness_assets test_review_regressions; do
+          for suite in test_suite test_pin_balance_scene test_visual_presentation test_overhaul test_contacts test_animation_polish test_contact_acceptance test_authored_moves test_clearance test_joint_deformation test_likeness_assets test_review_regressions test_cpu_review test_action_camera; do
             .tools/godot --headless --fixed-fps 60 --path . -s "tests/${suite}.gd" 2>&1 | tee "evidence/${suite}.log"
           done
           .tools/godot --headless --fixed-fps 60 --path . -s tools/soak_match.gd 2>&1 | tee evidence/whole-matches.log
+          .tools/godot --headless --disable-render-loop --fixed-fps 60 --path . -s tools/audit_match_pacing.gd -- --limit=128 2>&1 | tee evidence/pacing.log
+          .tools/godot --headless --disable-render-loop --fixed-fps 60 --path . -s tools/audit_match_pacing.gd -- --limit=16 --noise=7 --output=res://evidence/pacing-noise.json 2>&1 | tee evidence/pacing-noise.log
+          python3 - <<'PACING'
+          import json
+          from pathlib import Path
+          normal=json.loads(Path('evidence/pacing.json').read_text())['matches']
+          noise=json.loads(Path('evidence/pacing-noise.json').read_text())['matches']
+          assert len(normal)==128 and len(noise)==16
+          assert all(a['event_digest']==b['event_digest'] and a['ticks']==b['ticks'] for a,b in zip(normal,noise))
+          print('Cosmetic-noise parity verified; observed timeouts:',sum(m['timeout'] for m in normal))
+          PACING
           if grep -E 'SCRIPT ERROR:|Parse Error:|Unicode parsing error|\[FAIL\]' evidence/*.log; then
             echo 'Script or assertion failure.' >&2
             exit 1
@@ -57,7 +68,7 @@ jobs:
           set -euo pipefail
           sudo apt-get update -qq
           sudo apt-get install -y xvfb libgl1-mesa-dri
-          for capture in capture_contact_acceptance capture_model_quality capture_deformation capture_integrated_match capture_likeness capture_self_review; do
+          for capture in capture_contact_acceptance capture_model_quality capture_deformation capture_integrated_match capture_likeness capture_self_review capture_cpu_review; do
             xvfb-run -a .tools/godot --path . --audio-driver Dummy --rendering-method gl_compatibility --disable-render-loop --fixed-fps 60 -s "tools/${capture}.gd" 2>&1 | tee "evidence/${capture}.log"
           done
           xvfb-run -a .tools/godot --path . --audio-driver Dummy --rendering-method gl_compatibility --fixed-fps 60 -s tools/capture_selection_review.gd 2>&1 | tee evidence/capture_selection_review.log

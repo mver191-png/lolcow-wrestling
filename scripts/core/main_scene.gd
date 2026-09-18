@@ -28,7 +28,7 @@ func _ready() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("toggle_cpu"):
 		if cpu_controller_p2 and fighter_2:
-			fighter_2.clear_inputs()
+			cpu_controller_p2.reset_commands()
 			fighter_2.is_cpu = not fighter_2.is_cpu
 			MatchConfig.p2_is_cpu = fighter_2.is_cpu
 			cpu_controller_p2.set_physics_process(fighter_2.is_cpu)

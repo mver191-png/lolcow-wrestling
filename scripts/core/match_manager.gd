@@ -211,12 +211,26 @@ func _on_kick_out_succeeded(fighter: Fighter) -> void:
 		_resolve_pin_kick_out(current_pinner, current_pinned)
 
 func _abort_pin(reason: String) -> void:
-	pin_broken.emit(reason)
-	if referee:
-		referee.on_pin_broken()
+	# Clear coordinator ownership before notifications. An invalid partner must
+	# not leave the surviving actor in PINNING/PINNED or a submission indefinitely.
+	var attacker := current_pinner
+	var defender := current_pinned
 	current_pinner = null
 	current_pinned = null
+	pin_timer = 0.0
+	current_count = 0
 	current_state = MatchState.IN_PROGRESS
+	if is_instance_valid(attacker):
+		attacker.synchronized_partner = null
+		if attacker.current_state in [Fighter.State.PINNING, Fighter.State.SUBMISSION_ATTACKER]:
+			attacker._set_state(Fighter.State.IDLE)
+	if is_instance_valid(defender):
+		defender.synchronized_partner = null
+		if defender.current_state in [Fighter.State.PINNED, Fighter.State.SUBMISSION_DEFENDER]:
+			defender._set_state(Fighter.State.GETTING_UP)
+	if referee:
+		referee.on_pin_broken()
+	pin_broken.emit(reason)
 
 # ==============================================================================
 # Submission Management

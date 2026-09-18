@@ -1,13 +1,12 @@
-# Next: measured usability and art acceptance, not more assertion-count claims
+# Next: human-facing balance and close-view art review
 
-Preserve the self-review input, UI, seam and lifecycle fixes. Read
-`docs/SELF_REVIEW.md` before repeating earlier readiness claims.
+Preserve independent CPU/audio randomness, complete pre-physics commands, resource
+recovery hysteresis, invalid-hold cleanup and final-bounds camera framing.
 
-Run a broader seed/roster match sample to assess the unusually short CPU matches.
-Report distributions and obvious exploits; do not blindly tune a few seeded cases.
-Inspect actual gameplay camera views for hair/skin, collar/sleeve overlap and
-weight transfer. Add precise hit/contact work only with shared gameplay authority
-and regression coverage. Static expressions and subjective likeness approval
-remain open, as do Windows, gamepads and target-GPU performance.
+Use the match-audit tool to review fast/high-vitality pinfalls before changing
+escape or damage tuning. Do not infer fairness from two seeds or eliminate every
+upset. Review close-view shoulder/hair/finger/contact artifacts through full matches;
+no new face geometry or dynamic expression has been delivered by this pass.
 
-Keep the draft branch isolated from main. Rebuild raw-clone models before testing.
+Main remains unchanged. Keep the PR a draft until human usability, exact likeness
+approval and platform/physical-controller testing establish stronger acceptance.

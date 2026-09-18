@@ -34,3 +34,12 @@ initialization and residual disabled-shake problems are repaired and regression
 covered. Do not keep classifying those specific defects as unexplained or pending.
 The wider art/contact/platform limits above still apply. Synthetic input-event
 coverage is not a physical-device or comprehensive human playtest.
+
+## Pacing follow-up
+
+CPU guard-loop exhaustion, global AI/audio random coupling, stale CPU commands and
+invalid-hold survivor locks are regression-covered repairs. The new 128-case sample
+has no 120-second timeouts, but fast finishes/high-vitality pinfalls remain. Action
+framing enlarges the actual wrestlers and fits their bounds; it does not establish
+referee/rope occlusion freedom, new geometry quality or physical collision. See
+`docs/PACING_SELF_REVIEW.md`.

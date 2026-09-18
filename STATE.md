@@ -1,21 +1,21 @@
-# Current review branch
+# Current self-review follow-up
 
-The v3.3 source-guided models, 46-joint skinning, authored primary attacks and
-shared match authority remain. This patch repairs problems reproduced during a
-self-review; see `docs/SELF_REVIEW.md` for scope and evidence.
+Baseline: e3df96e3, retaining its repaired portrait seams, P2 bindings, selection,
+model initialization and shake behavior. This pass adds CPU stamina recovery,
+private AI/audio randomness, complete CPU command snapshots, invalid-hold cleanup
+and closer final-bounds-aware match framing. Actor meshes, rig, moves, health,
+stamina/escape rules and resource budgets are unchanged.
 
-Implemented: real P2 keypad bindings plus top-row alternatives; focus-safe and
-right-click selection; larger lit actor previews; nonduplicated stat updates;
-single model initialization per match entry; immediately disabled camera shake;
-non-overshooting camera interpolation; closed portrait seams; fitted beard roots.
+The matched 128-case study observed 39 baseline timeouts versus zero afterward.
+Completed-match median was 12.17 versus 17.05 seconds, excluding timeouts. This is
+limited observation, not balance acceptance. 22 new sample losses still occurred
+above 70% vitality. See docs/PACING_SELF_REVIEW.md for exact scope and reproduction.
 
-Local regression suites pass, including 94 new interaction assertions and 12
-Python cases. Actual old/new GLBs show all 873 head seam pairs coincide after the
-fix. Fresh editor import no longer produces the invalid-Unicode key-code error.
-A live-render-loop test verifies both menu previews. Consult the current commit's
-CI result for independently repeated validation; counts are not realism scores.
+Local configured suites pass, including 35 new controller/cleanup regressions and
+14 action-camera checks. The unchanged baseline failed 14 of those 35 controller
+assertions. CI repeats the current build tests, 128-case audit, random-noise parity
+and real rendered captures. Consult the commit's job result for CI status.
 
-Main and predecessor branches remain unchanged. Keep PR #3 draft. Likeness/art
-approval, static expressions, broader balance, full-skin contacts, physical rope
-collision, Windows export, gamepads and target-GPU behavior remain unfinished.
-Downloaded packages have current GLBs; raw clones must rebuild before import.
+The unforced normal-controller capture is separate from older staged kick-out
+videos. Software OpenGL does not establish target hardware performance. No main
+merge, production-art or comprehensive human-playtest approval is claimed.
