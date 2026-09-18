@@ -1,0 +1,57 @@
+name: Physical presentation toolchain
+on:
+  push:
+    branches: [astra/physical-audio-crowd]
+    paths: [.github/workflows/physical-bootstrap.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Obtain pinned engine and CC0 source audio
+        shell: bash
+        run: |
+          mkdir -p toolchain/audio
+          python3 - <<'PY'
+          import hashlib, html, json, pathlib, re, urllib.request
+          out = pathlib.Path('toolchain')
+          def fetch(url, path, limit=100_000_000):
+              req = urllib.request.Request(url, headers={'User-Agent':'OfflineMayhemAssetBuild/1.0'})
+              with urllib.request.urlopen(req, timeout=90) as response:
+                  data = response.read(limit+1)
+              if len(data)>limit: raise RuntimeError('Download exceeds limit')
+              path.write_bytes(data)
+              return hashlib.sha256(data).hexdigest()
+          engine = 'https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip'
+          sha=fetch(engine,out/'godot-linux.zip')
+          assert sha=='cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4', sha
+          records=[{'file':'godot-linux.zip','source':engine,'sha256':sha}]
+          kenney='https://kenney.nl/media/pages/assets/impact-sounds/87b4ddecda-1677589768/kenney_impact-sounds.zip'
+          try:
+              sha=fetch(kenney,out/'audio/kenney-impact.zip')
+              records.append({'file':'audio/kenney-impact.zip','source':kenney,'licence':'CC0-1.0','author':'Kenney','licence_page':'https://kenney.nl/assets/impact-sounds','sha256':sha})
+          except Exception as e: records.append({'source':kenney,'error':str(e)})
+          for author, sid, name in [('Breviceps',462362,'applause'),('jayfrosting',728773,'cheer'),('psykophobia',608996,'room')]:
+              page=f'https://freesound.org/people/{author}/sounds/{sid}/'
+              try:
+                  req=urllib.request.Request(page,headers={'User-Agent':'Mozilla/5.0'})
+                  text=urllib.request.urlopen(req,timeout=45).read().decode()
+                  assert 'creativecommons.org/publicdomain/zero' in text.lower(), 'CC0 not found on source page'
+                  (out/'audio'/f'{name}-source.html').write_text(text)
+                  urls=re.findall(r'https?://[^\s\"\'<>]+-hq\.mp3',html.unescape(text).replace('\\/','/'))
+                  assert urls, 'No public preview URL found'
+                  url=urls[0]
+                  sha=fetch(url,out/'audio'/f'{name}.mp3',30_000_000)
+                  records.append({'file':f'audio/{name}.mp3','source':url,'licence_page':page,'licence':'CC0-1.0','author':author,'sound_id':sid,'sha256':sha,'quality':'Public MP3 preview; not original WAV'})
+              except Exception as e: records.append({'source':page,'error':str(e)})
+          (out/'provenance.json').write_text(json.dumps(records,indent=2))
+          print(json.dumps(records,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: physical-presentation-toolchain
+          path: toolchain/
+          retention-days: 7
