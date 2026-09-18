@@ -4,7 +4,7 @@
 Python standard library only. Units are metres, Y up, -Z forward. The generated
 GLBs can be edited in Blender. Anatomical regions, not global X thresholds, own
 weights. Every animation samples every bone so poses cannot inherit stale tracks.
-These are stylized fictional ring interpretations, not verified likeness scans.
+These are stylized fictional ring interpretations, not verified likeness scans.\nModel-quality v3 increases deformation topology and adds character-specific gear geometry while preserving the gameplay rig.
 """
 from __future__ import annotations
 import argparse
@@ -54,7 +54,7 @@ class Asset:
     def __init__(self,key,profile):
         self.key,self.p=key,profile
         self.scale=profile["h"]/1.8
-        self.doc={"asset":{"version":"2.0","generator":"Offline Mayhem region-aware compiler 2.1"},"scene":0,"scenes":[{"nodes":[0]}],"nodes":[{"name":key,"children":[]}],"meshes":[],"materials":[],"bufferViews":[],"accessors":[],"animations":[],"skins":[],"images":[],"textures":[],"samplers":[{"magFilter":9729,"minFilter":9987,"wrapS":10497,"wrapT":10497}]}
+        self.doc={"asset":{"version":"2.0","generator":"Offline Mayhem model-quality compiler 3.0"},"scene":0,"scenes":[{"nodes":[0]}],"nodes":[{"name":key,"children":[]}],"meshes":[],"materials":[],"bufferViews":[],"accessors":[],"animations":[],"skins":[],"images":[],"textures":[],"samplers":[{"magFilter":9729,"minFilter":9987,"wrapS":10497,"wrapT":10497}]}
         self.buf=bytearray(); self.bones={}; self.world={}; self.parents={}; self.parts={}; self.regions={}
         self.setup_rig(); self.materials()
 
@@ -192,13 +192,13 @@ class Asset:
         self.ellipsoid((0,1.606,-.160),(.052,.003,.003),"dark","Head",rings=6)
         for side,sign in [("L",1),("R",-1)]:
             arm=p["arm"]; leg=p["leg"]; x=sign*sh; lx=sign*w*.47
-            self.loft([((x,y,0),arm*r,arm*r*.91) for y,r in [(.84,.62),(.94,.76),(1.07,.77),(1.11,.82),(1.20,1.02),(1.32,1.08),(1.40,.88)]],"skin",lambda pt,i,s=side:self.limb_w(s,pt[1],True),"arm",20)
+            self.loft([((x,y,0),arm*r,arm*r*.91) for y,r in [(.84,.62),(.94,.76),(1.07,.77),(1.11,.82),(1.20,1.02),(1.32,1.08),(1.40,.88)]],"skin",lambda pt,i,s=side:self.limb_w(s,pt[1],True),"arm",28)
             self.loft([((x,y,0),arm*.69,arm*.65) for y in [.855,.925]],"wrap",lambda pt,i,s=side:self.limb_w(s,pt[1],True),"wrap",20)
-            self.ellipsoid((x,.804,-.008),(.069,.062,.032),"skin","Hand."+side,"hand")
+            self.loft([((x,y,-.010),rx,rz) for y,rx,rz in [(.755,.045,.027),(.785,.064,.035),(.815,.071,.039),(.842,.058,.034)]],"skin",lambda pt,i,s=side:self.weights("Hand."+s),"hand",20)\n            self.ellipsoid((x+sign*.050,.815,-.018),(.028,.040,.024),"skin","Hand."+side,"thumb_base",14,8)\n            for knuckle,zoff in enumerate([-.037,-.012,.013,.038]): self.ellipsoid((x+sign*.018,.775,zoff),(.015,.012,.014),"skin","Hand."+side,"knuckle",10,6)
             for j in range(5):
                 bone=f"Finger{j}.{side}"; tip=f"Finger{j}Tip.{side}"; pos=mul(self.world[bone],1/self.scale); end=mul(self.world[tip],1/self.scale)
-                self.loft([((end[0],end[1]-.035,end[2]-.007),.010,.011),(end,.012,.014),(pos,.013,.014)],"skin",lambda pt,i,a=bone,b=tip:self.weights(a,b,1. if i<1 else (.65 if i==1 else 0.)),"finger",8)
-            self.loft([((lx,y,0),leg*r,leg*r*.95) for y,r in [(.30,.70),(.42,.68),(.51,.75),(.62,.90),(.76,1.02),(.88,1.02)]],"skin",lambda pt,i,s=side:self.limb_w(s,pt[1],False),"leg",24)
+                self.loft([((end[0],end[1]-.035,end[2]-.007),.010,.011),(end,.012,.014),(pos,.013,.014)],"skin",lambda pt,i,a=bone,b=tip:self.weights(a,b,1. if i<1 else (.65 if i==1 else 0.)),"finger",12)
+            self.loft([((lx,y,0),leg*r,leg*r*.95) for y,r in [(.30,.70),(.42,.68),(.51,.75),(.62,.90),(.76,1.02),(.88,1.02)]],"skin",lambda pt,i,s=side:self.limb_w(s,pt[1],False),"leg",30)
             self.loft([((lx,y,0),leg*r+.005,leg*r*.95+.005) for y,r in [(.63,.91),(.77,1.03),(.88,1.03)]],"gear",lambda pt,i,s=side:self.limb_w(s,pt[1],False),"shorts",24)
             self.ellipsoid((lx,.50,-leg*.70),(leg*.76,.082,.026),"boots","Shin."+side,"kneepad")
             self.loft([((lx,y,-.02),.105*leg/.14,rz) for y,rz in [(.055,.18),(.105,.17),(.18,.105),(.29,.103)]],"boots",lambda pt,i,s=side:self.weights("Foot."+s,"Shin."+s,smooth((pt[1]-.12)/.14)),"boot",24)
@@ -353,12 +353,12 @@ class Asset:
     def save(self,path):
         self.mesh(); self.animations(); self.validate()
         self.doc["buffers"]=[{"byteLength":len(self.buf)}]
-        self.doc["extras"]={"schema_version":2,"character":self.key,"style":"original stylized ring interpretation","authoring_forward":"-Z","walk_speed":1.5*self.scale,"run_speed":4.2*self.scale,"rig_bones":len(self.bones),"grip_support":"paired contact refinement pending"}
+        self.doc["extras"]={"schema_version":3,"character":self.key,"style":"original stylized ring interpretation","authoring_forward":"-Z","walk_speed":1.5*self.scale,"run_speed":4.2*self.scale,"rig_bones":len(self.bones),"grip_support":"paired contact refinement pending"}
         js=json.dumps(self.doc,separators=(",",":")).encode(); js+=b" "*((-len(js))%4)
         binary=bytes(self.buf); binary+=b"\0"*((-len(binary))%4)
         data=struct.pack("<4sII",b"glTF",2,28+len(js)+len(binary))+struct.pack("<I4s",len(js),b"JSON")+js+struct.pack("<I4s",len(binary),b"BIN\0")+binary
         path.parent.mkdir(parents=True,exist_ok=True); path.write_bytes(data)
-        return {"file":path.name,"sha256":hashlib.sha256(data).hexdigest(),"bones":len(self.bones),"clips":len(self.doc["animations"]),"vertices":sum(len(p["v"]) for p in self.parts.values()),"triangles":sum(len(p["i"])//3 for p in self.parts.values()),"bytes":len(data),"visual_acceptance":"prototype; see REVIEW.md"}
+        return {"file":path.name,"sha256":hashlib.sha256(data).hexdigest(),"bones":len(self.bones),"clips":len(self.doc["animations"]),"vertices":sum(len(p["v"]) for p in self.parts.values()),"triangles":sum(len(p["i"])//3 for p in self.parts.values()),"bytes":len(data),"visual_acceptance":"model-quality-v3 candidate; render inspection required"}
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
