@@ -173,6 +173,15 @@ class Asset:
         p=self.p; w=p["width"]; d=p["depth"]; sh=w+.055
         body=[(.80,.78,.83),(.88,.95,.98),(.98,1.04,1.03),(1.10,1.,1.08),(1.22,.95,1.),(1.34,1.03,.98),(1.42,.90,.82),(1.47,.36,.55)]
         self.loft([((0,y,0),w*rx,d*rz) for y,rx,rz in body],"gear",lambda pt,i:self.torso_w(pt[1]),"torso",32)
+        # Character-specific clothing geometry keeps silhouettes readable even in neutral materials.
+        if self.key=="candy_rooks":
+            self.loft([((0,y,-d*1.07),w*rx,.018) for y,rx in [(.79,.70),(.90,.86),(1.05,.83),(1.22,.72),(1.36,.62)]],"trim",lambda pt,i:self.torso_w(pt[1]),"gear_detail",32)
+        elif self.key=="daniel_larson":
+            for sign in [-1,1]: self.loft([((sign*w*.38,y,-d*1.025),.018,.022) for y in [.83,1.40]],"trim",lambda pt,i:self.torso_w(pt[1]),"gear_detail",12)
+        elif self.key=="referee_cobra":
+            self.loft([((0,y,-d*1.03),w*.06,.014) for y in [.82,1.43]],"trim",lambda pt,i:self.torso_w(pt[1]),"gear_detail",12)
+        elif self.key in ("tophiachu","andy_ditch"):
+            for sign in [-1,1]: self.loft([((sign*w*.42,y,-d*.94),w*.10,.018) for y in [1.18,1.44]],"trim",lambda pt,i:self.torso_w(pt[1]),"gear_detail",12)
         for y,rx,rz in [(.86,.94,.99),(1.425,.84,.81)]:
             self.loft([((0,y-.015,0),w*rx+.006,d*rz+.006),((0,y+.015,0),w*rx+.006,d*rz+.006)],"trim",lambda pt,i:self.torso_w(pt[1]),"seam",32)
         self.loft([((0,1.45,0),.115,.105),((0,1.60,0),.105,.105)],"skin",lambda pt,i:self.weights("Neck","Head",smooth((pt[1]-1.49)/.09)),"neck")
@@ -200,6 +209,10 @@ class Asset:
                 self.loft([((end[0],end[1]-.035,end[2]-.007),.010,.011),(end,.012,.014),(pos,.013,.014)],"skin",lambda pt,i,a=bone,b=tip:self.weights(a,b,1. if i<1 else (.65 if i==1 else 0.)),"finger",12)
             self.loft([((lx,y,0),leg*r,leg*r*.95) for y,r in [(.30,.70),(.42,.68),(.51,.75),(.62,.90),(.76,1.02),(.88,1.02)]],"skin",lambda pt,i,s=side:self.limb_w(s,pt[1],False),"leg",30)
             self.loft([((lx,y,0),leg*r+.005,leg*r*.95+.005) for y,r in [(.63,.91),(.77,1.03),(.88,1.03)]],"gear",lambda pt,i,s=side:self.limb_w(s,pt[1],False),"shorts",24)
+            if self.key in ("daniel_larson","referee_cobra"):
+                self.loft([((x,y,0),arm*1.08,arm*.96) for y in [1.315,1.37]],"gear",lambda pt,i,s=side:self.weights("UpperArm."+s),"gear_detail",24)
+            if self.key in ("jupiter_the_hybrid","anacondasin","novaonline","candy_rooks"):
+                self.loft([((lx,y,0),leg*1.04,leg*.99) for y in [.60,.635]],"trim",lambda pt,i,s=side:self.limb_w(s,pt[1],False),"gear_detail",26)
             self.ellipsoid((lx,.50,-leg*.70),(leg*.76,.082,.026),"boots","Shin."+side,"kneepad")
             self.loft([((lx,y,-.02),.105*leg/.14,rz) for y,rz in [(.055,.18),(.105,.17),(.18,.105),(.29,.103)]],"boots",lambda pt,i,s=side:self.weights("Foot."+s,"Shin."+s,smooth((pt[1]-.12)/.14)),"boot",24)
             self.ellipsoid((lx,.055,-.094),(.115*leg/.14,.037,.185),"boots","Foot."+side,"sole",20)
