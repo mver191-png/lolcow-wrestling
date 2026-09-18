@@ -1,0 +1,86 @@
+name: Public visual reference study
+on:
+  push:
+    branches: [astra/model-quality-v3]
+    paths: [.github/workflows/public-reference-study.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  references:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - name: Retrieve source-labelled public thumbnails for internal art study
+        run: |
+          mkdir -p reference-study
+          python3 - <<'PY'
+          from concurrent.futures import ThreadPoolExecutor
+          from html.parser import HTMLParser
+          from pathlib import Path
+          from urllib.request import Request, urlopen
+          from urllib.parse import urljoin, urlparse
+          import json, hashlib
+          sources = [
+            ('tophiachu','https://knowyourmeme.com/photos/2581312-tophiachu-tiktok-lolcow'),
+            ('tophiachu','https://knowyourmeme.com/memes/people/tophiachu-tiktok-lolcow'),
+            ('novaonline','https://knowyourmeme.com/memes/people/nova-online-tiktok-lolcow'),
+            ('novaonline','https://i.ytimg.com/vi/ZGQoShXI2Ho/maxresdefault.jpg'),
+            ('cyraxx','https://wiki.lolcow.city/cyraxx/Chance_Wilkins'),
+            ('cyraxx','https://tenor.com/view/cyraxx-chance-wilkins-psyraxx-43-gif-7870491556437349690'),
+            ('andy_ditch','https://tenor.com/view/andy-ditch-andrew-ditch-andy-andrew-ditch-gif-1518722277082662957'),
+            ('daniel_larson','https://i.kym-cdn.com/photos/images/newsfeed/002/345/829/5f4.jpg'),
+            ('daniel_larson','https://tenor.com/view/daniel-larson-danderson-daniellarson-daniel-larson-gif-14768455700226943549'),
+            ('referee_cobra','https://www.indy100.com/news/kingcobrajfs-youtuber-musician-cause-of-death-investigation-explained'),
+            ('jupiter_the_hybrid','https://rumble.com/v4dsuy3-jupiter-the-hybrid-interview.html'),
+            ('jupiter_the_hybrid','https://rumble.com/v5aqrdh-jupiter-the-hybrid-deleted-livestream-06-16-2024.html'),
+            ('anacondasin','https://socialblade.com/youtube/user/annajaneclossin'),
+            ('anacondasin','https://fish.audio/app/m/dfa155e0f6444f409793175326a9d675/'),
+            ('candy_rooks','https://open.spotify.com/episode/1cdZ9Rc2SO3ukrnMlHwerB')]
+          class Metadata(HTMLParser):
+            def __init__(self): super().__init__(); self.images=[]
+            def handle_starttag(self,tag,attrs):
+              a=dict(attrs)
+              if tag=='meta' and a.get('property',a.get('name','')) in ('og:image','twitter:image','twitter:image:src'):
+                self.images.append((a.get('content',''),'page lead image'))
+              if tag=='img' and any(k in (a.get('alt','')+' '+a.get('src','')).lower() for k in ['tophia','nova','chance','cyraxx','candy','anaconda','jupiter','kingcobra','saunders']):
+                self.images.append((a.get('src',a.get('data-src','')),a.get('alt','')))
+          def get(url):
+            if urlparse(url).scheme not in ('https','http'): raise ValueError('Unexpected URL scheme')
+            with urlopen(Request(url,headers={'User-Agent':'Mozilla/5.0 (visual-reference-study)'}),timeout=20) as r:
+              data=r.read(4000001)
+              if len(data)>4000000: raise ValueError('Image/page exceeds study limit')
+              return data,r.headers.get('Content-Type','')
+          def fetch(item):
+            index,(key,url)=item; result={'character_slot':key,'source_page':url,'images':[],'status':'unverified source attribution; inspect before modeling'}
+            try:
+              data,ctype=get(url)
+              if ctype.startswith('image/'): candidates=[(url,'source-labelled image')]
+              else:
+                parser=Metadata();parser.feed(data.decode('utf-8','replace'));candidates=parser.images
+              seen=set()
+              for image,alt in candidates:
+                image=urljoin(url,image)
+                if image in seen: continue
+                seen.add(image)
+                try:
+                  content,kind=get(image)
+                  if not kind.startswith('image/'): continue
+                  suffix='.gif' if 'gif' in kind else '.png' if 'png' in kind else '.webp' if 'webp' in kind else '.jpg'
+                  name=f'{index:02d}-{key}-{len(result["images"])}{suffix}'
+                  Path('reference-study',name).write_bytes(content)
+                  result['images'].append({'file':name,'url':image,'source_alt':alt,'sha256':hashlib.sha256(content).hexdigest()})
+                  if len(result['images'])>=2: break
+                except Exception as e: result.setdefault('image_errors',[]).append(str(e))
+            except Exception as e: result['error']=str(e)
+            return result
+          with ThreadPoolExecutor(max_workers=4) as pool: results=list(pool.map(fetch,enumerate(sources)))
+          Path('reference-study/sources.json').write_text(json.dumps(results,indent=2))
+          Path('reference-study/READ_ME.txt').write_text('Internal visual study only. Images remain the property of their original owners. Do not embed these thumbnails into game textures or commit them to the repository. Source labels are not facial identity verification. No private profiles, face recognition, voice cloning or biometric matching performed. No web allegation is adopted. Delete temporary study copies after inspection.')
+          print('Downloaded',sum(len(r['images']) for r in results),'public reference candidates')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: public-reference-study
+          path: reference-study/
+          retention-days: 1
