@@ -1,17 +1,10 @@
-# Next task: authored contact and recovery polish
+# Next task: authored motion and contact quality
 
-Keep the tested contact solver and simulation/presentation separation. Use the
-existing capture tool and contact metrics to evaluate changes before broadening
-scope.
+The mesh-clearance guard and full-vertex audit now complement the existing grip-marker tests. Preserve the tested authority separation, roster stats, shared clocks and input behavior.
 
-1. Author Tophiachu/Cyraxx grip acquisition, finger curl and leverage-specific
-   poses using the established contact markers. Reduce extreme joint bends rather
-   than increasing reach or hiding errors with body offsets.
-2. Add full-body rope and floor-clearance sampling through complete paired and
-   recovery sequences. Add supported elbow/hand/knee recovery phases.
-3. Improve referee approach anticipation and stance transitions without delaying
-   official counts. Review first-count contact in an uninterrupted match.
-4. Run a human match and inspect multiple camera views before marking art accepted.
+1. Author Tophiachu/Cyraxx recovery and leverage poses that require smaller model offsets. Review complete transitions, center of support, finger placement and shoulder bends from multiple angles. Do not call floor clearance alone a convincing get-up.
+2. Extend the current square-envelope protection to explicit turnbuckle, rope and opponent geometry where appropriate. Decide how any physical placement change is communicated to gameplay, rather than increasing cosmetic offset caps.
+3. Implement distinct signature-move choreography for the first two wrestlers, tied to actual move metadata and contact volumes. Preserve the same result authority and test both actor orders.
+4. Improve referee approach anticipation and perform an uninterrupted human match before art acceptance. Keep Windows, gamepad and target-GPU verification separate.
 
-Do not claim new unique finishers or tournament readiness from marker-distance
-assertions. Preserve roster stats, shared action clocks and terminal rules.
+Use `tools/capture_clearance.gd` and `tests/test_clearance.gd` alongside the existing contact and gameplay suites. Record actual renders and residual errors; do not hide invalid poses with more bloom, stretched bones or inflated pass counts.
